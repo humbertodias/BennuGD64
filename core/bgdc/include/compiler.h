@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -63,7 +63,7 @@ extern void compile_block(PROCDEF *) ;
 
 extern void import_mod( char * libname );
 
-/* Compilado de secciones especiales (definición de datos, etc) */
+/* Compilado de secciones especiales (definiciÃ³n de datos, etc) */
 extern int  compile_array_data (VARSPACE * n, segment * data, int size, int subsize, BASETYPE *t) ;
 extern int  compile_varspace (VARSPACE * n, segment * data, int additive, int copies, int padding, VARSPACE ** c, int alignment, int duplicateignore) ;
 extern void compile_constants () ;
@@ -82,7 +82,7 @@ extern expresion_result compile_subexpresion () ;
 extern expresion_result compile_expresion (int need_constant, int need_lvalue, int discart_code, BASETYPE t) ;
 extern expresion_result convert_result_type (expresion_result res, BASETYPE t);
 
-/* Códigos de identificadores y palabras reservadas */
+/* CÃ³digos de identificadores y palabras reservadas */
 
 extern int
 
@@ -121,7 +121,7 @@ extern int
     identifier_function,    identifier_int,         identifier_short,
     identifier_char,        identifier_unsigned,    identifier_signed ;
 
-extern int reserved_words ;  /* Número de palabras reservadas */
+extern int reserved_words ;  /* NÃºmero de palabras reservadas */
 
 extern int identifier_is_type(int id);
 extern int identifier_is_basic_type(int id);

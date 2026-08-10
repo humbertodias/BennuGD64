@@ -14,7 +14,7 @@ add_library (
 
 target_link_libraries (
   mod_video
-  SDL3::SDL3
+  ${BENNUGD_SDL3_TARGET}
   bgdrtm
   render
   video

@@ -11,7 +11,7 @@ add_library (
 
 target_link_libraries (
   wm
-  SDL3::SDL3
+  ${BENNUGD_SDL3_TARGET}
   bgdrtm
 )
 

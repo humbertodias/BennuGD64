@@ -83,15 +83,19 @@ add_executable (
 if (USE_LIBDES)
   target_link_libraries (
     bgdc
-    z
+    ZLIB::ZLIB
     des
   )
 else ()
   target_link_libraries (
     bgdc
-    z
+    ZLIB::ZLIB
     OpenSSL::Crypto
   )
+endif ()
+
+if (WIN32)
+  target_link_libraries (bgdc shlwapi)
 endif ()
 
 install (

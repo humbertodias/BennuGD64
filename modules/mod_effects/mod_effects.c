@@ -122,7 +122,7 @@ static void _put_pixel( GRAPH * dest, int x, int y, int color )
 
 /* ----------------------------------------------------------------- */
 
-static int modeffects_filter( INSTANCE *my, int *params )
+static int modeffects_filter( INSTANCE *my, intptr_t *params )
 { //fpg,map,tabla10
     GRAPH * map = bitmap_get( params[0], params[1] ), * map2;
     int *tabla = ( int* )params[2];
@@ -205,7 +205,7 @@ static int modeffects_filter( INSTANCE *my, int *params )
     return 1 ;
 }
 
-static int modeffects_blur( INSTANCE *my, int *params )
+static int modeffects_blur( INSTANCE *my, intptr_t *params )
 { // fpg,map,tipo
     GRAPH * map = bitmap_get( params[0], params[1] ), *map2;
 
@@ -379,7 +379,7 @@ static int modeffects_blur( INSTANCE *my, int *params )
     return 1 ;
 }
 
-static int modeffects_grayscale( INSTANCE *my, int *params )
+static int modeffects_grayscale( INSTANCE *my, intptr_t *params )
 { //fpg,map,tipo
     GRAPH * map = bitmap_get( params[0], params[1] ) ;
     uint32_t i, j, c;
@@ -435,7 +435,7 @@ static int modeffects_grayscale( INSTANCE *my, int *params )
     return 1 ;
 }
 
-static int modeffects_rgbscale( INSTANCE *my, int *params )
+static int modeffects_rgbscale( INSTANCE *my, intptr_t *params )
 { //fpg, map, r, g, b
     GRAPH * map = bitmap_get( params[0], params[1] ) ;
     uint32_t i, j, c;

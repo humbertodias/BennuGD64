@@ -65,7 +65,7 @@ DLVARFIXUP __bgdexport( mod_regex, globals_fixup) [] =   {
  *  of the match or -1 if none found.
  */
 
-static int modregex_regex (INSTANCE * my, int * params)
+static int modregex_regex (INSTANCE * my, intptr_t * params)
 {
     const char * reg = string_get(params[0]);
     const char * str = string_get(params[1]);
@@ -128,7 +128,7 @@ static int modregex_regex (INSTANCE * my, int * params)
  *  filled with information about the first match.
  */
 
-static int modregex_regex_replace (INSTANCE * my, int * params)
+static int modregex_regex_replace (INSTANCE * my, intptr_t * params)
 {
     const char * reg = string_get(params[0]);
     const char * rep = string_get(params[1]);
@@ -304,7 +304,7 @@ static int modregex_regex_replace (INSTANCE * my, int * params)
  *
  */
 
-static int modregex_split (INSTANCE * my, int * params)
+static int modregex_split (INSTANCE * my, intptr_t * params)
 {
     const char * reg = string_get(params[0]);
     const char * str = string_get(params[1]);
@@ -372,7 +372,7 @@ static int modregex_split (INSTANCE * my, int * params)
  *  resulting string.
  */
 
-static int modregex_join (INSTANCE * my, int * params)
+static int modregex_join (INSTANCE * my, intptr_t * params)
 {
     const char * sep = string_get(params[0]);
     int * string_array = (int *)params[1];

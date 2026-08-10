@@ -1,7 +1,7 @@
 /*
- *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright ù 2002-2006 Fenix Team (Fenix)
- *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
+ *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright © 2002-2006 Fenix Team (Fenix)
+ *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -346,7 +346,7 @@ static void _moddraw_object_move( int id, int x, int y )
 /* --------------------------------------------------------------------------- */
 /* Exportable functions                                                        */
 
-static int moddraw_drawing_map( INSTANCE * my, int * params )
+static int moddraw_drawing_map( INSTANCE * my, intptr_t * params )
 {
     drawing_graph = bitmap_get( params[ 0 ], params[ 1 ] ) ;
     return 1 ;
@@ -354,7 +354,7 @@ static int moddraw_drawing_map( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_drawing_at( INSTANCE * my, int * params )
+static int moddraw_drawing_at( INSTANCE * my, intptr_t * params )
 {
     drawing_graph = NULL;
     drawing_z = params[ 0 ];
@@ -363,7 +363,7 @@ static int moddraw_drawing_at( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_drawing_stipple( INSTANCE * my, int * params )
+static int moddraw_drawing_stipple( INSTANCE * my, intptr_t * params )
 {
     drawing_stipple = params[ 0 ];
     return 1;
@@ -371,7 +371,7 @@ static int moddraw_drawing_stipple( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_delete_drawing( INSTANCE * my, int * params )
+static int moddraw_delete_drawing( INSTANCE * my, intptr_t * params )
 {
     _moddraw_object_destroy( params[ 0 ] );
     return 1;
@@ -379,7 +379,7 @@ static int moddraw_delete_drawing( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_move_drawing( INSTANCE * my, int * params )
+static int moddraw_move_drawing( INSTANCE * my, intptr_t * params )
 {
     _moddraw_object_move( params[ 0 ], params[ 1 ], params[ 2 ] );
     return 1;
@@ -387,7 +387,7 @@ static int moddraw_move_drawing( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_drawing_color( INSTANCE * my, int * params )
+static int moddraw_drawing_color( INSTANCE * my, intptr_t * params )
 {
     gr_setcolor( params[ 0 ] );
     return 1 ;
@@ -395,7 +395,7 @@ static int moddraw_drawing_color( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_drawing_alpha( INSTANCE * my, int * params )
+static int moddraw_drawing_alpha( INSTANCE * my, intptr_t * params )
 {
     gr_setalpha( params[ 0 ] );
     return 1;
@@ -403,7 +403,7 @@ static int moddraw_drawing_alpha( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_box( INSTANCE * my, int * params )
+static int moddraw_box( INSTANCE * my, intptr_t * params )
 {
     if ( !drawing_graph )
     {
@@ -423,7 +423,7 @@ static int moddraw_box( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_rect( INSTANCE * my, int * params )
+static int moddraw_rect( INSTANCE * my, intptr_t * params )
 {
     if ( !drawing_graph )
     {
@@ -443,7 +443,7 @@ static int moddraw_rect( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_line( INSTANCE * my, int * params )
+static int moddraw_line( INSTANCE * my, intptr_t * params )
 {
     if ( !drawing_graph )
     {
@@ -463,7 +463,7 @@ static int moddraw_line( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_circle( INSTANCE * my, int * params )
+static int moddraw_circle( INSTANCE * my, intptr_t * params )
 {
     if ( !drawing_graph )
     {
@@ -482,7 +482,7 @@ static int moddraw_circle( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_fcircle( INSTANCE * my, int * params )
+static int moddraw_fcircle( INSTANCE * my, intptr_t * params )
 {
     if ( !drawing_graph )
     {
@@ -501,7 +501,7 @@ static int moddraw_fcircle( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_bezier( INSTANCE * my, int * params )
+static int moddraw_bezier( INSTANCE * my, intptr_t * params )
 {
     if ( !drawing_graph )
     {
@@ -526,14 +526,14 @@ static int moddraw_bezier( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_get_pixel( INSTANCE * my, int * params )
+static int moddraw_get_pixel( INSTANCE * my, intptr_t * params )
 {
     return gr_get_pixel( background, params[ 0 ], params[ 1 ] ) ;
 }
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_put_pixel( INSTANCE * my, int * params )
+static int moddraw_put_pixel( INSTANCE * my, intptr_t * params )
 {
     gr_put_pixel( background, params[ 0 ], params[ 1 ], params[ 2 ] ) ;
     return 1 ;
@@ -541,7 +541,7 @@ static int moddraw_put_pixel( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_map_get_pixel( INSTANCE * my, int * params )
+static int moddraw_map_get_pixel( INSTANCE * my, intptr_t * params )
 {
     GRAPH * map = bitmap_get( params[ 0 ], params[ 1 ] ) ;
     if ( !map ) return -1;
@@ -550,7 +550,7 @@ static int moddraw_map_get_pixel( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddraw_map_put_pixel( INSTANCE * my, int * params )
+static int moddraw_map_put_pixel( INSTANCE * my, intptr_t * params )
 {
     GRAPH * map = bitmap_get( params[ 0 ], params[ 1 ] ) ;
     if ( !map ) return 0 ;

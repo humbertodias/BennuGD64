@@ -71,7 +71,7 @@ PROCDEF ;
 
 /* System functions */
 
-typedef int SYSFUNC (INSTANCE *, int *) ;
+typedef int SYSFUNC (INSTANCE *, intptr_t *) ;
 typedef struct _sysproc
 {
 	int       code ;

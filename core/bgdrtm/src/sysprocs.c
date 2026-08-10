@@ -42,9 +42,9 @@
 /* ---------------------------------------------------------------------- */
 
 /* Debe existir un header bgdrtm.h */
-extern int bgd_copy_struct( INSTANCE * my, int * params ) ;
-extern int bgd_internal_memcopy( INSTANCE * my, int * params ) ;
-extern int bgd_internal_copy_string_array( INSTANCE * my, int * params ) ;
+extern int bgd_copy_struct( INSTANCE * my, intptr_t * params ) ;
+extern int bgd_internal_memcopy( INSTANCE * my, intptr_t * params ) ;
+extern int bgd_internal_copy_string_array( INSTANCE * my, intptr_t * params ) ;
 
 #include "sysprocs.h"
 #include "sysprocs_p.h"

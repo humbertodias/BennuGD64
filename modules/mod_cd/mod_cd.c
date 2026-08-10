@@ -85,7 +85,7 @@ DLVARFIXUP  __bgdexport( mod_cd, globals_fixup )[] =
    Returns the number of CD drives in the system
  **/
 
-static int modcd_drives( INSTANCE * my, int * params )
+static int modcd_drives( INSTANCE * my, intptr_t * params )
 {
     return SDL_CDNumDrives();
 }
@@ -96,7 +96,7 @@ static int modcd_drives( INSTANCE * my, int * params )
    Returns the status of a CD (using SDL constants)
  **/
 
-static int modcd_status( INSTANCE * my, int * params )
+static int modcd_status( INSTANCE * my, intptr_t * params )
 {
     if ( params[0] < 0 || params[0] >= SDL_CDNumDrives() ) return 0;
 
@@ -117,7 +117,7 @@ static int modcd_status( INSTANCE * my, int * params )
    Returns a human-readable string with the name of a CD drive
  **/
 
-static int modcd_name( INSTANCE * my, int * params )
+static int modcd_name( INSTANCE * my, intptr_t * params )
 {
     int result;
 
@@ -135,7 +135,7 @@ static int modcd_name( INSTANCE * my, int * params )
    Returns 1 if there is a valid CD in the drive or 0 otherwise
  **/
 
-static int modcd_getinfo( INSTANCE * my, int * params )
+static int modcd_getinfo( INSTANCE * my, intptr_t * params )
 {
     int i, total = 0;
     char * trackinfo;
@@ -172,7 +172,7 @@ static int modcd_getinfo( INSTANCE * my, int * params )
    Starts playing a track of the given CD
  **/
 
-static int modcd_play( INSTANCE * my, int * params )
+static int modcd_play( INSTANCE * my, intptr_t * params )
 {
     if ( params[0] < 0 || params[0] >= SDL_CDNumDrives() ) return 0;
 
@@ -196,7 +196,7 @@ static int modcd_play( INSTANCE * my, int * params )
    Plays a series of tracks of the CD
  **/
 
-static int modcd_playtracks( INSTANCE * my, int * params )
+static int modcd_playtracks( INSTANCE * my, intptr_t * params )
 {
     if ( params[0] < 0 || params[0] >= SDL_CDNumDrives() ) return 0;
 
@@ -220,7 +220,7 @@ static int modcd_playtracks( INSTANCE * my, int * params )
    Ejects a CD
  **/
 
-static int modcd_eject( INSTANCE * my, int * params )
+static int modcd_eject( INSTANCE * my, intptr_t * params )
 {
     if ( params[0] < 0 || params[0] >= SDL_CDNumDrives() ) return 0;
 
@@ -241,7 +241,7 @@ static int modcd_eject( INSTANCE * my, int * params )
    Pauses the CD playing
  **/
 
-static int modcd_pause( INSTANCE * my, int * params )
+static int modcd_pause( INSTANCE * my, intptr_t * params )
 {
     if ( params[0] < 0 || params[0] >= SDL_CDNumDrives() ) return 0;
 
@@ -262,7 +262,7 @@ static int modcd_pause( INSTANCE * my, int * params )
    Resumes a CD in pause
  **/
 
-static int modcd_resume( INSTANCE * my, int * params )
+static int modcd_resume( INSTANCE * my, intptr_t * params )
 {
     if ( params[0] < 0 || params[0] >= SDL_CDNumDrives() ) return 0;
 
@@ -283,7 +283,7 @@ static int modcd_resume( INSTANCE * my, int * params )
    Stops the CD
  **/
 
-static int modcd_stop( INSTANCE * my, int * params )
+static int modcd_stop( INSTANCE * my, intptr_t * params )
 {
     if ( params[0] < 0 || params[0] >= SDL_CDNumDrives() ) return 0;
 

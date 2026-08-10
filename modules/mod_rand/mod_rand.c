@@ -33,7 +33,7 @@
 
 /* ---------------------------------------------------------------------- */
 
-static int rand_seed( INSTANCE * my, int * params )
+static int rand_seed( INSTANCE * my, intptr_t * params )
 {
     srand( params[0] ) ;
     return 1 ;
@@ -41,7 +41,7 @@ static int rand_seed( INSTANCE * my, int * params )
 
 /* ---------------------------------------------------------------------- */
 
-static int rand_std( INSTANCE * my, int * params )
+static int rand_std( INSTANCE * my, intptr_t * params )
 {
     int num1 = MIN( params[0], params[1] ) ;
     int num2 = MAX( params[0], params[1] ) ;

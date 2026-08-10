@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
+ *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ù 2002-2006 Fenix Team (Fenix)
+ *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -50,7 +50,7 @@ static fixed * cos_table = NULL ;
 
 fixed ftofix( float x )
 {
-    return ( long )( x * FIXED_PREC );
+    return ( int32_t )( x * FIXED_PREC );
 }
 
 /* --------------------------------------------------------------------------- */

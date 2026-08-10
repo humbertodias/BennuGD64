@@ -133,7 +133,7 @@ DLVARFIXUP __bgdexport( mod_grproc, globals_fixup )[] =
 /* Funciones del sistema                                                       */
 /* --------------------------------------------------------------------------- */
 
-static int grproc_advance( INSTANCE * my, int * params )
+static int grproc_advance( INSTANCE * my, intptr_t * params )
 {
     int angle = LOCINT32( mod_grproc, my, ANGLE ) ;
     LOCINT32( mod_grproc, my, COORDX ) += fixtoi( fixmul( fcos( angle ), itofix( params[0] ) ) ) ;
@@ -143,7 +143,7 @@ static int grproc_advance( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int grproc_xadvance( INSTANCE * my, int * params )
+static int grproc_xadvance( INSTANCE * my, intptr_t * params )
 {
     int angle = params[0] ;
     LOCINT32( mod_grproc, my, COORDX ) += fixtoi( fixmul( fcos( angle ), itofix( params[1] ) ) ) ;
@@ -153,7 +153,7 @@ static int grproc_xadvance( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int grproc_get_angle( INSTANCE * my, int * params )
+static int grproc_get_angle( INSTANCE * my, intptr_t * params )
 {
     INSTANCE * b = instance_get( params[0] ) ;
 
@@ -249,14 +249,14 @@ static int get_distance_proc( INSTANCE * a, INSTANCE * b )
 
 /* --------------------------------------------------------------------------- */
 
-static int grproc_get_dist( INSTANCE * a, int * params )
+static int grproc_get_dist( INSTANCE * a, intptr_t * params )
 {
     return ( get_distance_proc( a, instance_get( params[0] ) ) );
 }
 
 /* --------------------------------------------------------------------------- */
 
-static int grproc_get_real_point( INSTANCE * my, int * params )
+static int grproc_get_real_point( INSTANCE * my, intptr_t * params )
 {
     GRAPH * b ;
     int x, y, r, centerx, centery, px = 0, py = 0, rx = 0, ry = 0 ;
@@ -920,21 +920,21 @@ static int __collision( INSTANCE * my, int id, int colltype )
 
 /* --------------------------------------------------------------------------- */
 
-static int grproc_collision( INSTANCE * my, int * params )
+static int grproc_collision( INSTANCE * my, intptr_t * params )
 {
     return __collision( my, params[ 0 ], COLLISION_NORMAL );
 }
 
 /* --------------------------------------------------------------------------- */
 
-static int grproc_collision_box( INSTANCE * my, int * params )
+static int grproc_collision_box( INSTANCE * my, intptr_t * params )
 {
     return __collision( my, params[ 0 ], COLLISION_BOX );
 }
 
 /* ----------------------------------------------------------------- */
 
-static int grproc_collision_circle( INSTANCE * my, int * params )
+static int grproc_collision_circle( INSTANCE * my, intptr_t * params )
 {
     return __collision( my, params[ 0 ], COLLISION_CIRCLE );
 }

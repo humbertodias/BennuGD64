@@ -47,7 +47,7 @@
 /* Window Manager                                                              */
 /* --------------------------------------------------------------------------- */
 
-static int bgd_set_title( INSTANCE * my, int * params )
+static int bgd_set_title( INSTANCE * my, intptr_t * params )
 {
     gr_set_caption( ( char * )string_get( params[0] ) ) ;
     return 1 ;
@@ -55,7 +55,7 @@ static int bgd_set_title( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_set_icon( INSTANCE * my, int * params )
+static int bgd_set_icon( INSTANCE * my, intptr_t * params )
 {
     gr_set_icon( bitmap_get( params[0], params[1] ) );
     return 1 ;
@@ -63,14 +63,14 @@ static int bgd_set_icon( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_minimize( INSTANCE * my, int * params )
+static int bgd_minimize( INSTANCE * my, intptr_t * params )
 {
     return SDL_WM_IconifyWindow();
 }
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_move_window( INSTANCE * my, int * params )
+static int bgd_move_window( INSTANCE * my, intptr_t * params )
 {
     int res = 0;
     if ( full_screen ) return 0;
@@ -118,7 +118,7 @@ static int bgd_move_window( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_get_window_pos( INSTANCE * my, int * params )
+static int bgd_get_window_pos( INSTANCE * my, intptr_t * params )
 {
     if ( full_screen ) return -1;
 
@@ -170,7 +170,7 @@ static int bgd_get_window_pos( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_get_window_size( INSTANCE * my, int * params )
+static int bgd_get_window_size( INSTANCE * my, intptr_t * params )
 {
 #if defined( WIN32 ) || ( __linux && ( defined( SDL_VIDEO_DRIVER_X11 ) ) )
     SDL_SysWMinfo wminfo ;
@@ -234,7 +234,7 @@ static int bgd_get_window_size( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_get_desktop_size( INSTANCE * my, int * params )
+static int bgd_get_desktop_size( INSTANCE * my, intptr_t * params )
 {
 #ifdef WIN32
     RECT Rect;

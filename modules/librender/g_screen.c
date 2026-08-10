@@ -217,9 +217,9 @@ void gr_unlock_screen()
 
     if ( scale_resolution != -1 )
     {
-        uint8_t  * src8  = screen->pixels, * dst8  = scale_screen->pixels , * pdst = scale_screen->pixels ;
-        uint16_t * src16 = screen->pixels, * dst16 = scale_screen->pixels ;
-        uint32_t * src32 = screen->pixels, * dst32 = scale_screen->pixels ;
+        uint8_t  * src8  = ( uint8_t * ) screen->pixels, * dst8  = ( uint8_t * ) scale_screen->pixels , * pdst = ( uint8_t * ) scale_screen->pixels ;
+        uint16_t * src16 = ( uint16_t * ) screen->pixels, * dst16 = ( uint16_t * ) scale_screen->pixels ;
+        uint32_t * src32 = ( uint32_t * ) screen->pixels, * dst32 = ( uint32_t * ) scale_screen->pixels ;
         int h, w;
 
         switch ( bennu_surface_bpp( scale_screen ) )
@@ -233,7 +233,7 @@ void gr_unlock_screen()
                             {
                                 if ( scale_resolution_table_w[w] != -1 )
                                 {
-                                    src8 = screen->pixels + scale_resolution_table_w[w];
+                                    src8 = ( uint8_t * ) screen->pixels + scale_resolution_table_w[w];
                                     for ( h = scale_screen->h - 1; h-- ; )
                                     {
                                         if ( scale_resolution_table_h[h] != -1 ) *dst8 = src8[scale_resolution_table_h[h]];
@@ -247,7 +247,7 @@ void gr_unlock_screen()
                         {
                             for ( w = 0; w < scale_screen->w; w++ )
                             {
-                                src8 = screen->pixels + scale_resolution_table_w[w];
+                                src8 = ( uint8_t * ) screen->pixels + scale_resolution_table_w[w];
                                 for ( h = scale_screen->h - 1; h-- ; )
                                 {
                                     *dst8 = src8[scale_resolution_table_h[h]];
@@ -265,7 +265,7 @@ void gr_unlock_screen()
                             {
                                 if ( scale_resolution_table_h[h] != -1 )
                                 {
-                                    src8 = screen->pixels + scale_resolution_table_h[h];
+                                    src8 = ( uint8_t * ) screen->pixels + scale_resolution_table_h[h];
                                     for ( w = 0; w < scale_screen->w; w++ )
                                     {
                                         if ( scale_resolution_table_w[w] != -1 ) *dst8 = src8[scale_resolution_table_w[w]];
@@ -279,7 +279,7 @@ void gr_unlock_screen()
                         {
                             for ( h = 0; h < scale_screen->h; h++ )
                             {
-                                src8 = screen->pixels + scale_resolution_table_h[h];
+                                src8 = ( uint8_t * ) screen->pixels + scale_resolution_table_h[h];
                                 for ( w = 0; w < scale_screen->w; w++ )
                                 {
                                     *dst8 = src8[scale_resolution_table_w[w]];
@@ -301,7 +301,7 @@ void gr_unlock_screen()
                             {
                                 if ( scale_resolution_table_w[w] != -1 )
                                 {
-                                    src16 = screen->pixels + scale_resolution_table_w[w];
+                                    src16 = ( uint16_t * )( ( uint8_t * ) screen->pixels + scale_resolution_table_w[w] );
                                     for ( h = scale_screen->h - 1; h-- ; )
                                     {
                                         if ( scale_resolution_table_h[h] != -1 ) *dst16 = src16[scale_resolution_table_h[h]];
@@ -316,7 +316,7 @@ void gr_unlock_screen()
                             int inc = scale_screen->pitch / bennu_surface_bytes_pp( scale_screen );
                             for ( w = 0; w < scale_screen->w; w++ )
                             {
-                                src16 = screen->pixels + scale_resolution_table_w[w];
+                                src16 = ( uint16_t * )( ( uint8_t * ) screen->pixels + scale_resolution_table_w[w] );
                                 for ( h = scale_screen->h - 1; h-- ; )
                                 {
                                     *dst16 = src16[scale_resolution_table_h[h]];
@@ -334,7 +334,7 @@ void gr_unlock_screen()
                             {
                                 if ( scale_resolution_table_h[h] != -1 )
                                 {
-                                    src16 = screen->pixels + scale_resolution_table_h[h];
+                                    src16 = ( uint16_t * )( ( uint8_t * ) screen->pixels + scale_resolution_table_h[h] );
                                     for ( w = 0; w < scale_screen->w; w++ )
                                     {
                                         if ( scale_resolution_table_w[w] != -1 ) *dst16 = src16[scale_resolution_table_w[w]];
@@ -348,7 +348,7 @@ void gr_unlock_screen()
                         {
                             for ( h = 0; h < scale_screen->h; h++ )
                             {
-                                src16 = screen->pixels + scale_resolution_table_h[h];
+                                src16 = ( uint16_t * )( ( uint8_t * ) screen->pixels + scale_resolution_table_h[h] );
                                 for ( w = 0; w < scale_screen->w; w++ )
                                 {
                                     *dst16 = src16[scale_resolution_table_w[w]];
@@ -370,7 +370,7 @@ void gr_unlock_screen()
                             {
                                 if ( scale_resolution_table_w[w] != -1 )
                                 {
-                                    src32 = screen->pixels + scale_resolution_table_w[w];
+                                    src32 = ( uint32_t * )( ( uint8_t * ) screen->pixels + scale_resolution_table_w[w] );
                                     for ( h = scale_screen->h - 1; h-- ; )
                                     {
                                         if ( scale_resolution_table_h[h] != -1 ) *dst32 = src32[scale_resolution_table_h[h]];
@@ -385,7 +385,7 @@ void gr_unlock_screen()
                             int inc = scale_screen->pitch / bennu_surface_bytes_pp( scale_screen );
                             for ( w = 0; w < scale_screen->w; w++ )
                             {
-                                src32 = screen->pixels + scale_resolution_table_w[w];
+                                src32 = ( uint32_t * )( ( uint8_t * ) screen->pixels + scale_resolution_table_w[w] );
                                 for ( h = scale_screen->h - 1; h-- ; )
                                 {
                                     *dst32 = src32[scale_resolution_table_h[h]];
@@ -403,7 +403,7 @@ void gr_unlock_screen()
                             {
                                 if ( scale_resolution_table_h[h] != -1 )
                                 {
-                                    src32 = screen->pixels + scale_resolution_table_h[h];
+                                    src32 = ( uint32_t * )( ( uint8_t * ) screen->pixels + scale_resolution_table_h[h] );
                                     for ( w = 0; w < scale_screen->w; w++ )
                                     {
                                         if ( scale_resolution_table_w[w] != -1 ) *dst32 = src32[scale_resolution_table_w[w]];
@@ -417,7 +417,7 @@ void gr_unlock_screen()
                         {
                             for ( h = 0; h < scale_screen->h; h++ )
                             {
-                                src32 = screen->pixels + scale_resolution_table_h[h];
+                                src32 = ( uint32_t * )( ( uint8_t * ) screen->pixels + scale_resolution_table_h[h] );
                                 for ( w = 0; w < scale_screen->w; w++ )
                                 {
                                     *dst32 = src32[scale_resolution_table_w[w]];

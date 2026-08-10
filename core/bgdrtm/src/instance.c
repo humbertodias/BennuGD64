@@ -52,8 +52,8 @@
 #define INSTANCE_NORMALIZE_PRIORITY 32768
 
 /* ---------------------------------------------------------------------- */
-/* Módulo de gestión de instancias, con las funciones de incialización y  */
-/* destrucción, duplicado, etc.                                           */
+/* Mdulo de gestin de instancias, con las funciones de incializacin y  */
+/* destruccin, duplicado, etc.                                           */
 /* ---------------------------------------------------------------------- */
 
 #define HASH(id)            (unsigned int)((id)&0x0000ffff)
@@ -349,7 +349,7 @@ INSTANCE * instance_duplicate( INSTANCE * father )
 
     /* Inicializa datos de jerarquia */
 
-    /* Crea el proceso clónico como si lo hubiera llamado el padre */
+    /* Crea el proceso clnico como si lo hubiera llamado el padre */
 
     type = LOCDWORD( father, PROCESS_TYPE ) ;
     LOCDWORD( r, PROCESS_ID )   = pid ;
@@ -390,8 +390,9 @@ INSTANCE * instance_duplicate( INSTANCE * father )
 
     r->called_by = NULL;
 
-    r->stack = malloc( father->stack[0] );
-    memmove(r->stack, father->stack, (int)father->stack_ptr - (int)father->stack);
+    /* Preserve the historical number of stack slots (STACK_SIZE bytes of ints). */
+    r->stack = malloc( (size_t)father->stack[0] );
+    memmove( r->stack, father->stack, (size_t)( father->stack_ptr - father->stack ) * sizeof( *father->stack ) );
     r->stack_ptr = &r->stack[1];
 
     /* Initialize list pointers */
@@ -506,9 +507,10 @@ INSTANCE * instance_new( PROCDEF * proc, INSTANCE * father )
 
     r->called_by = NULL;
 
-    r->stack = malloc( STACK_SIZE );
+    /* STACK_SIZE is historically a byte budget for int slots; keep the same slot count. */
+    r->stack = malloc( ( STACK_SIZE / sizeof( int32_t ) ) * sizeof( intptr_t ) );
     r->stack_ptr = &r->stack[1];
-    r->stack[0] = STACK_SIZE;
+    r->stack[0] = ( STACK_SIZE / sizeof( int32_t ) ) * sizeof( intptr_t );
 
     /* Initialize list pointers */
 
@@ -612,7 +614,7 @@ void instance_destroy( INSTANCE * r )
     for ( n = 0 ; n < r->proc->pubstring_count ; n++ ) string_discard( PUBDWORD( r, r->proc->pubstrings[n] ) ) ; /* Strings publicas */
     for ( n = 0 ; n < local_strings ; n++ ) string_discard( LOCDWORD( r, localstr[n] ) ) ; /* Strings locales */
 
-    /* Actualiza árbol de jerarquias */
+    /* Actualiza rbol de jerarquias */
 
     bigbro = instance_get( LOCDWORD( r, BIGBRO ) ) ; /* Tengo hermano mayor? */
     if ( bigbro ) LOCDWORD( bigbro, SMALLBRO ) = LOCDWORD( r, SMALLBRO ) ; /* El hermano menor de mi hermano mayor es mi hermano menor */

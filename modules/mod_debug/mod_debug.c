@@ -1,7 +1,7 @@
 /*
- *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright ù 2002-2006 Fenix Team (Fenix)
- *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
+ *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright © 2002-2006 Fenix Team (Fenix)
+ *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -2836,7 +2836,7 @@ static int console_info( void * what, REGION * clip, int * z, int * drawme )
 
 /* --------------------------------------------------------------------------- */
 
-static int moddebug_trace( INSTANCE * my, int * params )
+static int moddebug_trace( INSTANCE * my, intptr_t * params )
 {
     debug = params[0];
     return 0 ;

@@ -1,7 +1,7 @@
 /*
- *  Copyright ï¿½ 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright ï¿½ 2002-2006 Fenix Team (Fenix)
- *  Copyright ï¿½ 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
+ *  Copyright  2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright  2002-2006 Fenix Team (Fenix)
+ *  Copyright  1999-2002 Jos Luis Cebrin Page (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -96,7 +96,7 @@ enum {
 
 DLVARFIXUP __bgdexport( libvideo, globals_fixup )[] =
 {
-    /* Nombre de variable global, puntero al dato, tamaï¿½o del elemento, cantidad de elementos */
+    /* Nombre de variable global, puntero al dato, tamao del elemento, cantidad de elementos */
     { "graph_mode" , NULL, -1, -1 },
     { "scale_mode" , NULL, -1, -1 },
     { "full_screen" , NULL, -1, -1 },
@@ -188,7 +188,11 @@ void gr_video_present( SDL_Surface * src )
     winsurf = SDL_GetWindowSurface( window );
     if ( !winsurf ) return ;
 
-    SDL_BlitSurface( src, NULL, winsurf, NULL );
+    if ( winsurf->w == src->w && winsurf->h == src->h )
+        SDL_BlitSurface( src, NULL, winsurf, NULL );
+    else
+        SDL_BlitSurfaceScaled( src, NULL, winsurf, NULL, SDL_SCALEMODE_NEAREST );
+
     SDL_UpdateWindowSurface( window );
 }
 
@@ -203,6 +207,13 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 
     winsurf = SDL_GetWindowSurface( window );
     if ( !winsurf ) return ;
+
+    /* Scaled windows can't map dirty rects 1:1; refresh the whole frame. */
+    if ( winsurf->w != src->w || winsurf->h != src->h )
+    {
+        gr_video_present( src );
+        return ;
+    }
 
     for ( i = 0 ; i < count ; i++ )
         SDL_BlitSurface( src, ( SDL_Rect * ) &rects[ i ], winsurf, ( SDL_Rect * ) &rects[ i ] );
@@ -392,6 +403,8 @@ int gr_set_mode( int width, int height, int depth )
 
     if ( full_screen ) window_flags |= SDL_WINDOW_FULLSCREEN;
     if ( frameless ) window_flags |= SDL_WINDOW_BORDERLESS;
+    /* Resizable so window managers expose minimize/maximize/close chrome. */
+    if ( !full_screen && !frameless ) window_flags |= SDL_WINDOW_RESIZABLE;
 
     if ( scale_screen )
     {
@@ -426,11 +439,13 @@ int gr_set_mode( int width, int height, int depth )
         else
         {
             SDL_SetWindowFullscreen( window, full_screen ? true : false );
-            SDL_SetWindowBordered( window, frameless ? false : true );
             SDL_SetWindowSize( window, surface_width, surface_height );
         }
 
         if ( !window ) return -1;
+
+        SDL_SetWindowBordered( window, ( frameless || full_screen ) ? false : true );
+        SDL_SetWindowResizable( window, ( frameless || full_screen ) ? false : true );
 
         scale_screen = gr_create_shadow_surface( surface_width, surface_height, depth );
 
@@ -549,11 +564,13 @@ int gr_set_mode( int width, int height, int depth )
         else
         {
             SDL_SetWindowFullscreen( window, full_screen ? true : false );
-            SDL_SetWindowBordered( window, frameless ? false : true );
             SDL_SetWindowSize( window, surface_width, surface_height );
         }
 
         if ( !window ) return -1;
+
+        SDL_SetWindowBordered( window, ( frameless || full_screen ) ? false : true );
+        SDL_SetWindowResizable( window, ( frameless || full_screen ) ? false : true );
 
         screen = gr_create_shadow_surface( surface_width, surface_height, depth );
     }

@@ -53,7 +53,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
 endif()
 
 if (WIN32)
-  add_definitions (-DTARGET_WIN32 -D_CRT_SECURE_NO_WARNINGS)
+  add_definitions (-DTARGET_WIN32 -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES)
 endif ()
 
 find_package (SDL3 REQUIRED CONFIG)

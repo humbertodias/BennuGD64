@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -37,15 +37,15 @@ extern int autodeclare ;
 int reduce_arrays = 1;
 
 /* ---------------------------------------------------------------------- */
-/* Compilador de expresiones y sentencias. En este módulo están todas las */
-/* funciones de compilado que generan código efectivo.                    */
+/* Compilador de expresiones y sentencias. En este mÃ³dulo estÃ¡n todas las */
+/* funciones de compilado que generan cÃ³digo efectivo.                    */
 /* ---------------------------------------------------------------------- */
 
 PROCDEF * proc ;
 CODEBLOCK * code ;
 
-/* Comprueba que los parámetros de una expresión binaria sean datos
- * numéricos. Devuelve el tipo de operación(MN_FLOAT o MN_DWORD) */
+/* Comprueba que los parÃ¡metros de una expresiÃ³n binaria sean datos
+ * numÃ©ricos. Devuelve el tipo de operaciÃ³n(MN_FLOAT o MN_DWORD) */
 
 static int check_integer_type( expresion_result *exp )
 {
@@ -196,8 +196,8 @@ static int check_numeric_types( expresion_result *left, expresion_result *right 
     return 0 ;
 }
 
-/* Comprueba que los parámetros de una expresión binaria sean cadenas
- * o datos numéricos. Devuelve MN_STRING o el tipo de dato numérico */
+/* Comprueba que los parÃ¡metros de una expresiÃ³n binaria sean cadenas
+ * o datos numÃ©ricos. Devuelve MN_STRING o el tipo de dato numÃ©rico */
 
 static int check_numeric_or_string_types( expresion_result * left, expresion_result * right )
 {
@@ -250,7 +250,7 @@ static int check_numeric_or_string_types( expresion_result * left, expresion_res
     return check_numeric_types( left, right ) ;
 }
 
-/* Devuelve el código que hay que adjuntar a un mnemónico para producir
+/* Devuelve el cÃ³digo que hay que adjuntar a un mnemÃ³nico para producir
  * una variante del mismo, adecuada al tipo de dato concreto */
 
 int mntype( TYPEDEF type, int accept_structs )
@@ -378,7 +378,7 @@ expresion_result compile_sublvalue( VARSPACE * from, int base_offset, VARSPACE *
     res.value      = 0 ;
     res.count      = 1 ;
 
-    /* Indexado vía [...] */
+    /* Indexado vÃ­a [...] */
 
     while ( token.type == IDENTIFIER && token.code == identifier_leftb ) /* "[" */
     {
@@ -432,7 +432,7 @@ expresion_result compile_sublvalue( VARSPACE * from, int base_offset, VARSPACE *
     return res ;
 }
 
-/* Compila el tamaño de una VARIABLE o estructura local, global, privada o publica */
+/* Compila el tamaÃ±o de una VARIABLE o estructura local, global, privada o publica */
 
 #define MAX_EXPR_LEVEL 256
 
@@ -1011,7 +1011,7 @@ SYSPROC * compile_bestproc( SYSPROC ** procs )
     return procs[0] ;
 }
 
-/* Compila una lista de parámetros */
+/* Compila una lista de parÃ¡metros */
 
 int compile_paramlist( BASETYPE * types, const char * paramtypes )
 {
@@ -1336,7 +1336,7 @@ expresion_result compile_cast()
     }
     else if ( typedef_is_string( type ) )
     {
-        /* Conversión de puntero, float, entero o cadena de ancho fijo a cadena */
+        /* ConversiÃ³n de puntero, float, entero o cadena de ancho fijo a cadena */
 
         if ( typedef_is_array( res.type ) && res.type.chunk[1].type == TYPE_CHAR )
         {
@@ -1396,7 +1396,7 @@ expresion_result compile_cast()
     return res;
 }
 
-/* Compila un valor (elemento más pequeño del lenguaje) */
+/* Compila un valor (elemento mÃ¡s pequeÃ±o del lenguaje) */
 
 expresion_result compile_value()
 {
@@ -1581,7 +1581,7 @@ expresion_result compile_value()
             break;
     }
 
-    /* Llamada a un procedimiento o función del sistema */
+    /* Llamada a un procedimiento o funciÃ³n del sistema */
 
     id = token.code ;
 
@@ -1841,7 +1841,7 @@ expresion_result compile_factor()
             }
         }
 
-        /* Indexado vía [...] */
+        /* Indexado vÃ­a [...] */
 
         if ( token.type == IDENTIFIER && token.code == identifier_leftb ) /* "[" */
         {
@@ -2034,7 +2034,7 @@ expresion_result compile_operation()
             left.type = typedef_new( TYPE_STRING ) ;
         }
 
-        /* Suma/resta de valores numéricos */
+        /* Suma/resta de valores numÃ©ricos */
 
         if ( token.type == IDENTIFIER && ( token.code == identifier_plus || token.code == identifier_minus ) ) /* "+" or "-" */
         {
@@ -2042,7 +2042,7 @@ expresion_result compile_operation()
             if ( left.lvalue ) codeblock_add( code, mntype( left.type, 0 ) | MN_PTR, 0 ) ;
             right = compile_operand() ;
 
-            /* Concatenación de cadenas */
+            /* ConcatenaciÃ³n de cadenas */
 
             if (( typedef_is_string( left.type ) || typedef_is_string( right.type ) ) && op == MN_ADD )
             {
@@ -2895,7 +2895,7 @@ expresion_result compile_subexpresion()
             }
         }
 
-        /* Otra posible combinación(for not string/char[]/pointers) */
+        /* Otra posible combinaciÃ³n(for not string/char[]/pointers) */
 
         if (    token.code == identifier_plusequal      /* "+=" */
             ||  token.code == identifier_minusequal     /* "-=" */
@@ -3113,7 +3113,7 @@ expresion_result compile_expresion( int need_constant, int need_lvalue, int disc
 
     if ( t != TYPE_UNDEFINED ) res = convert_result_type( res, t ) ;
 
-    /* Optimización de datos constantes */
+    /* OptimizaciÃ³n de datos constantes */
 
     if ( res.constant )
     {

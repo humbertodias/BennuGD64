@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -33,7 +33,7 @@
 
 #include "xctype.h"
 
-/* Tabla de conversión de caracteres MS-DOS a Windows */
+/* Tabla de conversiÃ³n de caracteres MS-DOS a Windows */
 
 int dos_chars = 0 ;
 
@@ -56,7 +56,7 @@ unsigned char dos_to_win[256] = {
 173, 177,  61, 190, 182, 167, 247, 184, 176, 168, 183, 185, 179, 178, 166, 160
 } ;
 
-/* Tabla de conversión de caracteres Windows a MS-DOS */
+/* Tabla de conversiÃ³n de caracteres Windows a MS-DOS */
 
 unsigned char win_to_dos[256] =
 {
@@ -149,15 +149,15 @@ void init_c_type ()
     set_c_lower  ((const unsigned char *)"ABCDEFGHIJKLMNOPQRSTUVWXYZ",
                   (const unsigned char *)"abcdefghijklmnopqrstuvwxyz") ;
 #ifdef RESPETAR_ACENTOS
-    set_c_upper  ((const unsigned char *)"áéíóúñçàèìòùäëïöüıâêîôûæãåõ",
-                  (const unsigned char *)"ÁÉÍÓÚÑÇÀÈÌÒÙÄËÏÖÜİÂÊÎÔÛÆÃÅÕ") ;
-    set_c_lower  ((const unsigned char *)"ÁÉÍÓÚÑÇÀÈÌÒÙÄËÏÖÜİÂÊÎÔÛÆÃÅÕ",
-                  (const unsigned char *)"áéíóúñçàèìòùäëïöüıâêîôûæãåõ") ;
+    set_c_upper  ((const unsigned char *)"\xe1\xe9\xed\xf3\xfa\xf1\xe7\xe0\xe8\xec\xf2\xf9\xe4\xeb\xef\xf6\xfc\xfd\xe2\xea\xee\xf4\xfb\xe6\xe3\xe5\xf5",
+                  (const unsigned char *)"\xc1\xc9\xcd\xd3\xda\xd1\xc7\xc0\xc8\xcc\xd2\xd9\xc4\xcb\xcf\xd6\xdc\xdd\xc2\xca\xce\xd4\xdb\xc6\xc3\xc5\xd5") ;
+    set_c_lower  ((const unsigned char *)"\xc1\xc9\xcd\xd3\xda\xd1\xc7\xc0\xc8\xcc\xd2\xd9\xc4\xcb\xcf\xd6\xdc\xdd\xc2\xca\xce\xd4\xdb\xc6\xc3\xc5\xd5",
+                  (const unsigned char *)"\xe1\xe9\xed\xf3\xfa\xf1\xe7\xe0\xe8\xec\xf2\xf9\xe4\xeb\xef\xf6\xfc\xfd\xe2\xea\xee\xf4\xfb\xe6\xe3\xe5\xf5") ;
 #else
-    set_c_upper  ((const unsigned char *)"áéíóúñÑçÇàèìòùäëïöüıâêîôûæãåõÁÉÍÓÚ",
-                  (const unsigned char *)"AEIOUNNCCAEIOUAEIOUYAEIOUÆAAOAEIOU") ;
-    set_c_lower  ((const unsigned char *)"áéíóúñÑçÇàèìòùäëïöüıâêîôûæãåõÁÉÍÓÚ",
-                  (const unsigned char *)"aeiounnccaeiouaeiouyaeiouÆaaoaeiou") ;
+    set_c_upper  ((const unsigned char *)"\xe1\xe9\xed\xf3\xfa\xf1\xd1\xe7\xc7\xe0\xe8\xec\xf2\xf9\xe4\xeb\xef\xf6\xfc\xfd\xe2\xea\xee\xf4\xfb\xe6\xe3\xe5\xf5\xc1\xc9\xcd\xd3\xda",
+                  (const unsigned char *)"AEIOUNNCCAEIOUAEIOUYAEIOU\xc6" "AAOAEIOU") ;
+    set_c_lower  ((const unsigned char *)"\xe1\xe9\xed\xf3\xfa\xf1\xd1\xe7\xc7\xe0\xe8\xec\xf2\xf9\xe4\xeb\xef\xf6\xfc\xfd\xe2\xea\xee\xf4\xfb\xe6\xe3\xe5\xf5\xc1\xc9\xcd\xd3\xda",
+                  (const unsigned char *)"aeiounnccaeiouaeiouyaeiou\xc6" "aaoaeiou") ;
 #endif
 
     set_c_from  ((const unsigned char *)" \t\n\r", CTYPE_SPACE) ;
@@ -170,8 +170,8 @@ void init_c_type ()
 
     set_c_range ('A', 'Z', CTYPE_ALPHA) ;
     set_c_range ('a', 'z', CTYPE_ALPHA) ;
-    set_c_from  ((const unsigned char *)"áéíóúÁÉÍÓÚñÑçÇàèìòùÀÈÌÒÙäëïöüÄËÏÖÜÿıâêîôûÂÊÎÔÛ"
-                 "æÆãåğõªºÃÅĞÕØ", CTYPE_ALPHA) ;
+    set_c_from  ((const unsigned char *)"\xe1\xe9\xed\xf3\xfa\xc1\xc9\xcd\xd3\xda\xf1\xd1\xe7\xc7\xe0\xe8\xec\xf2\xf9\xc0\xc8\xcc\xd2\xd9\xe4\xeb\xef\xf6\xfc\xc4\xcb\xcf\xd6\xdc\xff\xfd\xe2\xea\xee\xf4\xfb\xc2\xca\xce\xd4\xdb"
+                 "\xe6\xc6\xe3\xe5\xf0\xf5\xaa\xba\xc3\xc5\xd0\xd5\xd8", CTYPE_ALPHA) ;
 
     set_c_as    (CTYPE_ALPHA, CTYPE_WORDCHAR) ;
     set_c_from  ((const unsigned char *)"_",         CTYPE_WORDCHAR) ;

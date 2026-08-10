@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -39,8 +39,8 @@
 #include "xctype.h"
 
 /* ---------------------------------------------------------------------- */
-/* Este módulo contiene las funciones que compilan definiciones de datos: */
-/* declaraciones de variables e inicialización de las mismas              */
+/* Este mÃ³dulo contiene las funciones que compilan definiciones de datos: */
+/* declaraciones de variables e inicializaciÃ³n de las mismas              */
 /* ---------------------------------------------------------------------- */
 
 int compile_array_data( VARSPACE * n, segment * data, int size, int subsize, BASETYPE *t )
@@ -498,7 +498,7 @@ int compile_varspace( VARSPACE * n, segment * data, int additive, int copies, in
             token_next();
         }
 
-        /* Tipos de datos básicos */
+        /* Tipos de datos bÃ¡sicos */
 
         if ( token.code == identifier_dword )
         {
@@ -697,7 +697,7 @@ int compile_varspace( VARSPACE * n, segment * data, int additive, int copies, in
             }
             token_back() ;
 
-            /* Da la vuelta a los índices [10][5] -> [5][10] */
+            /* Da la vuelta a los Ã­ndices [10][5] -> [5][10] */
 
             for ( i = 0 ; i < type.depth ; i++ ) if ( type.chunk[i].type != TYPE_ARRAY ) break ;
             i--;
@@ -773,7 +773,7 @@ int compile_varspace( VARSPACE * n, segment * data, int additive, int copies, in
                 token_next() ;
             }
 
-            /* Da la vuelta a los índices [10][5] -> [5][10] */
+            /* Da la vuelta a los Ã­ndices [10][5] -> [5][10] */
 
             for ( i = 0 ; i < type.depth ; i++ ) if ( type.chunk[i].type != TYPE_ARRAY ) break ;
             i--;
@@ -845,7 +845,7 @@ int compile_varspace( VARSPACE * n, segment * data, int additive, int copies, in
                 token_back() ;
             }
         }
-        else if ( segm && token.type == IDENTIFIER && token.code == identifier_equal ) /* Compila una asignación de valores por defecto */
+        else if ( segm && token.type == IDENTIFIER && token.code == identifier_equal ) /* Compila una asignaciÃ³n de valores por defecto */
         {
             segment_add_from( data, segm ) ;
             i = data->current ;

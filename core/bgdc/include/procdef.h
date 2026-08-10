@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -29,7 +29,7 @@
 #ifndef __PROCDEF_H
 #define __PROCDEF_H
 
-/* Procesos (un "PROCDEF" es, en realidad, simplemente su definición) */
+/* Procesos (un "PROCDEF" es, en realidad, simplemente su definiciÃ³n) */
 
 #include "segment.h"
 #include "varspace.h"

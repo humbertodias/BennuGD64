@@ -24,7 +24,7 @@ else ()
     bgdi
     bgdrtm
     z
-    crypto
+    OpenSSL::Crypto
   )
 endif ()
 

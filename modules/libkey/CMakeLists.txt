@@ -10,7 +10,7 @@ add_library (
 
 target_link_libraries (
   key
-  SDL
+  SDL3::SDL3
   bgdrtm
 )
 

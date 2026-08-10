@@ -15,7 +15,7 @@ add_library (
 
 target_link_libraries (
   mouse
-  SDL
+  SDL3::SDL3
   bgdrtm
   draw
   render

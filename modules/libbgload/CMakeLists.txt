@@ -12,6 +12,7 @@ add_library (
 target_link_libraries (
   bgload
   bgdrtm
+  SDL3::SDL3
 )
 
 if (NOT STATIC_MODULES)

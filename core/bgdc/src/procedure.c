@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -38,9 +38,9 @@
 #include "bgdc.h"
 
 /* ---------------------------------------------------------------------- */
-/* Gestor de procesos y bloques de código. Este módulo contiene funciones */
-/* de utilidad para crear procesos y bloques de código así como otras que */
-/* se emplean durante y después del compilado.                            */
+/* Gestor de procesos y bloques de cÃ³digo. Este mÃ³dulo contiene funciones */
+/* de utilidad para crear procesos y bloques de cÃ³digo asÃ­ como otras que */
+/* se emplean durante y despuÃ©s del compilado.                            */
 /* ---------------------------------------------------------------------- */
 
 PROCDEF * mainproc = 0 ;
@@ -153,8 +153,8 @@ void procdef_destroy (PROCDEF * proc)
 }
 
 
-/* Realiza acciones posteriores al compilado sobre el código:
- * - Convierte saltos de código de etiqueta a offset
+/* Realiza acciones posteriores al compilado sobre el cÃ³digo:
+ * - Convierte saltos de cÃ³digo de etiqueta a offset
  * - Convierte identificador de procesos en CALL o TYPE a typeid */
 
 void program_postprocess ()

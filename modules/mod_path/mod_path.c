@@ -1,7 +1,7 @@
 /*
  *  Copyright &#169; 2006-2013 SplinterGU (Fenix/Bennugd)
  *  Copyright &#169; 2002-2006 Fenix Team (Fenix)
- *  Copyright &#169; 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright &#169; 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -89,7 +89,7 @@ static double heuristic( int x, int y )
 /* --------------------------------------------------------------------------- */
 
 /* Uso: pf_open = add(pf_open, this) ; */
-/* La lista permanecerá ordenada */
+/* La lista permanecerÃ¡ ordenada */
 static node * node_add( node * list, node * this )
 {
     node * curr = list ;
@@ -363,7 +363,7 @@ static int path_set_wall( int n )
 }
 
 /* --------------------------------------------------------------------------- */
-/* Funciones de búsqueda de caminos */
+/* Funciones de bÃºsqueda de caminos */
 
 static int modpathfind_path_find( INSTANCE * my, intptr_t * params )
 {

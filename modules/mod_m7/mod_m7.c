@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
+ *  Copyright ¬© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ¬© 2002-2006 Fenix Team (Fenix)
+ *  Copyright ¬© 1999-2002 Jos√© Luis Cebri√°n Pag√ºe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -53,7 +53,7 @@ extern int trans_table_updated ;
 
 /* --------------------------------------------------------------------------- */
 
-/* Funciones generales de rotaciùn en 2D
+/* Funciones generales de rotaci√≥n en 2D
  *
  *  x1  =  x * cos(angulo)  -  y * sin(angulo)
  *  y1  =  x * sin(angulo)  +  y * cos(angulo)
@@ -63,8 +63,8 @@ extern int trans_table_updated ;
 #define ROTATEDX(x,y,sina,cosa) (fixmul(x,cosa) - fixmul(y,sina))
 #define ROTATEDY(x,y,sina,cosa) (fixmul(x,sina) + fixmul(y,cosa))
 
-/* Esta estructura guarda informaciùn que se recalcula a cada frame.
- * Quizù no serùa necesario recalcularlo todo. El incremento podrùa
+/* Esta estructura guarda informaci√≥n que se recalcula a cada frame.
+ * Quiz√° no ser√≠a necesario recalcularlo todo. El incremento podr√≠a
  * quedar constante mientras no variara la altura, p.ej. */
 
 typedef struct _lineinfo
@@ -151,7 +151,7 @@ enum {
 /* (usada en tiempo de ejecucion)                                    */
 DLVARFIXUP __bgdexport( mod_m7, globals_fixup )[] =
 {
-    /* Nombre de variable global, puntero al dato, tamaùo del elemento, cantidad de elementos */
+    /* Nombre de variable global, puntero al dato, tama√±o del elemento, cantidad de elementos */
     { "m7", NULL, -1, -1 },
     { NULL, NULL, -1, -1 }
 };
@@ -162,7 +162,7 @@ DLVARFIXUP __bgdexport( mod_m7, globals_fixup )[] =
 /* (usada en tiempo de ejecucion)                                    */
 DLVARFIXUP __bgdexport( mod_m7, locals_fixup )[]  =
 {
-    /* Nombre de variable local, offset al dato, tamaùo del elemento, cantidad de elementos */
+    /* Nombre de variable local, offset al dato, tama√±o del elemento, cantidad de elementos */
     { "angle"                   , NULL, -1, -1 },
     { "cnumber"                 , NULL, -1, -1 },
     { "x"                       , NULL, -1, -1 },
@@ -479,7 +479,7 @@ static void draw_mode7( void * what, REGION * clip )
     if ( ( outdoor && outdoor->format->depth != dest->format->depth ) ||
          (  indoor &&  indoor->format->depth != dest->format->depth ) ) return;
 
-    /* Averigua la posiciùn inicial de dibujo */
+    /* Averigua la posici√≥n inicial de dibujo */
 
     camera = instance_get( dat->camera_id ) ;
     if ( !camera ) return ;
@@ -489,7 +489,7 @@ static void draw_mode7( void * what, REGION * clip )
     cosa = fcos( -angle ) ;
     sina = fsin( -angle ) ;
 
-    /* Averigua la posiciùn de inicio */
+    /* Averigua la posici√≥n de inicio */
 
     camera_x = itofix( LOCINT32( mod_m7, camera, COORDX ) ) ;
     camera_y = itofix( LOCINT32( mod_m7, camera, COORDY ) ) ;
@@ -502,7 +502,7 @@ static void draw_mode7( void * what, REGION * clip )
 
     if ( dat->flags & B_VMIRROR ) camera_z = -camera_z ;
 
-    /* Bucle para sacar las sub-posiciones de cada lùnea */
+    /* Bucle para sacar las sub-posiciones de cada l√≠nea */
 
     width  = mode7->region->x2 - mode7->region->x + 1 ;
     height = mode7->region->y2 - mode7->region->y + 1 ;
@@ -519,13 +519,13 @@ static void draw_mode7( void * what, REGION * clip )
         base_y = -itofix( dat->focus / 2 ) ;
         base_z = itofix( dat->focus / 2 ) - itofix( y * dat->focus / height ) ;
 
-        /* Rota dicho punto segùn el ùngulo del proceso */
+        /* Rota dicho punto seg√∫n el √°ngulo del proceso */
 
         point_x = ROTATEDX( base_x, base_y, sina, cosa ) + camera_x ;
         point_y = ROTATEDY( base_x, base_y, sina, cosa ) + camera_y ;
         point_z = base_z + camera_z ;
 
-        /* Aplica la fùrmula (ver mode7.txt) */
+        /* Aplica la f√≥rmula (ver mode7.txt) */
 
         if ( point_z == camera_z )
         {
@@ -553,7 +553,7 @@ static void draw_mode7( void * what, REGION * clip )
         lines[y].right_bmp_x = fixdiv( fixmul(( point_x - camera_x ), -camera_z ), ( point_z - camera_z ) ) + camera_x ;
         lines[y].right_bmp_y = fixdiv( fixmul(( point_y - camera_y ), -camera_z ), ( point_z - camera_z ) ) + camera_y ;
 
-        /* Averigua el incremento necesario para cada paso de la lùnea */
+        /* Averigua el incremento necesario para cada paso de la l√≠nea */
 
         lines[y].hinc = ( lines[y].right_bmp_x - lines[y].left_bmp_x ) / width ;
         lines[y].vinc = ( lines[y].right_bmp_y - lines[y].left_bmp_y ) / width ;
@@ -785,7 +785,7 @@ static void draw_mode7( void * what, REGION * clip )
                 proclist = ( INSTANCE ** ) realloc( proclist, sizeof( INSTANCE * ) * proclist_reserved ) ;
             }
 
-            /* Averigua la distancia a la cùmara */
+            /* Averigua la distancia a la c√°mara */
 
             x = LOCINT32( mod_m7, i, COORDX ) ;
             y = LOCINT32( mod_m7, i, COORDY ) ;

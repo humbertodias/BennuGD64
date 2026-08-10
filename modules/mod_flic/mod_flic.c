@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
+ *  Copyright ¬© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ¬© 2002-2006 Fenix Team (Fenix)
+ *  Copyright ¬© 1999-2002 Jos√© Luis Cebri√°n Pag√ºe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -43,7 +43,7 @@
 #include "mod_flic.h"
 
 /* --------------------------------------------------------------------- */
-/* Librerùa para reproducir ficheros FLI directamente desde el disco     */
+/* Librer√≠a para reproducir ficheros FLI directamente desde el disco     */
 /* --------------------------------------------------------------------- */
 
 static FLIC * current_fli = 0 ;
@@ -199,7 +199,7 @@ static FLIC * flic_open( const char * filename )
     flic->bitmap = bitmap_new( 0, flic->header.width, flic->header.height, 8 ) ;
     if ( !flic->bitmap )
     {
-        /* Tamaùo incorrecto */
+        /* Tama√±o incorrecto */
         flic_destroy( flic ) ;
         return 0 ;
     }
@@ -511,7 +511,7 @@ static FLIC * flic_do_frame( FLIC * flic )
 
     do
     {
-        /* Recupera informaciùn del siguiente chunk del fichero */
+        /* Recupera informaci√≥n del siguiente chunk del fichero */
 
         if ( !file_read( flic->fp, flic->frame, sizeof( FLIC_FRAME ) ) ) return 0 ;
 
@@ -562,7 +562,7 @@ static void flic_reset( FLIC * flic )
 }
 
 /* ----------------------------------------------------------------- */
-/* Reproducciùn de FLI */
+/* Reproducci√≥n de FLI */
 
 /*
  *  FUNCTION : modflic_start

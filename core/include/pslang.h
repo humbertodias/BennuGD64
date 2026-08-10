@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -30,10 +30,10 @@
 #define __PSLANG_H
 
 /* --------------------- */
-/* Flags para mnemónicos */
+/* Flags para mnemÃ³nicos */
 /* --------------------- */
 
-/* Número de parámetros */
+/* NÃºmero de parÃ¡metros */
 
 #define MN_0_PARAMS     (0x00)
 #define MN_1_PARAMS     (0x80)
@@ -55,7 +55,7 @@
 #define MN_TYPEOF(code) ((code) & 0xF00)
 
 /* -------------------- */
-/* Códigos de mnemónico */
+/* CÃ³digos de mnemÃ³nico */
 /* -------------------- */
 
 /* Salidas */
@@ -113,12 +113,12 @@
 #define MN_JTTRUE               (0x1F| MN_1_PARAMS)
 #define MN_JNOCASE              (0x20| MN_1_PARAMS)
 
-/* Operaciones unarias - aceptan tipos de dato numéricos */
+/* Operaciones unarias - aceptan tipos de dato numÃ©ricos */
 
 #define MN_NEG                  (0x21| MN_0_PARAMS)
 #define MN_NOT                  (0x22| MN_0_PARAMS)
 
-/* Operaciones binarias - Aceptan tipos de dato numéricos */
+/* Operaciones binarias - Aceptan tipos de dato numÃ©ricos */
 
 #define MN_MUL                  (0x23| MN_0_PARAMS)
 #define MN_DIV                  (0x24| MN_0_PARAMS)
@@ -147,7 +147,7 @@
 #define MN_INC                  (0x35| MN_1_PARAMS)
 #define MN_DEC                  (0x36| MN_1_PARAMS)
 
-/* Alteración directa de variables */
+/* AlteraciÃ³n directa de variables */
 
 #define MN_LET                  (0x37| MN_0_PARAMS)
 #define MN_VARADD               (0x38| MN_0_PARAMS)
@@ -182,7 +182,7 @@
 
 /*** Free 4C, 4D, 4E, 4F ***/
 
-/* Funciones de conversión */
+/* Funciones de conversiÃ³n */
 
 #define MN_INT2FLOAT            (0x50| MN_1_PARAMS)
 #define MN_FLOAT2INT            (0x51| MN_1_PARAMS)
@@ -208,7 +208,7 @@
 
 /*** Free 6E, 6F ****/
 
-/* Mnemónicos inexistentes - usados por el compilador internamente */
+/* MnemÃ³nicos inexistentes - usados por el compilador internamente */
 
 #define MN_REPEAT               (0x70| MN_1_PARAMS)
 #define MN_BREAK                (0x71| MN_1_PARAMS)

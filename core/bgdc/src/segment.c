@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -74,7 +74,7 @@ segment * segment_new ()
 	s->current = 0 ;
 	s->reserved = 128 ;
 
-	s->bytes = (int *) calloc(s->reserved, sizeof(char)) ; /* Tamaño en bytes */
+	s->bytes = (int *) calloc(s->reserved, sizeof(char)) ; /* TamaÃ±o en bytes */
 	if (!s->bytes) compile_error ("segment_new: out of memory\n") ;
 
 	segment_register (s) ;
@@ -94,7 +94,7 @@ segment * segment_duplicate (segment * b)
 	s->current = b->current ;
 	s->reserved = b->reserved ;
 
-	s->bytes = (int *) calloc(s->reserved, sizeof(char)) ; /* Tamaño en bytes */
+	s->bytes = (int *) calloc(s->reserved, sizeof(char)) ; /* TamaÃ±o en bytes */
 	if (!s->bytes) compile_error ("segment_new: out of memory\n") ;
 	memcpy (s->bytes, b->bytes, s->current) ;
 

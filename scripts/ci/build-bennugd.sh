@@ -22,10 +22,9 @@ ZLIB_LIB=""
 if [[ "${RUNNER_OS:-}" == "Windows" || "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]; then
   png_candidates=(
     "$PREFIX/lib/libpng16_static.lib" "$PREFIX/lib/libpng16.lib" "$PREFIX/lib/png16.lib"
-    "$PREFIX/lib/libpng16.a" "$PREFIX/lib/libpng.a"
   )
   zlib_candidates=(
-    "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib" "$PREFIX/lib/z.lib" "$PREFIX/lib/libz.a"
+    "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib" "$PREFIX/lib/z.lib"
   )
 else
   png_candidates=(
@@ -47,6 +46,8 @@ if [[ -z "$PNG_LIB" || -z "$ZLIB_LIB" ]]; then
   ls -la "$PREFIX/lib" >&2 || true
   exit 1
 fi
+echo "    PNG_LIBRARY=$PNG_LIB"
+echo "    ZLIB_LIBRARY=$ZLIB_LIB"
 
 args=(
   -S "$ROOT"
@@ -69,6 +70,7 @@ if [[ -n "${CMAKE_GENERATOR_PLATFORM:-}" ]]; then
   args+=(-A "$CMAKE_GENERATOR_PLATFORM")
 fi
 if [[ "${RUNNER_OS:-}" == "Windows" || "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* ]]; then
+  args+=(-DCMAKE_POLICY_DEFAULT_CMP0091=NEW)
   args+=(-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded)
 fi
 

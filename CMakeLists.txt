@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
 
 project (BennuGD)
 add_definitions (-DVERSION="1.0.0")
@@ -16,26 +16,13 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
   )
 endif()
 
-# param:
-# STATIC_MODULES (instead of shared modules)
-# INTERPRETER_ONLY (generate only bgdi exec)
-# USE_LIBDES (instead OpenSSL, not tested)
-# NO_SOUND (not tested)
+option (STATIC_MODULES "Build modules as static libraries linked into bgdi" ON)
+option (INTERPRETER_ONLY "Generate only the bgdi executable" OFF)
+option (USE_LIBDES "Use bundled DES instead of OpenSSL" OFF)
+option (NO_SOUND "Disable sound support" OFF)
+option (BENNUGD_STATIC_DEPS "Prefer statically linked third-party libraries" OFF)
 
-# gcw0 param to add in builtroot
-set (STATIC_MODULES true)
-set (INTERPRETER_ONLY false)
-set (USE_LIBDES false)
-set (NO_SOUND false)
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-  add_definitions (-DTARGET_LINUX)
-endif()
-
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  add_definitions (-DTARGET_MAC)
-endif()
-
+# gcw0 / embedded default remains static modules.
 if (STATIC_MODULES)
   add_definitions (-D__STATIC__)
   set (MODULES "STATIC")
@@ -47,6 +34,28 @@ if (NO_SOUND)
   add_definitions (-DNO_SOUND)
 endif ()
 
+if (BENNUGD_STATIC_DEPS)
+  if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.24")
+    set (CMAKE_FIND_LIBRARY_PREFER_STATIC ON)
+  endif ()
+  set (OPENSSL_USE_STATIC_LIBS TRUE)
+  # Prefer static zlib/libpng when CMake supports the hints (3.24+).
+  set (ZLIB_USE_STATIC_LIBS TRUE)
+  set (PNG_USE_STATIC_LIBS TRUE)
+endif ()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+  add_definitions (-DTARGET_LINUX)
+endif()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  add_definitions (-DTARGET_MAC)
+endif()
+
+if (WIN32)
+  add_definitions (-DTARGET_WIN32 -D_CRT_SECURE_NO_WARNINGS -D_USE_MATH_DEFINES)
+endif ()
+
 find_package (SDL3 REQUIRED CONFIG)
 if (NOT NO_SOUND)
   find_package (SDL3_mixer REQUIRED CONFIG)
@@ -55,6 +64,7 @@ find_package (ZLIB REQUIRED)
 find_package (PNG REQUIRED)
 if (USE_LIBDES)
   add_definitions (-DUSE_LIBDES)
+  include_directories (${CMAKE_SOURCE_DIR}/3rdparty/des-4.04b)
 else ()
   find_package(OpenSSL REQUIRED)
   add_definitions (-DUSE_OPENSSL)
@@ -71,10 +81,21 @@ if (TARGET SDL3::Headers)
     include_directories (${_SDL3_INC})
   endif ()
 endif ()
+
+# Prefer the static SDL/mixer targets when requested and available.
+set (BENNUGD_SDL3_TARGET SDL3::SDL3)
+if (BENNUGD_STATIC_DEPS AND TARGET SDL3::SDL3-static)
+  set (BENNUGD_SDL3_TARGET SDL3::SDL3-static)
+endif ()
+set (BENNUGD_SDL3_MIXER_TARGET SDL3_mixer::SDL3_mixer)
+if (BENNUGD_STATIC_DEPS AND TARGET SDL3_mixer::SDL3_mixer-static)
+  set (BENNUGD_SDL3_MIXER_TARGET SDL3_mixer::SDL3_mixer-static)
+endif ()
+
 # Compat helpers (surface format accessors, etc.)
 include_directories (
   ${CMAKE_SOURCE_DIR}/modules/libvideo
-  ${ZLIB_INCLUDE_DIR}
+  ${ZLIB_INCLUDE_DIRS}
 )
 
 if (USE_LIBDES)

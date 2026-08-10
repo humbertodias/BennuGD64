@@ -38,6 +38,7 @@
 #include <windef.h>
 #include <winnls.h>
 #include "shlwapi.h"
+#include <direct.h>
 #endif
 
 #include "bgdc.h"

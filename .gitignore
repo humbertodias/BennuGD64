@@ -3,6 +3,8 @@
 /build-*/
 /out/
 /cmake-build-*/
+/.deps/
+/dist/
 
 # In-source CMake artifacts
 CMakeCache.txt
@@ -43,3 +45,5 @@ bgdc
 *.swo
 *~
 .cache/
+
+.DS_Store

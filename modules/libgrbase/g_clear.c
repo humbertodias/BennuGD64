@@ -91,7 +91,7 @@ void gr_clear_as( GRAPH * dest, int color )
 
         case 16:
         {
-            uint8_t * data = dest->data ;
+            uint8_t * data = ( uint8_t * ) dest->data ;
             int16_t * ptr ;
             int n ;
             y = dest->height;
@@ -107,7 +107,7 @@ void gr_clear_as( GRAPH * dest, int color )
 
         case 32:
         {
-            uint8_t * data = dest->data ;
+            uint8_t * data = ( uint8_t * ) dest->data ;
             uint32_t * ptr ;
             int n ;
             y = dest->height;

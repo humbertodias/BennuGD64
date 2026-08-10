@@ -12,10 +12,10 @@ add_library (
 
 target_link_libraries (
   mod_sound
-  SDL3::SDL3
+  ${BENNUGD_SDL3_TARGET}
   bgload
   bgdrtm
-  SDL3_mixer::SDL3_mixer
+  ${BENNUGD_SDL3_MIXER_TARGET}
 )
 
 if (NOT STATIC_MODULES)

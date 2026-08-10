@@ -283,10 +283,27 @@ int gr_set_icon( GRAPH * map )
 int gr_set_mode( int width, int height, int depth )
 {
     int n ;
-    int surface_width = width;
-    int surface_height = height;
+    int surface_width;
+    int surface_height;
     Uint32 window_flags = 0;
     char * e;
+
+    /* SDL1 SetVideoMode(0,0) used the desktop size. SDL2/3 CreateSurface(0,0)
+     * yields an empty surface and later crashes in gr_lock_screen. */
+    if ( width < 1 || height < 1 )
+    {
+        const SDL_DisplayMode * mode = SDL_GetDesktopDisplayMode( SDL_GetPrimaryDisplay() );
+        if ( mode )
+        {
+            if ( width < 1 ) width = mode->w;
+            if ( height < 1 ) height = mode->h;
+        }
+        if ( width < 1 ) width = 320;
+        if ( height < 1 ) height = 200;
+    }
+
+    surface_width = width;
+    surface_height = height;
 
     enable_scale = ( GLODWORD( libvideo, GRAPH_MODE ) & MODE_2XSCALE ) ? 1 : 0 ;
     full_screen = ( GLODWORD( libvideo, GRAPH_MODE ) & MODE_FULLSCREEN ) ? 1 : 0 ;

@@ -1119,7 +1119,7 @@ void draw_line( GRAPH * dest, REGION * clip, int x, int y, int w, int h )
     {
         case 1:
         {
-            uint8_t * ptr = dest->data + dest->pitch * y + ( x >> 3 ) ;
+            uint8_t * ptr = ( uint8_t * ) dest->data + dest->pitch * y + ( x >> 3 ) ;
             uint8_t mask, rmask ;
             mask = ( 1 << ( 7 - ( x & 7 ) ) );
 

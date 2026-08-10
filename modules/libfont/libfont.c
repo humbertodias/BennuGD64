@@ -415,7 +415,7 @@ int gr_font_newfrombitmap( GRAPH * map, int charset, int width, int height, int 
     {
         if ( i > last ) break;
 
-        chardata = map->data + h * charsize;
+        chardata = ( char * ) map->data + h * charsize;
 
         for ( charptr = chardata, w = 0; w < cw; w++, charptr += linesize, i++ )
         {
@@ -436,7 +436,7 @@ int gr_font_newfrombitmap( GRAPH * map, int charset, int width, int height, int 
 
             bitmap_add_cpoint( bitmap, 0, 0 ) ;
 
-            ptr = bitmap->data ;
+            ptr = ( char * ) bitmap->data ;
             memset( bitmap->data, '\0', bitmap->pitch * bitmap->height );
 
             for ( y = 0 ; y < height ; y++, ptr += bitmap->pitch ) memcpy( ptr, charptr + map->pitch * y + align, bitmap->widthb - align );

@@ -3,6 +3,8 @@
 /build-*/
 /out/
 /cmake-build-*/
+/.deps/
+/dist/
 
 # In-source CMake artifacts
 CMakeCache.txt

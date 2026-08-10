@@ -13,7 +13,7 @@ add_library (
 
 target_link_libraries (
   mod_flic
-  SDL
+  SDL2::SDL2
   bgdrtm
   render
   blit

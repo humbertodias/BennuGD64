@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+#include <libgen.h>
 
 #define __stdcall
 #define __dllexport

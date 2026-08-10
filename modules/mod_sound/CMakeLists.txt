@@ -12,10 +12,10 @@ add_library (
 
 target_link_libraries (
   mod_sound
-  SDL
+  SDL2::SDL2
   bgload
   bgdrtm
-  SDL_mixer
+  SDL2_mixer::SDL2_mixer
 )
 
 if (NOT STATIC_MODULES)

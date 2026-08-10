@@ -41,7 +41,7 @@ else ()
   target_link_libraries (
     bgdrtm
     z
-    crypto
+    OpenSSL::Crypto
   )
 endif ()
 

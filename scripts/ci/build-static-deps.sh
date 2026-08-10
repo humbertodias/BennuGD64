@@ -170,7 +170,8 @@ rm -rf "$SRC_DIR/SDL-build" \
   "$PREFIX/cmake/SDL3" \
   "$PREFIX/include/SDL3" \
   "$PREFIX/lib/pkgconfig/sdl3.pc"
-rm -f "$PREFIX/lib"/libSDL3* "$PREFIX/lib"/SDL3* "$PREFIX/lib"/sdl3*
+rm -f "$PREFIX/lib"/libSDL3* "$PREFIX/lib"/SDL3* "$PREFIX/lib"/sdl3* \
+  "$PREFIX/cmake"/SDL3*.cmake
 fetch_git "https://github.com/libsdl-org/SDL.git" "$SDL3_REF" "$SRC_DIR/SDL"
 cmake_configure "$SRC_DIR/SDL" "$SRC_DIR/SDL-build" \
   -DSDL_SHARED=OFF \
@@ -195,7 +196,11 @@ rm -rf "$SRC_DIR/SDL_mixer-build" \
 rm -f "$PREFIX/lib"/libSDL3_mixer* "$PREFIX/lib"/SDL3_mixer*
 fetch_git "https://github.com/libsdl-org/SDL_mixer.git" "$SDL3_MIXER_REF" "$SRC_DIR/SDL_mixer" 0
 SDL3_DIR_HINT=""
-for d in "$PREFIX/lib/cmake/SDL3" "$PREFIX/cmake/SDL3"; do
+for d in \
+  "$PREFIX/lib/cmake/SDL3" \
+  "$PREFIX/cmake/SDL3" \
+  "$PREFIX/cmake"
+do
   if [[ -f "$d/SDL3Config.cmake" ]]; then SDL3_DIR_HINT="$d"; break; fi
 done
 if [[ -z "$SDL3_DIR_HINT" ]]; then
@@ -203,6 +208,7 @@ if [[ -z "$SDL3_DIR_HINT" ]]; then
   find "$PREFIX" -name 'SDL3Config.cmake' 2>/dev/null | head >&2 || true
   exit 1
 fi
+echo "    using SDL3_DIR=$SDL3_DIR_HINT"
 cmake_configure "$SRC_DIR/SDL_mixer" "$SRC_DIR/SDL_mixer-build" \
   -DSDL3_DIR="$SDL3_DIR_HINT" \
   -DBUILD_SHARED_LIBS=OFF \
@@ -229,7 +235,8 @@ cmake_build_install "$SRC_DIR/SDL_mixer-build"
 SDL_VER=""
 for vf in \
   "$PREFIX/lib/cmake/SDL3/SDL3ConfigVersion.cmake" \
-  "$PREFIX/cmake/SDL3/SDL3ConfigVersion.cmake"
+  "$PREFIX/cmake/SDL3/SDL3ConfigVersion.cmake" \
+  "$PREFIX/cmake/SDL3ConfigVersion.cmake"
 do
   if [[ -f "$vf" ]]; then
     SDL_VER="$(sed -n 's/set(PACKAGE_VERSION "\([^"]*\)")/\1/p' "$vf" | head -1)"

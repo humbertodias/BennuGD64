@@ -60,21 +60,21 @@ DLVARFIXUP __bgdexport( mod_video, globals_fixup )[] =
 
 /* Funciones de inicialización y carga */
 
-static int modvideo_set_mode( INSTANCE * my, int * params )
+static int modvideo_set_mode( INSTANCE * my, intptr_t * params )
 {
     return gr_set_mode( params[0] / 10000, params[0] % 10000, 0 ) ;
 }
 
 /* --------------------------------------------------------------------------- */
 
-static int modvideo_set_mode_2( INSTANCE * my, int * params )
+static int modvideo_set_mode_2( INSTANCE * my, intptr_t * params )
 {
     return gr_set_mode( params[0], params[1], 0 ) ;
 }
 
 /* --------------------------------------------------------------------------- */
 
-static int modvideo_set_mode_3( INSTANCE * my, int * params )
+static int modvideo_set_mode_3( INSTANCE * my, intptr_t * params )
 {
     GLODWORD( mod_video, GRAPH_MODE ) = (( GLODWORD( mod_video, GRAPH_MODE ) & 0xFF00 ) | params[2] );
     return gr_set_mode( params[0], params[1], 0 ) ;
@@ -82,7 +82,7 @@ static int modvideo_set_mode_3( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int modvideo_set_mode_4( INSTANCE * my, int * params )
+static int modvideo_set_mode_4( INSTANCE * my, intptr_t * params )
 {
     GLODWORD( mod_video, GRAPH_MODE ) = ( params[2] | params[3] );
     return gr_set_mode( params[0], params[1], 0 ) ;
@@ -90,7 +90,7 @@ static int modvideo_set_mode_4( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int modvideo_set_fps( INSTANCE * my, int * params )
+static int modvideo_set_fps( INSTANCE * my, intptr_t * params )
 {
     gr_set_fps( params[0], params[1] ) ;
     return params[0];
@@ -119,7 +119,7 @@ Returns NULL if there are no dimensions available for a particular format,
 or -1 if any dimension is okay for the given format.
 */
 
-static int modvideo_list_modes( INSTANCE * my, int * params )
+static int modvideo_list_modes( INSTANCE * my, intptr_t * params )
 {
     SDL_Rect **modes;
     SDL_PixelFormat vfmt;
@@ -167,7 +167,7 @@ static int modvideo_list_modes( INSTANCE * my, int * params )
 
 */
 
-static int modvideo_mode_is_ok( INSTANCE * my, int * params )
+static int modvideo_mode_is_ok( INSTANCE * my, intptr_t * params )
 {
     int sdl_flags = get_sdl_flags( params[3] );
     int depth = params[2];

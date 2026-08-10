@@ -30,6 +30,7 @@
 
 #include "bgdrtm.h"
 #include "bgddl.h"
+#include "bgd_handles.h"
 
 #include "libgrbase.h"
 
@@ -55,9 +56,9 @@
  *      Pointer to the new blendop table or NULL if not enough memory
  */
 
-static int modblendop_create_blendop( INSTANCE * my, int * params )
+static int modblendop_create_blendop( INSTANCE * my, intptr_t * params )
 {
-    return ( int ) blend_create();
+    return bgd_handle_put( blend_create() );
 }
 
 /* ----------------------------------------------------------------- */
@@ -76,11 +77,11 @@ static int modblendop_create_blendop( INSTANCE * my, int * params )
  *      1               OK
  */
 
-static int modblendop_apply( INSTANCE * my, int * params )
+static int modblendop_apply( INSTANCE * my, intptr_t * params )
 {
     GRAPH * graph = bitmap_get( params[0], params[1] );
     if ( !graph ) return 0;
-    blend_apply( graph, ( int16_t * )params[2] );
+    blend_apply( graph, ( int16_t * )bgd_handle_get( params[2] ) );
     return 1;
 
 }
@@ -100,11 +101,11 @@ static int modblendop_apply( INSTANCE * my, int * params )
  *      None
  */
 
-static int modblendop_assign( INSTANCE * my, int * params )
+static int modblendop_assign( INSTANCE * my, intptr_t * params )
 {
     GRAPH * graph = bitmap_get( params[0], params[1] );
     if ( !graph ) return 0;
-    blend_assign( graph, ( int16_t * )params[2] );
+    blend_assign( graph, ( int16_t * )bgd_handle_get( params[2] ) );
     return 1;
 }
 
@@ -121,9 +122,10 @@ static int modblendop_assign( INSTANCE * my, int * params )
  *      None
  */
 
-static int modblendop_free( INSTANCE * my, int * params )
+static int modblendop_free( INSTANCE * my, intptr_t * params )
 {
-    blend_free(( int16_t * )params[0] );
+    blend_free(( int16_t * )bgd_handle_get( params[0] ) );
+    bgd_handle_free( params[0] );
     return 1;
 }
 
@@ -140,9 +142,9 @@ static int modblendop_free( INSTANCE * my, int * params )
  *      None
  */
 
-static int modblendop_identity( INSTANCE * my, int * params )
+static int modblendop_identity( INSTANCE * my, intptr_t * params )
 {
-    blend_init(( int16_t * )params[0] );
+    blend_init(( int16_t * )bgd_handle_get( params[0] ) );
     return 1;
 }
 
@@ -170,9 +172,9 @@ static int modblendop_identity( INSTANCE * my, int * params )
  *      1               Ok
  */
 
-static int modblendop_grayscale( INSTANCE * my, int * params )
+static int modblendop_grayscale( INSTANCE * my, intptr_t * params )
 {
-    blend_grayscale(( int16_t * )params[0], params[1] );
+    blend_grayscale(( int16_t * )bgd_handle_get( params[0] ), params[1] );
     return 1;
 }
 
@@ -193,9 +195,9 @@ static int modblendop_grayscale( INSTANCE * my, int * params )
  *      None
  */
 
-static int modblendop_translucency( INSTANCE * my, int * params )
+static int modblendop_translucency( INSTANCE * my, intptr_t * params )
 {
-    blend_translucency(( int16_t * )params[0], *( float * )( &params[1] ) );
+    blend_translucency(( int16_t * )bgd_handle_get( params[0] ), *( float * )( &params[1] ) );
     return 1;
 }
 
@@ -217,9 +219,9 @@ static int modblendop_translucency( INSTANCE * my, int * params )
  *      None
  */
 
-static int modblendop_intensity( INSTANCE * my, int * params )
+static int modblendop_intensity( INSTANCE * my, intptr_t * params )
 {
-    blend_intensity(( int16_t * )params[0], *( float * )( &params[1] ) );
+    blend_intensity(( int16_t * )bgd_handle_get( params[0] ), *( float * )( &params[1] ) );
     return 1;
 }
 
@@ -237,9 +239,9 @@ static int modblendop_intensity( INSTANCE * my, int * params )
  *      None
  */
 
-static int modblendop_swap( INSTANCE * my, int * params )
+static int modblendop_swap( INSTANCE * my, intptr_t * params )
 {
-    blend_swap(( int16_t * )params[0] );
+    blend_swap(( int16_t * )bgd_handle_get( params[0] ) );
     return 1;
 }
 
@@ -265,9 +267,9 @@ static int modblendop_swap( INSTANCE * my, int * params )
  *      None
  */
 
-static int modblendop_tint( INSTANCE * my, int * params )
+static int modblendop_tint( INSTANCE * my, intptr_t * params )
 {
-    blend_tint(( int16_t * )params[0], *( float * )( &params[1] ), ( uint8_t ) params[2], ( uint8_t ) params[3], ( uint8_t ) params[4] );
+    blend_tint(( int16_t * )bgd_handle_get( params[0] ), *( float * )( &params[1] ), ( uint8_t ) params[2], ( uint8_t ) params[3], ( uint8_t ) params[4] );
     return 1;
 }
 

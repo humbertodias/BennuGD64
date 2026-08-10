@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright &#169; 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright &#169; 2002-2006 Fenix Team (Fenix)
+ *  Copyright &#169; 1999-2002 José Luis Cebrián Pagüe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -40,6 +40,7 @@
 
 #include "librender.h"
 #include "resolution.h"
+#include "bgd_handles.h"
 
 #include "sysprocs_st.h"
 
@@ -163,13 +164,13 @@ void draw_instance_at( INSTANCE * i, REGION * region, int x, int y, GRAPH * dest
     if (( blendop = LOCDWORD( librender, i, BLENDOP ) ) )
     {
         blend_table = map->blend_table;
-        map->blend_table = ( int16_t * ) blendop;
+        map->blend_table = ( int16_t * ) bgd_handle_get( blendop );
     }
 
     if (( paletteid = LOCDWORD( librender, i, PALETTEID ) ) )
     {
         palette = map->format->palette ;
-        map->format->palette = ( PALETTE * ) paletteid;
+        map->format->palette = ( PALETTE * ) bgd_handle_get( paletteid );
     }
 
     /* XGRAPH does not rotate destination graphic.
@@ -189,7 +190,7 @@ void draw_instance_at( INSTANCE * i, REGION * region, int x, int y, GRAPH * dest
 }
 
 /* --------------------------------------------------------------------------- */
-/* Rutinas gráficas de alto nivel */
+/* Rutinas grficas de alto nivel */
 
 void draw_instance( INSTANCE * i, REGION * clip )
 {
@@ -207,8 +208,7 @@ void draw_instance( INSTANCE * i, REGION * clip )
     int x, y, r ;
     /* Difference with draw_instance_at to here */
 
-//    map = instance_graph( i ) ;
-    map = ( GRAPH * ) LOCDWORD( librender, i, GRAPHPTR );
+    map = instance_graph( i ) ;
     if ( !map ) return ;
 
     flags = ( LOCDWORD( librender, i, FLAGS ) ^ LOCDWORD( librender, i, XGRAPH_FLAGS ) );
@@ -227,13 +227,13 @@ void draw_instance( INSTANCE * i, REGION * clip )
     if (( blendop = LOCDWORD( librender, i, BLENDOP ) ) )
     {
         blend_table = map->blend_table;
-        map->blend_table = ( int16_t * ) blendop;
+        map->blend_table = ( int16_t * ) bgd_handle_get( blendop );
     }
 
     if (( paletteid = LOCDWORD( librender, i, PALETTEID ) ) )
     {
         palette = map->format->palette ;
-        map->format->palette = ( PALETTE * ) paletteid;
+        map->format->palette = ( PALETTE * ) bgd_handle_get( paletteid );
     }
 
     /* Difference with draw_instance_at from here */
@@ -286,7 +286,8 @@ int draw_instance_info( INSTANCE * i, REGION * region, int * z, int * drawme )
 
     * drawme = 0;
 
-    LOCDWORD( librender, i, GRAPHPTR ) = ( int )( graph = instance_graph( i ) );
+    graph = instance_graph( i );
+    LOCDWORD( librender, i, GRAPHPTR ) = graph ? 1 : 0 ;
     if ( !graph )
     {
         /*

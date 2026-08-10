@@ -39,8 +39,9 @@
 #include "libvideo.h"
 
 #ifdef _WIN32
+#include <windows.h>
 #include <initguid.h>
-#include "ddraw.h"
+#include <ddraw.h>
 #endif
 
 /* --------------------------------------------------------------------------- */
@@ -117,7 +118,7 @@ DLVARFIXUP __bgdexport( libvideo, globals_fixup )[] =
 LPDIRECTDRAW2 directdraw = NULL;
 DDCAPS ddcaps;
 
-HRESULT WINAPI( *_DirectDrawCreate )( GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter );
+HRESULT ( WINAPI * _DirectDrawCreate )( GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter );
 
 /* --------------------------------------------------------------------------- */
 
@@ -131,7 +132,9 @@ int init_dx( void )
     handle = LoadLibrary( "DDRAW.DLL" );
     if ( handle == NULL ) return -1;
 
-    _DirectDrawCreate = GetProcAddress( handle, "DirectDrawCreate" );
+    _DirectDrawCreate = ( HRESULT ( WINAPI * )( GUID FAR *, LPDIRECTDRAW FAR *, IUnknown FAR * ) )
+                        GetProcAddress( handle, "DirectDrawCreate" );
+    if ( !_DirectDrawCreate ) return -1;
 
     hr = _DirectDrawCreate( NULL, &directdraw1, NULL );
     if ( FAILED( hr ) ) return -1;

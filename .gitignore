@@ -45,3 +45,5 @@ bgdc
 *.swo
 *~
 .cache/
+
+.DS_Store

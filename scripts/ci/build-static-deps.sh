@@ -19,6 +19,8 @@ CMAKE_GENERATOR="${CMAKE_GENERATOR:-}"
 HOST_OS="$(uname -s)"
 
 mkdir -p "$SRC_DIR" "$PREFIX"
+# Avoid bash failing on unmatched globs in cleanup paths (esp. Windows).
+shopt -s nullglob
 
 cmake_configure() {
   local src="$1"
@@ -40,6 +42,8 @@ cmake_configure() {
   fi
   if [[ "${RUNNER_OS:-}" == "Windows" || "$HOST_OS" == MINGW* || "$HOST_OS" == MSYS* ]]; then
     args+=(-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded)
+    # MSVC is not a usable ASM compiler for vendored deps (CMP0194).
+    args+=(-DCMAKE_POLICY_DEFAULT_CMP0194=NEW)
   fi
   cmake "${args[@]}" "$@"
 }
@@ -153,28 +157,26 @@ cmake_configure "$SRC_DIR/SDL" "$SRC_DIR/SDL-build" \
   -DSDL_INSTALL_DOCS=OFF
 cmake_build_install "$SRC_DIR/SDL-build"
 
-# --- SDL3_mixer (needs vendored external/* submodules for ogg/vorbis/etc.) ---
+# --- SDL3_mixer ---
+# Use header-only decoders (stb_vorbis + dr_mp3) so we do not need git submodules
+# or vendored flac/mpg123/opus (those break easily under MSVC).
+# NOTE: the CMake option is SDLMIXER_EXAMPLES, not SDLMIXER_SAMPLES.
 rm -rf "$SRC_DIR/SDL_mixer-build" \
   "$PREFIX/lib/libSDL3_mixer"* \
   "$PREFIX/lib/cmake/SDL3_mixer" \
   "$PREFIX/lib/pkgconfig/sdl3-mixer.pc" \
   "$PREFIX/lib/pkgconfig/sdl3_mixer.pc"
-fetch_git "https://github.com/libsdl-org/SDL_mixer.git" "$SDL3_MIXER_REF" "$SRC_DIR/SDL_mixer" 1
-if [[ ! -f "$SRC_DIR/SDL_mixer/external/ogg/CMakeLists.txt" ]]; then
-  echo "SDL_mixer vendored ogg is missing after submodule sync." >&2
-  echo "Contents of external/:" >&2
-  ls -la "$SRC_DIR/SDL_mixer/external" >&2 || true
-  exit 1
-fi
+fetch_git "https://github.com/libsdl-org/SDL_mixer.git" "$SDL3_MIXER_REF" "$SRC_DIR/SDL_mixer" 0
 cmake_configure "$SRC_DIR/SDL_mixer" "$SRC_DIR/SDL_mixer-build" \
   -DBUILD_SHARED_LIBS=OFF \
   -DSDLMIXER_DEPS_SHARED=OFF \
-  -DSDLMIXER_VENDORED=ON \
-  -DSDLMIXER_SAMPLES=OFF \
+  -DSDLMIXER_VENDORED=OFF \
+  -DSDLMIXER_EXAMPLES=OFF \
   -DSDLMIXER_TESTS=OFF \
+  -DSDLMIXER_STRICT=OFF \
   -DSDLMIXER_GME=OFF \
   -DSDLMIXER_MOD=OFF \
-  -DSDLMIXER_MIDI_FLUIDSYNTH=OFF \
+  -DSDLMIXER_MIDI=OFF \
   -DSDLMIXER_WAVPACK=OFF \
   -DSDLMIXER_FLAC=OFF \
   -DSDLMIXER_OPUS=OFF \

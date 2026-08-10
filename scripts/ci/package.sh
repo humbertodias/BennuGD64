@@ -59,7 +59,7 @@ cat > "$STAGE/BUILD_INFO.txt" <<EOF
 BennuGD64 ${VERSION}
 platform: ${PLATFORM}
 arch: ${ARCH}
-static deps: zlib, libpng, SDL3, SDL3_mixer, bundled DES
+static deps: zlib, libpng, SDL3, SDL3_mixer (stb_vorbis + dr_mp3), bundled DES
 note: OS graphics/audio system libraries may still be required at runtime (X11/Wayland/Cocoa/DirectX).
 EOF
 

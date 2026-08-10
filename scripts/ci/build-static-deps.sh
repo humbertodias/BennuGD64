@@ -140,13 +140,20 @@ cmake_configure "$SRC_DIR/zlib" "$SRC_DIR/zlib-build" \
   -DZLIB_BUILD_EXAMPLES=OFF
 cmake_build_install "$SRC_DIR/zlib-build"
 rm -f "$PREFIX/lib/libz.dylib" "$PREFIX/lib/libz."*.dylib
+# Drop shared zlib leftovers so static consumers never pick an import lib/DLL.
+rm -f "$PREFIX/lib"/libz.dll.a "$PREFIX/lib"/libzlib.dll.a "$PREFIX/bin"/libz*.dll "$PREFIX/bin"/zlib*.dll
 # MSVC installs zlibstatic.lib; give FindZLIB a conventional zlib.lib alias.
 if [[ -f "$PREFIX/lib/zlibstatic.lib" && ! -f "$PREFIX/lib/zlib.lib" ]]; then
   cp "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib"
 fi
+# MinGW/CMake often installs libzlibstatic.a; expose the conventional libz.a name.
+if [[ -f "$PREFIX/lib/libzlibstatic.a" && ! -f "$PREFIX/lib/libz.a" ]]; then
+  cp "$PREFIX/lib/libzlibstatic.a" "$PREFIX/lib/libz.a"
+fi
 ZLIB_LIB=""
 for candidate in \
   "$PREFIX/lib/libz.a" \
+  "$PREFIX/lib/libzlibstatic.a" \
   "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib" "$PREFIX/lib/z.lib"
 do
   if [[ -f "$candidate" ]]; then ZLIB_LIB="$candidate"; break; fi
@@ -213,12 +220,18 @@ echo "    found PNG archive: $PNG_FOUND"
 mkdir -p "$PREFIX/lib"
 case "$PNG_FOUND" in
   *.a)
-    cp "$PNG_FOUND" "$PREFIX/lib/libpng16.a"
+    if [[ "$PNG_FOUND" != "$PREFIX/lib/libpng16.a" ]]; then
+      cp "$PNG_FOUND" "$PREFIX/lib/libpng16.a"
+    fi
     ;;
   *)
     # MSVC-style archive: keep .lib names for FindPNG.
-    cp "$PNG_FOUND" "$PREFIX/lib/libpng16_static.lib"
-    cp "$PNG_FOUND" "$PREFIX/lib/libpng16.lib"
+    if [[ "$PNG_FOUND" != "$PREFIX/lib/libpng16_static.lib" ]]; then
+      cp "$PNG_FOUND" "$PREFIX/lib/libpng16_static.lib"
+    fi
+    if [[ "$PNG_FOUND" != "$PREFIX/lib/libpng16.lib" ]]; then
+      cp "$PNG_FOUND" "$PREFIX/lib/libpng16.lib"
+    fi
     ;;
 esac
 

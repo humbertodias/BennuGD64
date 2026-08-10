@@ -30,6 +30,7 @@ png_candidates=(
 )
 zlib_candidates=(
   "$PREFIX/lib/libz.a"
+  "$PREFIX/lib/libzlibstatic.a"
   "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib" "$PREFIX/lib/z.lib"
 )
 for candidate in "${png_candidates[@]}"; do

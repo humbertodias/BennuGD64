@@ -1,7 +1,7 @@
 /*
- *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright ù 2002-2006 Fenix Team (Fenix)
- *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
+ *  Copyright &#169; 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright &#169; 2002-2006 Fenix Team (Fenix)
+ *  Copyright &#169; 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *

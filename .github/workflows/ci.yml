@@ -69,7 +69,13 @@ jobs:
 
       - name: Install Windows build dependencies
         if: matrix.platform == 'windows'
-        run: echo "Using Visual Studio generator (preinstalled on runner)"
+        run: choco install ninja -y
+
+      - name: Setup MSVC environment
+        if: matrix.platform == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
 
       - name: Resolve version
         id: meta
@@ -82,37 +88,29 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
 
-      - name: Select CMake generator
-        id: gen
-        run: |
-          if [[ "${{ matrix.platform }}" == "windows" ]]; then
-            echo "generator=Visual Studio 17 2022" >> "$GITHUB_OUTPUT"
-            echo "cmake_arch=-A x64" >> "$GITHUB_OUTPUT"
-          else
-            echo "generator=Ninja" >> "$GITHUB_OUTPUT"
-            echo "cmake_arch=" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Build static dependencies
         env:
           DEPS_DIR: ${{ github.workspace }}/.deps
-          CMAKE_GENERATOR: ${{ steps.gen.outputs.generator }}
+          CMAKE_GENERATOR: Ninja
+          CC: ${{ matrix.platform == 'windows' && 'cl' || '' }}
+          CXX: ${{ matrix.platform == 'windows' && 'cl' || '' }}
         run: |
           chmod +x scripts/ci/*.sh
-          if [[ -n "${{ steps.gen.outputs.cmake_arch }}" ]]; then
-            export CMAKE_GENERATOR_PLATFORM=x64
-          fi
+          # Drop empty CC/CXX so Unix keep their defaults.
+          if [[ -z "${CC}" ]]; then unset CC; fi
+          if [[ -z "${CXX}" ]]; then unset CXX; fi
           scripts/ci/build-static-deps.sh
 
       - name: Build BennuGD64
         env:
           DEPS_DIR: ${{ github.workspace }}/.deps
           BUILD_DIR: ${{ github.workspace }}/build-ci
-          CMAKE_GENERATOR: ${{ steps.gen.outputs.generator }}
+          CMAKE_GENERATOR: Ninja
+          CC: ${{ matrix.platform == 'windows' && 'cl' || '' }}
+          CXX: ${{ matrix.platform == 'windows' && 'cl' || '' }}
         run: |
-          if [[ -n "${{ steps.gen.outputs.cmake_arch }}" ]]; then
-            export CMAKE_GENERATOR_PLATFORM=x64
-          fi
+          if [[ -z "${CC}" ]]; then unset CC; fi
+          if [[ -z "${CXX}" ]]; then unset CXX; fi
           scripts/ci/build-bennugd.sh
 
       - name: Smoke test binaries

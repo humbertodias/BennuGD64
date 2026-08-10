@@ -36,9 +36,6 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 #include <unistd.h>
-#include <stdlib.h>
-#include <string.h>
-#include <libgen.h>
 
 #define __stdcall
 #define __dllexport
@@ -46,6 +43,8 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /*******************************************************************************
  * COMMON                                                                      *
@@ -277,6 +276,8 @@ static void * dlibopen( const char * fname )
 {
     __FAKE_DL * fdl = __fake_dl;
     char dlname[32], *p;
+    const char * base = fname;
+    const char * s;
 
     if ( !fake_dl_inited )
     {
@@ -284,7 +285,12 @@ static void * dlibopen( const char * fname )
         fake_dl_inited = 1;
     }
 
-    strcpy( dlname, basename( fname ) );
+    /* Portable basename (libgen basename is unavailable on MSVC). */
+    for ( s = fname ; *s ; s++ )
+    {
+        if ( *s == '/' || *s == '\\' ) base = s + 1;
+    }
+    strcpy( dlname, base );
 
     p = strrchr( dlname, '.' );
     if ( p ) *p = '\0' ;

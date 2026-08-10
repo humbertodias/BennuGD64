@@ -64,25 +64,28 @@ note: OS graphics/audio system libraries may still be required at runtime (X11/W
 EOF
 
 mkdir -p "$DIST_DIR"
+# Keep local archives for manual packaging; CI uploads the stage folder so
+# Actions artifacts are not zip-inside-zip for downloaders.
 ARCHIVE_BASE="$DIST_DIR/bennugd64-${VERSION}-${PLATFORM}-${ARCH}"
 rm -f "${ARCHIVE_BASE}.zip" "${ARCHIVE_BASE}.tar.gz"
 
 STAGE_PARENT="$DIST_DIR/stage"
 STAGE_NAME="$(basename "$STAGE")"
 
-if [[ "$PLATFORM" == "windows" ]]; then
-  if command -v zip >/dev/null 2>&1; then
-    (cd "$STAGE_PARENT" && zip -r "${ARCHIVE_BASE}.zip" "$STAGE_NAME")
+if [[ "${SKIP_ARCHIVE:-0}" != "1" ]]; then
+  if [[ "$PLATFORM" == "windows" ]]; then
+    if command -v zip >/dev/null 2>&1; then
+      (cd "$STAGE_PARENT" && zip -r "${ARCHIVE_BASE}.zip" "$STAGE_NAME")
+    else
+      powershell.exe -NoProfile -Command \
+        "Compress-Archive -Path '$STAGE_PARENT/$STAGE_NAME' -DestinationPath '${ARCHIVE_BASE}.zip' -Force"
+    fi
+    echo "Wrote ${ARCHIVE_BASE}.zip"
   else
-    powershell.exe -NoProfile -Command \
-      "Compress-Archive -Path '$STAGE_PARENT/$STAGE_NAME' -DestinationPath '${ARCHIVE_BASE}.zip' -Force"
+    tar -C "$STAGE_PARENT" -czf "${ARCHIVE_BASE}.tar.gz" "$STAGE_NAME"
+    echo "Wrote ${ARCHIVE_BASE}.tar.gz"
   fi
-  echo "Wrote ${ARCHIVE_BASE}.zip"
-else
-  tar -C "$STAGE_PARENT" -czf "${ARCHIVE_BASE}.tar.gz" "$STAGE_NAME"
-  echo "Wrote ${ARCHIVE_BASE}.tar.gz"
 fi
 
-mkdir -p "$DIST_DIR/binaries"
-cp -f "$STAGE"/bgdc* "$DIST_DIR/binaries/" 2>/dev/null || true
-cp -f "$STAGE"/bgdi* "$DIST_DIR/binaries/" 2>/dev/null || true
+echo "Staged package directory: $STAGE"
+ls -la "$STAGE"

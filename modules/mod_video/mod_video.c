@@ -1,7 +1,7 @@
 /*
- *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright ù 2002-2006 Fenix Team (Fenix)
- *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
+ *  Copyright ÔøΩ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ÔøΩ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ÔøΩ 1999-2002 JosÔøΩ Luis CebriÔøΩn PagÔøΩe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -28,7 +28,8 @@
 
 /* --------------------------------------------------------------------------- */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 #include <stdlib.h>
 #include <stdint.h>
@@ -52,14 +53,14 @@ enum {
 
 DLVARFIXUP __bgdexport( mod_video, globals_fixup )[] =
 {
-    /* Nombre de variable global, puntero al dato, tamaùo del elemento, cantidad de elementos */
+    /* Nombre de variable global, puntero al dato, tamaÔøΩo del elemento, cantidad de elementos */
     { "graph_mode" , NULL, -1, -1 },
     { NULL , NULL, -1, -1 }
 };
 
 /* --------------------------------------------------------------------------- */
 
-/* Funciones de inicializaciùn y carga */
+/* Funciones de inicializaciÔøΩn y carga */
 
 static int modvideo_set_mode( INSTANCE * my, intptr_t * params )
 {
@@ -108,31 +109,37 @@ or -1 if any dimension is okay for the given format.
 
 static int modvideo_list_modes( INSTANCE * my, intptr_t * params )
 {
-    int i, n, display_index = 0;
+    int i, n = 0;
     static int * available_modes = NULL ;
-    SDL_DisplayMode mode;
+    SDL_DisplayMode ** modes;
+    SDL_DisplayID display_id;
 
     (void)params; /* depth/flags retained for API compatibility */
 
-    n = SDL_GetNumDisplayModes( display_index );
-    if ( n <= 0 ) return 0;
+    display_id = SDL_GetPrimaryDisplay();
+    modes = SDL_GetFullscreenDisplayModes( display_id, &n );
+    if ( !modes || n <= 0 )
+    {
+        if ( modes ) SDL_free( modes );
+        return 0;
+    }
 
     available_modes = realloc( available_modes, ( 1 + n ) * sizeof( int ) * 2 );
-    if ( !available_modes ) return -2;
+    if ( !available_modes )
+    {
+        SDL_free( modes );
+        return -2;
+    }
 
     for ( i = 0; i < n; ++i )
     {
-        if ( SDL_GetDisplayMode( display_index, i, &mode ) != 0 )
-        {
-            available_modes[i*2  ] = 0;
-            available_modes[i*2+1] = 0;
-            continue;
-        }
-        available_modes[i*2  ] = mode.w;
-        available_modes[i*2+1] = mode.h;
+        available_modes[i*2  ] = modes[i]->w;
+        available_modes[i*2+1] = modes[i]->h;
     }
     available_modes[i*2  ] = 0;
     available_modes[i*2+1] = 0;
+
+    SDL_free( modes );
 
     return ( int )( intptr_t )available_modes;
 }
@@ -152,23 +159,29 @@ static int modvideo_list_modes( INSTANCE * my, intptr_t * params )
 static int modvideo_mode_is_ok( INSTANCE * my, intptr_t * params )
 {
     int depth = params[2];
-    int i, n, display_index = 0;
-    SDL_DisplayMode mode;
+    int i, n = 0;
+    SDL_DisplayMode ** modes;
+    SDL_DisplayID display_id;
 
     if ( !depth ) depth = ( params[3] & MODE_32BITS ) ? 32 : (( params[3] & MODE_16BITS ) ? 16 : 8 );
 
-    n = SDL_GetNumDisplayModes( display_index );
-    for ( i = 0; i < n; ++i )
+    display_id = SDL_GetPrimaryDisplay();
+    modes = SDL_GetFullscreenDisplayModes( display_id, &n );
+    if ( modes )
     {
-        if ( SDL_GetDisplayMode( display_index, i, &mode ) != 0 ) continue;
-        if ( mode.w == params[0] && mode.h == params[1] )
+        for ( i = 0; i < n; ++i )
         {
-            int bpp = SDL_BITSPERPIXEL( mode.format );
-            return bpp ? bpp : depth;
+            if ( modes[i]->w == params[0] && modes[i]->h == params[1] )
+            {
+                int bpp = SDL_BITSPERPIXEL( modes[i]->format );
+                SDL_free( modes );
+                return bpp ? bpp : depth;
+            }
         }
+        SDL_free( modes );
     }
 
-    /* Windowed modes are always acceptable in SDL2 */
+    /* Windowed modes are always acceptable */
     return depth;
 }
 

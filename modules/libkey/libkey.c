@@ -29,7 +29,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 #include "xctype.h"
 #include "bgddl.h"
@@ -59,11 +60,13 @@ static int hotkey_count = 0 ;
 
 /* Publicas */
 key_equiv key_table[127] ;              /* Now we have a search table with equivs */
-unsigned char * keystate = NULL;        /* Pointer to key states */
+const bool * keystate = NULL;        /* Pointer to key states */
+
+extern SDL_Window * window ;
 
 /* ---------------------------------------------------------------------- */
 
-static int sdl_equiv[SDL_NUM_SCANCODES] ;
+static int sdl_equiv[SDL_SCANCODE_COUNT] ;
 
 static int equivs[] =
 {
@@ -319,10 +322,14 @@ static void process_key_events()
                 if ( hotkey_count )
                     for ( n = 0; n < hotkey_count; n++ )
                     {
-                        if ((( hotkey_list[n].mod & e.key.keysym.mod ) == hotkey_list[n].mod ) &&
-                                ( !hotkey_list[n].sym || ( hotkey_list[n].sym == e.key.keysym.sym ) ) )
+                        if ((( hotkey_list[n].mod & e.key.mod ) == hotkey_list[n].mod ) &&
+                                ( !hotkey_list[n].sym || ( hotkey_list[n].sym == e.key.key ) ) )
                         {
-                            ignore_key = hotkey_list[n].callback( e.key.keysym );
+                            Bennu_Keysym ksym ;
+                            ksym.scancode = e.key.scancode ;
+                            ksym.sym = e.key.key ;
+                            ksym.mod = e.key.mod ;
+                            ignore_key = hotkey_list[n].callback( ksym );
                         }
                     }
                 /* KeyDown HotKey */
@@ -331,13 +338,13 @@ static void process_key_events()
 
                 /* Almacena la pulsaci�n de la tecla */
 
-                k = sdl_equiv[e.key.keysym.scancode];
+                k = sdl_equiv[e.key.scancode];
 
-                m = e.key.keysym.mod ;
+                m = e.key.mod ;
 
-                if ( e.key.keysym.sym >= 32 && e.key.keysym.sym < 256 )
+                if ( e.key.key >= 32 && e.key.key < 256 )
                 {
-                    asc = win_to_dos[e.key.keysym.sym & 0xFF] ;
+                    asc = win_to_dos[e.key.key & 0xFF] ;
                     if ( asc >= 'a' && asc <= 'z' && ( m & KMOD_LSHIFT || m & KMOD_RSHIFT || keystate[SDL_SCANCODE_CAPSLOCK] ) )
                         asc -= 0x20 ;
                 }
@@ -423,9 +430,9 @@ void __bgdexport( libkey, module_initialize )()
         ptr += 2 ;
     }
 
-    if ( !keystate ) keystate = ( unsigned char * ) SDL_GetKeyboardState( NULL );
+    if ( !keystate ) keystate = SDL_GetKeyboardState( NULL );
 
-    SDL_StartTextInput();
+    if ( window ) SDL_StartTextInput( window );
 }
 
 /* ---------------------------------------------------------------------- */

@@ -174,8 +174,7 @@ void gr_set_caption( char * title )
 
 void gr_set_surface_palette( SDL_Surface * surface, SDL_Color * colors, int first, int ncolors )
 {
-    if ( surface && surface->format && surface->format->palette )
-        SDL_SetPaletteColors( surface->format->palette, colors, first, ncolors );
+    bennu_set_surface_palette_colors( surface, colors, first, ncolors );
 }
 
 /* --------------------------------------------------------------------------- */
@@ -238,7 +237,7 @@ static SDL_Surface * gr_create_shadow_surface( int width, int height, int depth 
 #endif
     }
 
-    return SDL_CreateRGBSurface( 0, width, height, depth, rmask, gmask, bmask, amask );
+    return bennu_create_rgb_surface( width, height, depth, rmask, gmask, bmask, amask );
 }
 
 /* --------------------------------------------------------------------------- */
@@ -263,15 +262,15 @@ int gr_set_icon( GRAPH * map )
                 }
             }
 
-            ico = SDL_CreateRGBSurfaceFrom( icon->data, 32, 32, 8, 32, 0x00, 0x00, 0x00, 0x00 ) ;
+            ico = bennu_create_rgb_surface_from( icon->data, 32, 32, 8, 32, 0x00, 0x00, 0x00, 0x00 ) ;
             gr_set_surface_palette( ico, palette, 0, 256 );
         }
         else
         {
-            ico = SDL_CreateRGBSurfaceFrom( icon->data, 32, 32, icon->format->depth, icon->pitch, icon->format->Rmask, icon->format->Gmask, icon->format->Bmask, icon->format->Amask ) ;
+            ico = bennu_create_rgb_surface_from( icon->data, 32, 32, icon->format->depth, icon->pitch, icon->format->Rmask, icon->format->Gmask, icon->format->Bmask, icon->format->Amask ) ;
         }
 
-        SDL_SetColorKey( ico, SDL_TRUE, SDL_MapRGB( ico->format, 0, 0, 0 ) ) ;
+        SDL_SetColorKey( ico, SDL_TRUE, bennu_map_rgb( ico, 0, 0, 0 ) ) ;
         if ( window ) SDL_SetWindowIcon( window, ico );
         SDL_FreeSurface( ico ) ;
     }
@@ -405,13 +404,12 @@ int gr_set_mode( int width, int height, int depth )
         if ( !window )
         {
             window = SDL_CreateWindow( apptitle ? apptitle : "",
-                                       SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                        surface_width, surface_height, window_flags );
         }
         else
         {
-            SDL_SetWindowFullscreen( window, full_screen ? SDL_WINDOW_FULLSCREEN : 0 );
-            SDL_SetWindowBordered( window, frameless ? SDL_FALSE : SDL_TRUE );
+            SDL_SetWindowFullscreen( window, full_screen ? true : false );
+            SDL_SetWindowBordered( window, frameless ? false : true );
             SDL_SetWindowSize( window, surface_width, surface_height );
         }
 
@@ -427,7 +425,7 @@ int gr_set_mode( int width, int height, int depth )
             height = scale_screen->h;
         }
 
-        screen = gr_create_shadow_surface( width, height, scale_screen->format->BitsPerPixel );
+        screen = gr_create_shadow_surface( width, height, bennu_surface_bpp( scale_screen ) );
 
         /* scale tables */
 
@@ -529,13 +527,12 @@ int gr_set_mode( int width, int height, int depth )
         if ( !window )
         {
             window = SDL_CreateWindow( apptitle ? apptitle : "",
-                                       SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                                        surface_width, surface_height, window_flags );
         }
         else
         {
-            SDL_SetWindowFullscreen( window, full_screen ? SDL_WINDOW_FULLSCREEN : 0 );
-            SDL_SetWindowBordered( window, frameless ? SDL_FALSE : SDL_TRUE );
+            SDL_SetWindowFullscreen( window, full_screen ? true : false );
+            SDL_SetWindowBordered( window, frameless ? false : true );
             SDL_SetWindowSize( window, surface_width, surface_height );
         }
 
@@ -546,7 +543,8 @@ int gr_set_mode( int width, int height, int depth )
 
     if ( !screen ) return -1;
 
-    SDL_SetWindowGrab( window, grab_input ? SDL_TRUE : SDL_FALSE ) ;
+    SDL_SetWindowMouseGrab( window, grab_input ? true : false ) ;
+    SDL_SetWindowKeyboardGrab( window, grab_input ? true : false ) ;
 
     /* Set window title */
     gr_set_caption( apptitle ) ;
@@ -571,18 +569,22 @@ int gr_set_mode( int width, int height, int depth )
 
     if ( sys_pixel_format->depth == 16 )
     {
+        Uint32 rmask = bennu_surface_rmask( screen );
+        Uint32 gmask = bennu_surface_gmask( screen );
+        Uint32 bmask = bennu_surface_bmask( screen );
+
         for ( n = 0 ; n < 65536 ; n++ )
         {
             colorghost[ n ] =
-                ((( n & screen->format->Rmask ) >> 1 ) & screen->format->Rmask ) +
-                ((( n & screen->format->Gmask ) >> 1 ) & screen->format->Gmask ) +
-                ((( n & screen->format->Bmask ) >> 1 ) & screen->format->Bmask ) ;
+                ((( n & rmask ) >> 1 ) & rmask ) +
+                ((( n & gmask ) >> 1 ) & gmask ) +
+                ((( n & bmask ) >> 1 ) & bmask ) ;
         }
     }
 
     scr_initialized = 1 ;
 
-    SDL_ShowCursor( SDL_DISABLE ) ;
+    SDL_HideCursor() ;
 
     pal_refresh( NULL ) ;
     palette_changed = 1 ;

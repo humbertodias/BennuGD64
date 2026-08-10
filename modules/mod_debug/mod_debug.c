@@ -34,7 +34,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 #include "bgdcore.h"
 #include "bgdrtm.h"
@@ -2356,7 +2357,7 @@ static void console_do( const char * command )
 /* Hotkey for exit (ALT+X)                                                     */
 /* --------------------------------------------------------------------------- */
 
-static int force_exit_cb( SDL_Keysym k )
+static int force_exit_cb( Bennu_Keysym k )
 {
     exit_value = 0;
     must_exit = 1 ;
@@ -2367,7 +2368,7 @@ static int force_exit_cb( SDL_Keysym k )
 /* Hotkeys for activate/deactivate console                                     */
 /* --------------------------------------------------------------------------- */
 
-static int console_keyboard_handler_cb( SDL_Keysym k )
+static int console_keyboard_handler_cb( Bennu_Keysym k )
 {
     char cmd[256];
 

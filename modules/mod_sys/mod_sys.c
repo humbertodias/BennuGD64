@@ -33,9 +33,8 @@
 #include "files.h"
 #include "xstrings.h"
 
-#include <unistd.h>
-
 #ifndef WIN32
+#include <unistd.h>
 #include <sys/wait.h>
 #else
 #include <process.h>

@@ -36,9 +36,6 @@ jobs:
           - runner: macos-latest
             platform: macos
             arch: arm64
-          - runner: macos-13
-            platform: macos
-            arch: x86_64
 
     defaults:
       run:

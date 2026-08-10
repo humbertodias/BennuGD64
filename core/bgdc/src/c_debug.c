@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -37,8 +37,8 @@
 #include "bgdc.h"
 
 /* ---------------------------------------------------------------------- */
-/* Este módulo contiene funciones que muestran el equivalente en texto de */
-/* una instrucción o mnemónico, o de un bloque de código completo         */
+/* Este mÃ³dulo contiene funciones que muestran el equivalente en texto de */
+/* una instrucciÃ³n o mnemÃ³nico, o de un bloque de cÃ³digo completo         */
 /* ---------------------------------------------------------------------- */
 
 void codeblock_dump (CODEBLOCK * c)

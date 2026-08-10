@@ -1,7 +1,7 @@
 /*
- *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright ù 2002-2006 Fenix Team (Fenix)
- *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
+ *  Copyright ¬© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ¬© 2002-2006 Fenix Team (Fenix)
+ *  Copyright ¬© 1999-2002 Jos√© Luis Cebri√°n Pag√ºe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -67,7 +67,7 @@ typedef struct _text
     int color32 ;
     int objectid ;
     int last_value ;
-    char * text ;           /* Memoria dinùmica */
+    char * text ;           /* Memoria din√°mica */
     const void * var  ;  /* CHANGED TO VOID to allow diff. data types */
     int last_z ;
     int last_color8 ;
@@ -104,7 +104,7 @@ enum {
 
 DLVARFIXUP __bgdexport( libtext, globals_fixup )[] =
 {
-    /* Nombre de variable global, puntero al dato, tamaùo del elemento, cantidad de elementos */
+    /* Nombre de variable global, puntero al dato, tama√±o del elemento, cantidad de elementos */
     { "text_z"      , NULL, -1, -1 },
     { "text_flags"  , NULL, -1, -1 },
     { NULL          , NULL, -1, -1 }

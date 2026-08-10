@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -33,7 +33,7 @@
 #include "bgdc.h"
 
 /* ---------------------------------------------------------------------- */
-/* Este módulo contiene funciones de utilidad para crear e ir rellenando  */
+/* Este mÃ³dulo contiene funciones de utilidad para crear e ir rellenando  */
 /* varspaces (tablas con identificador, offset y tipo de cada VARIABLE)   */
 /* y segmentos de datos                                                   */
 /* ---------------------------------------------------------------------- */

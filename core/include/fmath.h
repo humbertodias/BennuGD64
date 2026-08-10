@@ -1,7 +1,7 @@
 /*
  *  Copyright &#169; 2006-2013 SplinterGU (Fenix/Bennugd)
  *  Copyright &#169; 2002-2006 Fenix Team (Fenix)
- *  Copyright &#169; 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
+ *  Copyright &#169; 1999-2002 Jos√© Luis Cebri√°n Pag√ºe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -34,7 +34,7 @@
 
 #include "bgdcore.h"
 
-/* Rutinas matemùticas de punto fijo, basadas en Allegro */
+/* Rutinas matem√°ticas de punto fijo, basadas en Allegro */
 
 #ifndef M_PI
 #define M_PI        3.14159265358979323846  /* PI */

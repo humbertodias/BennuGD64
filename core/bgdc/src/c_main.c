@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
+ *  Copyright ¬© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ¬© 2002-2006 Fenix Team (Fenix)
+ *  Copyright ¬© 1999-2002 Jos√© Luis Cebri√°n Pag√ºe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -51,9 +51,9 @@ int imports[512] ;      /* Modules */
 int nimports = 0 ;
 
 /* ---------------------------------------------------------------------- */
-/* MÛdulo principal del compilador. Contiene cÛdigo que inicializa los    */
-/* identificadores conocidos, asÌ como las funciones de compilado de      */
-/* nivel m·s alto                                                         */
+/* M√≥dulo principal del compilador. Contiene c√≥digo que inicializa los    */
+/* identificadores conocidos, as√≠ como las funciones de compilado de      */
+/* nivel m√°s alto                                                         */
 /* ---------------------------------------------------------------------- */
 
 /* Tipos */
@@ -999,7 +999,7 @@ void compile_process()
             var = varspace_search( &local, token.code ) ;
             if ( var )
             {
-                /* El par·metro es en realidad un local */
+                /* El par√°metro es en realidad un local */
                 if ( type_implicit )
                 {
                     type = typedef_base( var->type );
@@ -1043,7 +1043,7 @@ void compile_process()
                 var = varspace_search( &global, token.code );
                 if ( var )
                 {
-                    /* El par·metro es en realidad un global */
+                    /* El par√°metro es en realidad un global */
                     if ( type_implicit )
                     {
                         type = typedef_base( var->type );
@@ -1162,7 +1162,7 @@ void compile_process()
         token_next() ;
     }
 
-    /* Gestiona procesos cuyos par·metros son variables locales */
+    /* Gestiona procesos cuyos par√°metros son variables locales */
 
     if ( !is_declare )
     {
@@ -1249,7 +1249,7 @@ void compile_program()
                     token.code == identifier_function ||
                     token.code == identifier_declare  ||
                     identifier_is_basic_type( token.type )
-                  ) ) compile_process() ; /* DefiniciÛn de proceso */
+                  ) ) compile_process() ; /* Definici√≥n de proceso */
         else if ( segment_by_name( token.code ) ) compile_process() ;
         else break ;
     }

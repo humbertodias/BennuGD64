@@ -43,7 +43,7 @@
 /* Window Manager                                                              */
 /* --------------------------------------------------------------------------- */
 
-static int bgd_set_title( INSTANCE * my, int * params )
+static int bgd_set_title( INSTANCE * my, intptr_t * params )
 {
     gr_set_caption( ( char * )string_get( params[0] ) ) ;
     return 1 ;
@@ -51,7 +51,7 @@ static int bgd_set_title( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_set_icon( INSTANCE * my, int * params )
+static int bgd_set_icon( INSTANCE * my, intptr_t * params )
 {
     gr_set_icon( bitmap_get( params[0], params[1] ) );
     return 1 ;
@@ -59,7 +59,7 @@ static int bgd_set_icon( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_minimize( INSTANCE * my, int * params )
+static int bgd_minimize( INSTANCE * my, intptr_t * params )
 {
     if ( !window ) return 0;
     SDL_MinimizeWindow( window );
@@ -68,7 +68,7 @@ static int bgd_minimize( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_move_window( INSTANCE * my, int * params )
+static int bgd_move_window( INSTANCE * my, intptr_t * params )
 {
     if ( full_screen || !window ) return 0;
     SDL_SetWindowPosition( window, params[0], params[1] );
@@ -77,7 +77,7 @@ static int bgd_move_window( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_get_window_pos( INSTANCE * my, int * params )
+static int bgd_get_window_pos( INSTANCE * my, intptr_t * params )
 {
     int x, y;
 
@@ -91,7 +91,7 @@ static int bgd_get_window_pos( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_get_window_size( INSTANCE * my, int * params )
+static int bgd_get_window_size( INSTANCE * my, intptr_t * params )
 {
     int w, h;
 
@@ -107,7 +107,7 @@ static int bgd_get_window_size( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int bgd_get_desktop_size( INSTANCE * my, int * params )
+static int bgd_get_desktop_size( INSTANCE * my, intptr_t * params )
 {
     SDL_DisplayMode mode;
     int display_index = 0;

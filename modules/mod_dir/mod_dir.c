@@ -95,7 +95,7 @@ DLVARFIXUP __bgdexport( mod_dir, globals_fixup)[] =
 /* ----------------------------------------------------------------- */
 /* DIRECTORY FUNCTIONS */
 
-static int moddir_cd( INSTANCE * my, int * params )
+static int moddir_cd( INSTANCE * my, intptr_t * params )
 {
     char * d = dir_current() ;
     int r = string_new( d ) ;
@@ -104,7 +104,7 @@ static int moddir_cd( INSTANCE * my, int * params )
     return r ;
 }
 
-static int moddir_chdir( INSTANCE * my, int * params )
+static int moddir_chdir( INSTANCE * my, intptr_t * params )
 {
     const char * d = string_get( params[ 0 ] ) ;
     int ret = dir_change( d ) ;
@@ -112,7 +112,7 @@ static int moddir_chdir( INSTANCE * my, int * params )
     return ( ret ) ;
 }
 
-static int moddir_mkdir( INSTANCE * my, int * params )
+static int moddir_mkdir( INSTANCE * my, intptr_t * params )
 {
     const char * d = string_get( params[ 0 ] ) ;
     int ret = dir_create( d ) ;
@@ -120,7 +120,7 @@ static int moddir_mkdir( INSTANCE * my, int * params )
     return ( ret ) ;
 }
 
-static int moddir_rmdir( INSTANCE * my, int * params )
+static int moddir_rmdir( INSTANCE * my, intptr_t * params )
 {
     const char * d = string_get( params[ 0 ] ) ;
     int ret = dir_delete( d );
@@ -128,7 +128,7 @@ static int moddir_rmdir( INSTANCE * my, int * params )
     return ( ret ) ;
 }
 
-static int moddir_rm( INSTANCE * my, int * params )
+static int moddir_rm( INSTANCE * my, intptr_t * params )
 {
     const char * d = string_get( params[ 0 ] ) ;
     int ret = dir_deletefile( d );
@@ -200,7 +200,7 @@ static int __moddir_read(__DIR_ST * dh )
  *  until no more files exists. It then returns NIL.
  */
 
-static int moddir_glob( INSTANCE * my, int * params )
+static int moddir_glob( INSTANCE * my, intptr_t * params )
 {
     const char * path = string_get( params[ 0 ] );
     static __DIR_ST * dh = NULL;
@@ -232,7 +232,7 @@ static int moddir_glob( INSTANCE * my, int * params )
  *  return 0 if fail.
  */
 
-static int moddir_open( INSTANCE * my, int * params )
+static int moddir_open( INSTANCE * my, intptr_t * params )
 {
     int result = ( int ) dir_open( string_get( params[ 0 ] ) );
     string_discard( params[ 0 ] );
@@ -242,7 +242,7 @@ static int moddir_open( INSTANCE * my, int * params )
 /*  int DIRCLOSE (INT handle)
  */
 
-static int moddir_close( INSTANCE * my, int * params )
+static int moddir_close( INSTANCE * my, intptr_t * params )
 {
     if ( params[ 0 ] ) dir_close ( ( __DIR_ST * ) params[ 0 ] ) ;
     return 1;
@@ -255,7 +255,7 @@ static int moddir_close( INSTANCE * my, int * params )
  *  until no more files exists. It then returns NIL.
  */
 
-static int moddir_read( INSTANCE * my, int * params )
+static int moddir_read( INSTANCE * my, intptr_t * params )
 {
     return ( __moddir_read((__DIR_ST *) params[ 0 ] ) ) ;
 }

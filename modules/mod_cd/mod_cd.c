@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright ï¿½ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ï¿½ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ï¿½ 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -73,19 +73,31 @@ DLVARFIXUP  __bgdexport( mod_cd, globals_fixup )[] =
 
 /* ----------------------------------------------------------------- */
 
-static int modcd_drives( INSTANCE * my, int * params )
+static int modcd_drives( INSTANCE * my, intptr_t * params )
 {
     (void)my; (void)params;
     return 0;
 }
 
-static int modcd_status( INSTANCE * my, int * params )
+/* --------------------------------------------------------------------------- */
+/**
+   int CD_STATUS (int CD)
+   Returns the status of a CD (using SDL constants)
+ **/
+
+static int modcd_status( INSTANCE * my, intptr_t * params )
 {
     (void)my; (void)params;
     return 0;
 }
 
-static int modcd_name( INSTANCE * my, int * params )
+/* --------------------------------------------------------------------------- */
+/**
+   string CD_NAME (int CD)
+   Returns a human-readable string with the name of a CD drive
+ **/
+
+static int modcd_name( INSTANCE * my, intptr_t * params )
 {
     int result;
     (void)my; (void)params;
@@ -94,43 +106,86 @@ static int modcd_name( INSTANCE * my, int * params )
     return result;
 }
 
-static int modcd_getinfo( INSTANCE * my, int * params )
+/* --------------------------------------------------------------------------- */
+/**
+   CD_GETINFO(int CD)
+   Fills the global structure CD with information about the current CD
+   Returns 1 if there is a valid CD in the drive or 0 otherwise
+ **/
+
+static int modcd_getinfo( INSTANCE * my, intptr_t * params )
 {
     (void)my; (void)params;
     return 0;
 }
 
-static int modcd_play( INSTANCE * my, int * params )
+/* --------------------------------------------------------------------------- */
+/**
+   CD_PLAY (int CD, int TRACK)
+   Starts playing a track of the given CD
+ **/
+
+static int modcd_play( INSTANCE * my, intptr_t * params )
 {
     (void)my; (void)params;
     return 0;
 }
 
-static int modcd_playtracks( INSTANCE * my, int * params )
+/* --------------------------------------------------------------------------- */
+/**
+   CD_PLAY (int CD, int TRACK, int NUMTRACKS)
+   Plays a series of tracks of the CD
+ **/
+
+static int modcd_playtracks( INSTANCE * my, intptr_t * params )
 {
     (void)my; (void)params;
     return 0;
 }
 
-static int modcd_eject( INSTANCE * my, int * params )
+/* --------------------------------------------------------------------------- */
+/**
+   CD_EJECT (int CD)
+   Ejects a CD
+ **/
+
+static int modcd_eject( INSTANCE * my, intptr_t * params )
 {
     (void)my; (void)params;
     return 0;
 }
 
-static int modcd_pause( INSTANCE * my, int * params )
+/* --------------------------------------------------------------------------- */
+/**
+   CD_PAUSE (int CD)
+   Pauses the CD playing
+ **/
+
+static int modcd_pause( INSTANCE * my, intptr_t * params )
 {
     (void)my; (void)params;
     return 0;
 }
 
-static int modcd_resume( INSTANCE * my, int * params )
+/* --------------------------------------------------------------------------- */
+/**
+   CD_RESUME (int CD)
+   Resumes a CD in pause
+ **/
+
+static int modcd_resume( INSTANCE * my, intptr_t * params )
 {
     (void)my; (void)params;
     return 0;
 }
 
-static int modcd_stop( INSTANCE * my, int * params )
+/* --------------------------------------------------------------------------- */
+/**
+   CD_STOP (int CD)
+   Stops the CD
+ **/
+
+static int modcd_stop( INSTANCE * my, intptr_t * params )
 {
     (void)my; (void)params;
     return 0;

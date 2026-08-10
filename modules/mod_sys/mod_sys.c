@@ -47,7 +47,7 @@
 
 /* ---------------------------------------------------------------------- */
 
-static int modsys_exec( INSTANCE * my, int * params )
+static int modsys_exec( INSTANCE * my, intptr_t * params )
 {
     int mode = params[0];
     char * filename = ( char * ) string_get( params[1] );
@@ -107,7 +107,7 @@ static int modsys_exec( INSTANCE * my, int * params )
 
 /* ---------------------------------------------------------------------- */
 
-static int modsys_getenv( INSTANCE * my, int * params )
+static int modsys_getenv( INSTANCE * my, intptr_t * params )
 {
     char *e ;
     int str ;

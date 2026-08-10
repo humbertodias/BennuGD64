@@ -12,6 +12,7 @@ add_library (
   g_blendop.c
   g_conversion.c
   libgrbase.c
+  bgd_handles.c
 ) 
 
 target_link_libraries (

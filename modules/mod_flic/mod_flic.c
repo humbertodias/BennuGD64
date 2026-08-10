@@ -1,7 +1,7 @@
 /*
- *  Copyright  2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright  2002-2006 Fenix Team (Fenix)
- *  Copyright  1999-2002 Jos Luis Cebrin Page (Fenix)
+ *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright © 2002-2006 Fenix Team (Fenix)
+ *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -61,10 +61,10 @@ static FLIC * flic_do_brun( FLIC * flic ) ;
 static FLIC * flic_do_chunk( FLIC * flic ) ;
 static FLIC * flic_do_frame( FLIC * flic ) ;
 static void flic_reset( FLIC * flic ) ;
-static int modflic_start( INSTANCE * my, int * params ) ;
-static int modflic_reset( INSTANCE * my, int * params ) ;
-static int modflic_end( INSTANCE * my, int * params ) ;
-static int modflic_frame( INSTANCE * my, int * params ) ;
+static int modflic_start( INSTANCE * my, intptr_t * params ) ;
+static int modflic_reset( INSTANCE * my, intptr_t * params ) ;
+static int modflic_end( INSTANCE * my, intptr_t * params ) ;
+static int modflic_frame( INSTANCE * my, intptr_t * params ) ;
 
 /* ----------------------------------------------------------------- */
 
@@ -576,7 +576,7 @@ static void flic_reset( FLIC * flic )
  *
  */
 
-static int modflic_start( INSTANCE * my, int * params )
+static int modflic_start( INSTANCE * my, intptr_t * params )
 {
     const char * str = string_get( params[0] ) ;
     if ( !str ) return 0 ;
@@ -613,7 +613,7 @@ static int modflic_start( INSTANCE * my, int * params )
  *
  */
 
-static int modflic_reset( INSTANCE * my, int * params )
+static int modflic_reset( INSTANCE * my, intptr_t * params )
 {
     if ( current_fli ) flic_reset( current_fli ) ;
     return 1 ;
@@ -630,7 +630,7 @@ static int modflic_reset( INSTANCE * my, int * params )
  *
  */
 
-static int modflic_end( INSTANCE * my, int * params )
+static int modflic_end( INSTANCE * my, intptr_t * params )
 {
     if ( current_fli )
     {
@@ -655,7 +655,7 @@ static int modflic_end( INSTANCE * my, int * params )
  *
  */
 
-static int modflic_frame( INSTANCE * my, int * params )
+static int modflic_frame( INSTANCE * my, intptr_t * params )
 {
     if ( current_fli ) return current_fli->finished ? 0 : current_fli->current_frame ;
     return 0 ;
@@ -663,7 +663,7 @@ static int modflic_frame( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int modflic_startx1( INSTANCE * my, int * params )
+static int modflic_startx1( INSTANCE * my, intptr_t * params )
 {
     FLIC * flic ;
     const char * str = string_get( params[0] ) ;
@@ -688,7 +688,7 @@ static int modflic_startx1( INSTANCE * my, int * params )
     return 0 ;
 }
 
-static int modflic_startx2( INSTANCE * my, int * params )
+static int modflic_startx2( INSTANCE * my, intptr_t * params )
 {
     FLIC * flic ;
     const char * str = string_get( params[0] ) ;
@@ -713,24 +713,24 @@ static int modflic_startx2( INSTANCE * my, int * params )
     return 0 ;
 }
 
-static int modflic_resetx( INSTANCE * my, int * params )
+static int modflic_resetx( INSTANCE * my, intptr_t * params )
 {
     flic_reset(( FLIC * ) params[0] ) ;
     return 1 ;
 }
 
-static int modflic_endx( INSTANCE * my, int * params )
+static int modflic_endx( INSTANCE * my, intptr_t * params )
 {
     flic_destroy((( FLIC * ) params[0] ) ) ;
     return 1 ;
 }
 
-static int modflic_framex( INSTANCE * my, int * params )
+static int modflic_framex( INSTANCE * my, intptr_t * params )
 {
     return (( FLIC * ) params[0] )->finished ? 0 : (( FLIC * ) params[0] )->current_frame ;
 }
 
-static int modflic_params( INSTANCE * my, int * params )
+static int modflic_params( INSTANCE * my, intptr_t * params )
 {
     FLIC * flic = ( FLIC * ) params[0] ;
 
@@ -744,7 +744,7 @@ static int modflic_params( INSTANCE * my, int * params )
     return 1 ;
 }
 
-static int modflic_move( INSTANCE * my, int * params )
+static int modflic_move( INSTANCE * my, intptr_t * params )
 {
     FLIC * flic = ( FLIC * ) params[0] ;
 
@@ -754,35 +754,35 @@ static int modflic_move( INSTANCE * my, int * params )
     return 1 ;
 }
 
-static int modflic_z( INSTANCE * my, int * params )
+static int modflic_z( INSTANCE * my, intptr_t * params )
 {
     (( FLIC * ) params[0] )->z = params[1] ;
 
     return 1 ;
 }
 
-static int modflic_angle( INSTANCE * my, int * params )
+static int modflic_angle( INSTANCE * my, intptr_t * params )
 {
     (( FLIC * ) params[0] )->angle = params[1] ;
 
     return 1 ;
 }
 
-static int modflic_size( INSTANCE * my, int * params )
+static int modflic_size( INSTANCE * my, intptr_t * params )
 {
     (( FLIC * ) params[0] )->size = params[1] ;
 
     return 1 ;
 }
 
-static int modflic_flags( INSTANCE * my, int * params )
+static int modflic_flags( INSTANCE * my, intptr_t * params )
 {
     (( FLIC * ) params[0] )->flags = params[1] ;
 
     return 1 ;
 }
 
-static int modflic_getinfo( INSTANCE * my, int * params )
+static int modflic_getinfo( INSTANCE * my, intptr_t * params )
 {
     FLIC * flic = ( FLIC * ) params[0] ;
 

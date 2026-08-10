@@ -44,7 +44,7 @@
 /* --------------------------------------------------------------------------- */
 /* Timer                                                                       */
 
-static int modtime_get_timer( INSTANCE * my, int * params )
+static int modtime_get_timer( INSTANCE * my, intptr_t * params )
 {
     return SDL_GetTicks() ;
 }
@@ -52,7 +52,7 @@ static int modtime_get_timer( INSTANCE * my, int * params )
 /* --------------------------------------------------------------------------- */
 /* Hora del día                                                                */
 
-static int modtime_time( INSTANCE * my, int * params )
+static int modtime_time( INSTANCE * my, intptr_t * params )
 {
     return time( 0 ) ;
 }
@@ -71,7 +71,7 @@ static int modtime_time( INSTANCE * my, int * params )
  *
  */
 
-static int modtime_ftime( INSTANCE * my, int * params )
+static int modtime_ftime( INSTANCE * my, intptr_t * params )
 {
     char buffer[128] ;
     char * format ;

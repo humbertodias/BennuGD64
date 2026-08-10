@@ -51,6 +51,5 @@ GitHub Actions (`.github/workflows/ci.yml`) builds `bgdc` and `bgdi` for:
 - Linux x86_64
 - Windows x86_64 (MinGW-w64 UCRT64 via MSYS2)
 - macOS arm64
-- macOS x86_64
 
 On tags matching `v*` (for example `v1.0.0`), the workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically. OS graphics/audio libraries may still be required at runtime.

@@ -47,20 +47,21 @@
 
     #ifndef __BGDC__
 
-    #include <SDL.h>
+    #include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
     typedef struct _keyequiv {
         int                 sdlk_equiv ;
         struct _keyequiv    * next ;
     } key_equiv ;
 
-    typedef int (* HOTKEY_CALLBACK) (SDL_Keysym);
+    typedef int (* HOTKEY_CALLBACK) (Bennu_Keysym);
 
     #ifndef __LIBKEY
     extern DLLIMPORT void hotkey_add(int mod, int sym, HOTKEY_CALLBACK callback);
 
     extern DLLIMPORT key_equiv key_table[] ;           /* Now we have a search table with equivs */
-    extern DLLIMPORT unsigned char * keystate ;        /* Pointer to key states */
+    extern DLLIMPORT const bool * keystate ;        /* Pointer to key states */
     #endif
 
     #endif

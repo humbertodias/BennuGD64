@@ -306,18 +306,13 @@ void gr_draw_frame()
 
 void __bgdexport( librender, module_initialize )()
 {
-#ifndef TARGET_DINGUX_A320
-    if ( !SDL_WasInit( SDL_INIT_TIMER ) ) SDL_InitSubSystem( SDL_INIT_TIMER );
-#endif
+    /* SDL3: timers are always available; SDL_INIT_TIMER was removed */
 }
 
 /* --------------------------------------------------------------------------- */
 
 void __bgdexport( librender, module_finalize )()
 {
-#ifndef TARGET_DINGUX_A320
-    if ( SDL_WasInit( SDL_INIT_TIMER ) ) SDL_QuitSubSystem( SDL_INIT_TIMER );
-#endif
 }
 
 /* --------------------------------------------------------------------------- */

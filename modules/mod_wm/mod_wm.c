@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright ï¿½ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ï¿½ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ï¿½ 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -37,7 +37,8 @@
 #include "libgrbase.h"
 #include "libvideo.h"
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 /* --------------------------------------------------------------------------- */
 /* Window Manager                                                              */
@@ -109,16 +110,17 @@ static int bgd_get_window_size( INSTANCE * my, intptr_t * params )
 
 static int bgd_get_desktop_size( INSTANCE * my, intptr_t * params )
 {
-    SDL_DisplayMode mode;
-    int display_index = 0;
+    const SDL_DisplayMode * mode;
+    SDL_DisplayID display_id = 0;
 
-    if ( window ) display_index = SDL_GetWindowDisplayIndex( window );
-    if ( display_index < 0 ) display_index = 0;
+    if ( window ) display_id = SDL_GetDisplayForWindow( window );
+    if ( !display_id ) display_id = SDL_GetPrimaryDisplay();
 
-    if ( SDL_GetDesktopDisplayMode( display_index, &mode ) != 0 ) return -1;
+    mode = SDL_GetDesktopDisplayMode( display_id );
+    if ( !mode ) return -1;
 
-    if ( params[0] ) *(( int * )( params[0] ) ) = mode.w;
-    if ( params[1] ) *(( int * )( params[1] ) ) = mode.h;
+    if ( params[0] ) *(( int * )( params[0] ) ) = mode->w;
+    if ( params[1] ) *(( int * )( params[1] ) ) = mode->h;
     return 1 ;
 }
 

@@ -26,7 +26,8 @@
 
 #include "bgddl.h"
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 /* ----------------------------------------------------------------- */
 /* Public functions                                                  */
@@ -37,7 +38,7 @@ static void  dump_new_events()
     /* Remove all pendings events */
 
     /* We can't return -1, just return 0 (no event) on error */
-    while ( SDL_PeepEvents( &event, 1, SDL_GETEVENT, SDL_FIRSTEVENT, SDL_LASTEVENT ) > 0 );
+    while ( SDL_PeepEvents( &event, 1, SDL_GETEVENT, SDL_EVENT_FIRST, SDL_EVENT_LAST ) > 0 );
 
     /* Get new events */
     SDL_PumpEvents();

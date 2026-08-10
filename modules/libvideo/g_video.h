@@ -1,7 +1,7 @@
 /*
- *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright ù 2002-2006 Fenix Team (Fenix)
- *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
+ *  Copyright ÔøΩ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ÔøΩ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ÔøΩ 1999-2002 JosÔøΩ Luis CebriÔøΩn PagÔøΩe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -32,7 +32,8 @@
 /* --------------------------------------------------------------------------- */
 
 #ifndef __BGDC__
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 #include "libgrbase.h"
 #endif

@@ -57,7 +57,7 @@ static void activate_vpalette()
         if ( sys_pixel_format->depth > 8 )
         {
             for ( n = 0 ; n < 256 ; n++ )
-                sys_pixel_format->palette->colorequiv[ n ] = SDL_MapRGB( screen->format, sys_pixel_format->palette->rgb[ n ].r, sys_pixel_format->palette->rgb[ n ].g, sys_pixel_format->palette->rgb[ n ].b ) ;
+                sys_pixel_format->palette->colorequiv[ n ] = bennu_map_rgb( screen, sys_pixel_format->palette->rgb[ n ].r, sys_pixel_format->palette->rgb[ n ].g, sys_pixel_format->palette->rgb[ n ].b ) ;
         }
         else
         {

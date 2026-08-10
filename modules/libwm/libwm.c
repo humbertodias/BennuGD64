@@ -28,7 +28,8 @@
 
 /* --------------------------------------------------------------------------- */
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 #include "bgdrtm.h"
 
@@ -85,37 +86,37 @@ static void wm_events()
 
     GLODWORD( libwm, EXIT_STATUS ) = 0 ;
 
-    while ( SDL_PeepEvents( &e, 1, SDL_GETEVENT, SDL_QUIT, SDL_QUIT ) > 0 )
+    while ( SDL_PeepEvents( &e, 1, SDL_GETEVENT, SDL_EVENT_QUIT, SDL_EVENT_QUIT ) > 0 )
     {
         GLODWORD( libwm, EXIT_STATUS ) = 1 ;
     }
 
-    while ( SDL_PeepEvents( &e, 1, SDL_GETEVENT, SDL_WINDOWEVENT, SDL_WINDOWEVENT ) > 0 )
+    while ( SDL_PeepEvents( &e, 1, SDL_GETEVENT, SDL_EVENT_WINDOW_FIRST, SDL_EVENT_WINDOW_LAST ) > 0 )
     {
-        switch ( e.window.event )
+        switch ( e.type )
         {
-            case SDL_WINDOWEVENT_SHOWN:
-            case SDL_WINDOWEVENT_RESTORED:
-            case SDL_WINDOWEVENT_MAXIMIZED:
+            case SDL_EVENT_WINDOW_SHOWN:
+            case SDL_EVENT_WINDOW_RESTORED:
+            case SDL_EVENT_WINDOW_MAXIMIZED:
                 GLODWORD( libwm, WINDOW_STATUS ) = 1 ;
                 break ;
-            case SDL_WINDOWEVENT_HIDDEN:
-            case SDL_WINDOWEVENT_MINIMIZED:
+            case SDL_EVENT_WINDOW_HIDDEN:
+            case SDL_EVENT_WINDOW_MINIMIZED:
                 GLODWORD( libwm, WINDOW_STATUS ) = 0 ;
                 break ;
-            case SDL_WINDOWEVENT_FOCUS_GAINED:
+            case SDL_EVENT_WINDOW_FOCUS_GAINED:
                 GLODWORD( libwm, FOCUS_STATUS ) = 1 ;
                 break ;
-            case SDL_WINDOWEVENT_FOCUS_LOST:
+            case SDL_EVENT_WINDOW_FOCUS_LOST:
                 GLODWORD( libwm, FOCUS_STATUS ) = 0 ;
                 break ;
-            case SDL_WINDOWEVENT_ENTER:
+            case SDL_EVENT_WINDOW_MOUSE_ENTER:
                 GLODWORD( libwm, MOUSE_STATUS ) = 1 ;
                 break ;
-            case SDL_WINDOWEVENT_LEAVE:
+            case SDL_EVENT_WINDOW_MOUSE_LEAVE:
                 GLODWORD( libwm, MOUSE_STATUS ) = 0 ;
                 break ;
-            case SDL_WINDOWEVENT_CLOSE:
+            case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
                 GLODWORD( libwm, EXIT_STATUS ) = 1 ;
                 break ;
         }

@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright ï¿½ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ï¿½ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ï¿½ 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -33,7 +33,8 @@
 
 #include "bgddl.h"
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 #include "dlvaracc.h"
 
@@ -50,7 +51,7 @@ enum {
 
 DLVARFIXUP __bgdexport( mod_timers, globals_fixup )[] =
 {
-    /* Nombre de variable global, puntero al dato, tamaño del elemento, cantidad de elementos */
+    /* Nombre de variable global, puntero al dato, tamaï¿½o del elemento, cantidad de elementos */
     { "timer"   , NULL, -1, -1 },
     { NULL, NULL, -1, -1 }
 };

@@ -47,9 +47,9 @@ if (NO_SOUND)
   add_definitions (-DNO_SOUND)
 endif ()
 
-find_package (SDL2 REQUIRED CONFIG)
+find_package (SDL3 REQUIRED CONFIG)
 if (NOT NO_SOUND)
-  find_package (SDL2_mixer REQUIRED CONFIG)
+  find_package (SDL3_mixer REQUIRED CONFIG)
 endif ()
 find_package (ZLIB REQUIRED)
 find_package (PNG REQUIRED)
@@ -60,12 +60,20 @@ else ()
   add_definitions (-DUSE_OPENSSL)
 endif ()
 
-# Propagate SDL2 headers the same way the old FindSDL include dir did.
-get_target_property (_SDL2_INC SDL2::SDL2 INTERFACE_INCLUDE_DIRECTORIES)
-if (_SDL2_INC)
-  include_directories (${_SDL2_INC})
+# Temporary: map many SDL2 symbol names while structural API breaks are fixed.
+add_definitions (-DSDL_ENABLE_OLD_NAMES)
+
+# Propagate SDL3 headers project-wide (bgdc includes module exports that need SDL.h).
+# SDL3::SDL3 may not set INTERFACE_INCLUDE_DIRECTORIES; SDL3::Headers does.
+if (TARGET SDL3::Headers)
+  get_target_property (_SDL3_INC SDL3::Headers INTERFACE_INCLUDE_DIRECTORIES)
+  if (_SDL3_INC)
+    include_directories (${_SDL3_INC})
+  endif ()
 endif ()
+# Compat helpers (surface format accessors, etc.)
 include_directories (
+  ${CMAKE_SOURCE_DIR}/modules/libvideo
   ${ZLIB_INCLUDE_DIR}
 )
 

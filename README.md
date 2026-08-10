@@ -5,8 +5,8 @@ A fork of [BennuGD](https://www.bennugd.org/) adapted to run on modern 64-bit ar
 ## Dependencies
 
 - CMake
-- SDL2
-- SDL2_mixer (unless `NO_SOUND` is enabled)
+- SDL3
+- SDL3_mixer (unless `NO_SOUND` is enabled)
 - zlib
 - OpenSSL (or set `USE_LIBDES` to use the bundled DES library)
 - libpng

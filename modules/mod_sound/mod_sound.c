@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
+ *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ù 2002-2006 Fenix Team (Fenix)
+ *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -26,7 +26,7 @@
  *
  */
 
-#pragma comment (lib, "SDL_mixer")
+#pragma comment (lib, "SDL2_mixer")
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -62,7 +62,7 @@ static int audio_initialized = 0 ;
 
 DLVARFIXUP  __bgdexport( mod_sound, globals_fixup )[] =
 {
-    /* Nombre de variable global, puntero al dato, tamaÒo del elemento, cantidad de elementos */
+    /* Nombre de variable global, puntero al dato, tamaùo del elemento, cantidad de elementos */
     { "sound_freq", NULL, -1, -1 },
     { "sound_mode", NULL, -1, -1 },
     { "sound_channels", NULL, -1, -1 },
@@ -73,25 +73,24 @@ DLVARFIXUP  __bgdexport( mod_sound, globals_fixup )[] =
 /* Interfaz SDL_RWops Bennu              */
 /* ------------------------------------- */
 
-static int SDLCALL __modsound_seek_cb( SDL_RWops *context, int offset, int whence )
+static Sint64 SDLCALL __modsound_seek_cb( SDL_RWops *context, Sint64 offset, int whence )
 {
-    if ( file_seek( context->hidden.unknown.data1, offset, whence ) < 0 ) return ( -1 );
-    return( file_pos( context->hidden.unknown.data1 ) );
-//    return ( file_seek( context->hidden.unknown.data1, offset, whence ) );
+    if ( file_seek( context->hidden.unknown.data1, ( int ) offset, whence ) < 0 ) return ( -1 );
+    return ( Sint64 ) file_pos( context->hidden.unknown.data1 );
 }
 
-static int SDLCALL __modsound_read_cb( SDL_RWops *context, void *ptr, int size, int maxnum )
+static size_t SDLCALL __modsound_read_cb( SDL_RWops *context, void *ptr, size_t size, size_t maxnum )
 {
-    int ret = file_read( context->hidden.unknown.data1, ptr, size * maxnum );
-    if ( ret > 0 ) ret /= size;
-    return( ret );
+    int ret = file_read( context->hidden.unknown.data1, ptr, ( int )( size * maxnum ) );
+    if ( ret > 0 ) ret /= ( int ) size;
+    return ( size_t ) ret;
 }
 
-static int SDLCALL __modsound_write_cb( SDL_RWops *context, const void *ptr, int size, int num )
+static size_t SDLCALL __modsound_write_cb( SDL_RWops *context, const void *ptr, size_t size, size_t num )
 {
-    int ret = file_write( context->hidden.unknown.data1, ( void * )ptr, size * num );
-    if ( ret > 0 ) ret /= size;
-    return( ret );
+    int ret = file_write( context->hidden.unknown.data1, ( void * )ptr, ( int )( size * num ) );
+    if ( ret > 0 ) ret /= ( int ) size;
+    return ( size_t ) ret;
 }
 
 static int SDLCALL __modsound_close_cb( SDL_RWops *context )
@@ -113,6 +112,7 @@ static SDL_RWops *SDL_RWFromBGDFP( file *fp )
         rwops->read = __modsound_read_cb;
         rwops->write = __modsound_write_cb;
         rwops->close = __modsound_close_cb;
+        rwops->type = SDL_RWOPS_UNKNOWN;
         rwops->hidden.unknown.data1 = fp;
     }
     return( rwops );
@@ -196,7 +196,7 @@ static void sound_close()
 {
     if ( !audio_initialized ) return;
 
-    //falta por comprobar que todo estÈ descargado
+    //falta por comprobar que todo estù descargado
 
     Mix_CloseAudio();
 
@@ -232,7 +232,7 @@ static int load_song( const char * filename )
 
     if ( !( fp = file_open( filename, "rb0" ) ) ) return ( 0 );
 
-    if ( !( music = Mix_LoadMUS_RW( SDL_RWFromBGDFP( fp ) ) ) )
+    if ( !( music = Mix_LoadMUS_RW( SDL_RWFromBGDFP( fp ), 1 ) ) )
     {
         file_close( fp );
         fprintf( stderr, "Couldn't load %s: %s\n", filename, SDL_GetError() );

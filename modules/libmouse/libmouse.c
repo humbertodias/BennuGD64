@@ -1,7 +1,7 @@
 /*
- *  Copyright  2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright  2002-2006 Fenix Team (Fenix)
- *  Copyright  1999-2002 Jos Luis Cebrin Page (Fenix)
+ *  Copyright ï¿½ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ï¿½ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ï¿½ 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -83,7 +83,7 @@ enum {
 
 DLVARFIXUP __bgdexport( libmouse, globals_fixup )[] =
 {
-    /* Nombre de variable global, puntero al dato, tamao del elemento, cantidad de elementos */
+    /* Nombre de variable global, puntero al dato, tamaï¿½o del elemento, cantidad de elementos */
 
     { "mouse.x"         , NULL, -1, -1 },
     { "mouse.y"         , NULL, -1, -1 },
@@ -126,7 +126,7 @@ static void do_mouse_events()
 
     /* Actualizar eventos */
 
-    /* El cambio de mouse.x/y afecta directamente al ratn */
+    /* El cambio de mouse.x/y afecta directamente al ratï¿½n */
 
     if (
         ( last_mouse_x != -1 && GLOINT32( libmouse, MOUSEX ) != last_mouse_x ) ||
@@ -134,15 +134,15 @@ static void do_mouse_events()
     {
         if ( scale_resolution != -1 )
         {
-            SDL_WarpMouse( GLOINT32( libmouse, MOUSEX ) / ( (double)screen->w / (double)scale_screen->w ), GLOINT32( libmouse, MOUSEY ) / ( (double)screen->h / (double)scale_screen->h ) ) ;
+            SDL_WarpMouseInWindow( window,  GLOINT32( libmouse, MOUSEX ) / ( (double)screen->w / (double)scale_screen->w ), GLOINT32( libmouse, MOUSEY ) / ( (double)screen->h / (double)scale_screen->h ) ) ;
         }
         else if ( enable_scale || scale_mode != SCALE_NONE )
         {
-            SDL_WarpMouse( GLOINT32( libmouse, MOUSEX ) * 2 , GLOINT32( libmouse, MOUSEY ) * 2 ) ;
+            SDL_WarpMouseInWindow( window,  GLOINT32( libmouse, MOUSEX ) * 2 , GLOINT32( libmouse, MOUSEY ) * 2 ) ;
         }
         else
         {
-            SDL_WarpMouse( GLOINT32( libmouse, MOUSEX ), GLOINT32( libmouse, MOUSEY ) ) ;
+            SDL_WarpMouseInWindow( window,  GLOINT32( libmouse, MOUSEX ), GLOINT32( libmouse, MOUSEY ) ) ;
         }
     }
 
@@ -151,7 +151,7 @@ static void do_mouse_events()
     GLODWORD( libmouse, MOUSEWHEELUP )   = 0 ;
     GLODWORD( libmouse, MOUSEWHEELDOWN ) = 0 ;
 
-    while ( SDL_PeepEvents( &e, 1, SDL_GETEVENT, SDL_MOUSEEVENTMASK ) > 0 )
+    while ( SDL_PeepEvents( &e, 1, SDL_GETEVENT, SDL_MOUSEMOTION, SDL_MOUSEWHEEL ) > 0 )
     {
         switch ( e.type )
         {
@@ -253,14 +253,17 @@ static void do_mouse_events()
                 if ( e.button.button == SDL_BUTTON_LEFT )      GLODWORD( libmouse, MOUSELEFT )     = 1 ;
                 if ( e.button.button == SDL_BUTTON_MIDDLE )    GLODWORD( libmouse, MOUSEMIDDLE )   = 1 ;
                 if ( e.button.button == SDL_BUTTON_RIGHT )     GLODWORD( libmouse, MOUSERIGHT )    = 1 ;
-                if ( e.button.button == SDL_BUTTON_WHEELUP )   GLODWORD( libmouse, MOUSEWHEELUP )++ ;
-                if ( e.button.button == SDL_BUTTON_WHEELDOWN ) GLODWORD( libmouse, MOUSEWHEELDOWN )++ ;
                 break ;
 
             case SDL_MOUSEBUTTONUP:
                 if ( e.button.button == SDL_BUTTON_LEFT )      GLODWORD( libmouse, MOUSELEFT )      = 0 ;
                 if ( e.button.button == SDL_BUTTON_MIDDLE )    GLODWORD( libmouse, MOUSEMIDDLE )    = 0 ;
                 if ( e.button.button == SDL_BUTTON_RIGHT )     GLODWORD( libmouse, MOUSERIGHT )     = 0 ;
+                break ;
+
+            case SDL_MOUSEWHEEL:
+                if ( e.wheel.y > 0 ) GLODWORD( libmouse, MOUSEWHEELUP ) += e.wheel.y ;
+                if ( e.wheel.y < 0 ) GLODWORD( libmouse, MOUSEWHEELDOWN ) += -e.wheel.y ;
                 break ;
         }
     }

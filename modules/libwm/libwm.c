@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright ï¿½ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ï¿½ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ï¿½ 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -53,7 +53,7 @@ enum {
 
 DLVARFIXUP  __bgdexport( libwm, globals_fixup )[] =
 {
-    /* Nombre de variable global, puntero al dato, tamaño del elemento, cantidad de elementos */
+    /* Nombre de variable global, puntero al dato, tamaï¿½o del elemento, cantidad de elementos */
     { "exit_status"     , NULL, -1, -1 },
     { "window_status"   , NULL, -1, -1 },
     { "focus_status"    , NULL, -1, -1 },
@@ -62,7 +62,7 @@ DLVARFIXUP  __bgdexport( libwm, globals_fixup )[] =
 };
 
 /* --------------------------------------------------------------------------- */
-/* Gestión de eventos de ventana                                               */
+/* Gestiï¿½n de eventos de ventana                                               */
 /* --------------------------------------------------------------------------- */
 
 /*
@@ -85,21 +85,38 @@ static void wm_events()
 
     GLODWORD( libwm, EXIT_STATUS ) = 0 ;
 
-    while ( SDL_PeepEvents( &e, 1, SDL_GETEVENT, SDL_QUITMASK | SDL_ACTIVEEVENTMASK ) )
+    while ( SDL_PeepEvents( &e, 1, SDL_GETEVENT, SDL_QUIT, SDL_QUIT ) > 0 )
     {
-        switch ( e.type )
-        {
-                /* WINDOW MANAGER EVENTS */
-            case SDL_QUIT:
-                /* UPDATE  exit status... initilized each frame */
-                GLODWORD( libwm, EXIT_STATUS ) = 1 ;
-//                bgdrtm_exit( -1 );
-                break ;
+        GLODWORD( libwm, EXIT_STATUS ) = 1 ;
+    }
 
-            case SDL_ACTIVEEVENT:
-                if ( e.active.state & SDL_APPACTIVE ) GLODWORD( libwm, WINDOW_STATUS ) = ( e.active.gain ) ? 1 : 0 ;
-                if ( e.active.state & SDL_APPINPUTFOCUS ) GLODWORD( libwm, FOCUS_STATUS ) = ( e.active.gain ) ? 1 : 0 ;
-                if ( e.active.state & SDL_APPMOUSEFOCUS ) GLODWORD( libwm, MOUSE_STATUS ) = ( e.active.gain ) ? 1 : 0 ;
+    while ( SDL_PeepEvents( &e, 1, SDL_GETEVENT, SDL_WINDOWEVENT, SDL_WINDOWEVENT ) > 0 )
+    {
+        switch ( e.window.event )
+        {
+            case SDL_WINDOWEVENT_SHOWN:
+            case SDL_WINDOWEVENT_RESTORED:
+            case SDL_WINDOWEVENT_MAXIMIZED:
+                GLODWORD( libwm, WINDOW_STATUS ) = 1 ;
+                break ;
+            case SDL_WINDOWEVENT_HIDDEN:
+            case SDL_WINDOWEVENT_MINIMIZED:
+                GLODWORD( libwm, WINDOW_STATUS ) = 0 ;
+                break ;
+            case SDL_WINDOWEVENT_FOCUS_GAINED:
+                GLODWORD( libwm, FOCUS_STATUS ) = 1 ;
+                break ;
+            case SDL_WINDOWEVENT_FOCUS_LOST:
+                GLODWORD( libwm, FOCUS_STATUS ) = 0 ;
+                break ;
+            case SDL_WINDOWEVENT_ENTER:
+                GLODWORD( libwm, MOUSE_STATUS ) = 1 ;
+                break ;
+            case SDL_WINDOWEVENT_LEAVE:
+                GLODWORD( libwm, MOUSE_STATUS ) = 0 ;
+                break ;
+            case SDL_WINDOWEVENT_CLOSE:
+                GLODWORD( libwm, EXIT_STATUS ) = 1 ;
                 break ;
         }
     }

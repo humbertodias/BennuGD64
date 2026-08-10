@@ -11,7 +11,7 @@ add_library (
 
 target_link_libraries (
   wm
-  SDL
+  SDL2::SDL2
   bgdrtm
 )
 

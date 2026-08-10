@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright ï¿½ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ï¿½ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ï¿½ 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -412,7 +412,7 @@ void gr_unlock_screen()
 
         if ( SDL_MUSTLOCK( scale_screen ) ) SDL_UnlockSurface( scale_screen ) ;
         if ( waitvsync ) gr_wait_vsync();
-        SDL_Flip( scale_screen ) ;
+        gr_video_present( scale_screen ) ;
     }
     else if ( enable_scale )
     {
@@ -480,7 +480,7 @@ void gr_unlock_screen()
 
         if ( SDL_MUSTLOCK( screen ) ) SDL_UnlockSurface( screen ) ;
         if ( waitvsync ) gr_wait_vsync();
-        SDL_Flip( screen ) ;
+        gr_video_present( screen ) ;
     }
     else if ( scrbitmap->info_flags & GI_EXTERNAL_DATA )
     {
@@ -496,7 +496,7 @@ void gr_unlock_screen()
         {
             if ( SDL_MUSTLOCK( screen ) ) SDL_UnlockSurface( screen ) ;
             if ( waitvsync ) gr_wait_vsync();
-            SDL_Flip( screen ) ;
+            gr_video_present( screen ) ;
         }
         else
         {
@@ -513,7 +513,7 @@ void gr_unlock_screen()
                 }
                 if ( SDL_MUSTLOCK( screen ) ) SDL_UnlockSurface( screen ) ;
                 if ( waitvsync ) gr_wait_vsync();
-                SDL_UpdateRects( screen, updaterects_count, rects ) ;
+                gr_video_present_rects( screen, rects, updaterects_count ) ;
             }
         }
     }

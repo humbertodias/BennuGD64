@@ -26,7 +26,7 @@ add_library (
 
 target_link_libraries (
   render
-  SDL
+  SDL2::SDL2
   bgdrtm
   blit
   video

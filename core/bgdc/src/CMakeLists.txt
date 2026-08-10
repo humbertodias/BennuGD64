@@ -90,7 +90,7 @@ else ()
   target_link_libraries (
     bgdc
     z
-    crypto
+    OpenSSL::Crypto
   )
 endif ()
 

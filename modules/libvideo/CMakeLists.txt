@@ -15,7 +15,7 @@ target_link_libraries (
   video
   bgdrtm
   grbase
-  SDL
+  SDL2::SDL2
 )
 
 if (NOT STATIC_MODULES)

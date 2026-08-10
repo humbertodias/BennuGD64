@@ -18,7 +18,7 @@ target_link_libraries (
   key
   render
   grbase
-  SDL
+  SDL2::SDL2
   bgdrtm
 )
 

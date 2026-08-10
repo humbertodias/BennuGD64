@@ -14,7 +14,7 @@ add_library (
 
 target_link_libraries (
   scroll
-  SDL
+  SDL2::SDL2
   bgdrtm
   render
   blit

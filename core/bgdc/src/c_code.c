@@ -689,7 +689,7 @@ static void strdelchars( char * str, char * chars )
     while ( *str )
     {
         if ( strchr( chars, *str ) )
-            strcpy( str, str + 1 ) ;
+            memmove( str, str + 1, strlen( str + 1 ) + 1 ) ;
         else
             str++ ;
     }

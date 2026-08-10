@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright ï¿½ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ï¿½ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ï¿½ 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -32,7 +32,8 @@
 /* --------------------------------------------------------------------------- */
 
 #ifndef __BGDC__
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 #include "libgrbase.h"
 #endif
@@ -69,6 +70,7 @@
 #ifndef __BGDC__
 extern GRAPH * icon ;
 
+extern SDL_Window * window ;
 extern SDL_Surface * screen ;
 extern SDL_Surface * scale_screen ;
 
@@ -107,6 +109,9 @@ extern void gr_set_caption( char * title );
 extern int gr_set_icon( GRAPH * map );
 extern int gr_set_mode( int width, int height, int depth );
 extern void gr_wait_vsync();
+extern void gr_set_surface_palette( SDL_Surface * surface, SDL_Color * colors, int first, int ncolors );
+extern void gr_video_present( SDL_Surface * src );
+extern void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int count );
 
 /* --------------------------------------------------------------------------- */
 

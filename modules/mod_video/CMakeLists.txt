@@ -14,7 +14,7 @@ add_library (
 
 target_link_libraries (
   mod_video
-  SDL
+  SDL3::SDL3
   bgdrtm
   render
   video

@@ -1,7 +1,7 @@
 /*
  *  Copyright &#169; 2006-2013 SplinterGU (Fenix/Bennugd)
  *  Copyright &#169; 2002-2006 Fenix Team (Fenix)
- *  Copyright &#169; 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright &#169; 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -39,7 +39,7 @@
 #include "bgddl.h"
 
 /* --------------------------------------------------------------------------- */
-/* Funciones matemáticas */
+/* Funciones matemï¿½ticas */
 /* --------------------------------------------------------------------------- */
 
 static int math_abs( INSTANCE * my, intptr_t * params )
@@ -150,7 +150,7 @@ static int math_isnan( INSTANCE * my, intptr_t * params )
 static int math_finite( INSTANCE * my, intptr_t * params )
 {
     double param = ( double ) *( float * ) &params[0] ;
-    return finite ( param );
+    return isfinite( param );
 }
 
 /* --------------------------------------------------------------------------- */

@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright ï¿½ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ï¿½ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ï¿½ 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -37,11 +37,8 @@
 #include "libgrbase.h"
 #include "libvideo.h"
 
-#include <SDL.h>
-
-#if defined( WIN32 ) || ( __linux && ( defined( SDL_VIDEO_DRIVER_X11 ) ) )
-#include <SDL_syswm.h>
-#endif
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 /* --------------------------------------------------------------------------- */
 /* Window Manager                                                              */
@@ -65,106 +62,31 @@ static int bgd_set_icon( INSTANCE * my, intptr_t * params )
 
 static int bgd_minimize( INSTANCE * my, intptr_t * params )
 {
-    return SDL_WM_IconifyWindow();
+    if ( !window ) return 0;
+    SDL_MinimizeWindow( window );
+    return 1;
 }
 
 /* --------------------------------------------------------------------------- */
 
 static int bgd_move_window( INSTANCE * my, intptr_t * params )
 {
-    int res = 0;
-    if ( full_screen ) return 0;
-
-#if defined( WIN32 ) || ( __linux && ( defined( SDL_VIDEO_DRIVER_X11 ) ) )
-    SDL_SysWMinfo wminfo ;
-
-    SDL_VERSION( &wminfo.version );
-    if ( SDL_GetWMInfo( &wminfo ) != 1 ) return 0 ;
-#endif
-
-#ifdef WIN32
-    /* Set the new window position */
-    res = SetWindowPos(
-                wminfo.window,     // handle to window
-                HWND_NOTOPMOST,    // Possibly will have no effect... it stays below top-most
-                params[0],          // horizontal position
-                params[1],          // vertical position
-                0,                  // keep the old window width
-                0,                  // keep the old window height
-                SWP_SHOWWINDOW | SWP_NOSIZE // Make it visible and retain size
-            ) ;
-#elif __linux
-#ifdef SDL_VIDEO_DRIVER_X11
-    Window root, parent, *children = NULL;
-    unsigned int children_count;
-
-    if ( wminfo.subsystem == SDL_SYSWM_X11 )
-    {
-        if ( XQueryTree( wminfo.info.x11.display, wminfo.info.x11.window, &root, &parent, &children, &children_count ) != BadWindow )
-        {
-            wminfo.info.x11.lock_func();
-            res = XMoveWindow( wminfo.info.x11.display, parent, params[0], params[1] );
-            XMapRaised(wminfo.info.x11.display, parent); /* Show Window */
-            wminfo.info.x11.unlock_func();
-            if ( children ) XFree( children );
-        }
-    }
-#endif
-#endif
-
-    // Missing BeOS & MAC support
-    return res ;
+    if ( full_screen || !window ) return 0;
+    SDL_SetWindowPosition( window, params[0], params[1] );
+    return 1;
 }
 
 /* --------------------------------------------------------------------------- */
 
 static int bgd_get_window_pos( INSTANCE * my, intptr_t * params )
 {
-    if ( full_screen ) return -1;
+    int x, y;
 
-#if defined( WIN32 ) || ( __linux && ( defined( SDL_VIDEO_DRIVER_X11 ) ) )
-    SDL_SysWMinfo wminfo ;
+    if ( full_screen || !window ) return -1;
 
-    SDL_VERSION( &wminfo.version );
-    if ( SDL_GetWMInfo( &wminfo ) != 1 ) return -1 ;
-#endif
-
-#ifdef WIN32
-    RECT Rect;
-
-    if ( GetWindowRect( wminfo.window, &Rect ) )
-    {
-        if ( params[0] ) *(( int * )( params[0] ) ) = Rect.left;
-        if ( params[1] ) *(( int * )( params[1] ) ) = Rect.top;
-    }
-#elif __linux
-#ifdef SDL_VIDEO_DRIVER_X11
-    Window root, parent, *children = NULL;
-    unsigned int children_count;
-    XWindowAttributes wattr;
-    int res ;
-
-    wminfo.info.x11.lock_func();
-    if ( XQueryTree( wminfo.info.x11.display, wminfo.info.x11.window, &root, &parent, &children, &children_count ) != BadWindow )
-    {
-        if ( children ) XFree( children );
-
-        if ( XQueryTree( wminfo.info.x11.display, parent, &root, &parent, &children, &children_count ) != BadWindow )
-        {
-            if ( children ) XFree( children );
-
-            res = XGetWindowAttributes( wminfo.info.x11.display, parent, &wattr );
-            if ( res != BadDrawable && res != BadWindow )
-            {
-                if ( params[0] ) *(( int * )( params[0] ) ) = wattr.x;
-                if ( params[1] ) *(( int * )( params[1] ) ) = wattr.y;
-            }
-        }
-    }
-    wminfo.info.x11.unlock_func();
-#endif
-#endif
-
+    SDL_GetWindowPosition( window, &x, &y );
+    if ( params[0] ) *(( int * )( params[0] ) ) = x;
+    if ( params[1] ) *(( int * )( params[1] ) ) = y;
     return 1 ;
 }
 
@@ -172,63 +94,15 @@ static int bgd_get_window_pos( INSTANCE * my, intptr_t * params )
 
 static int bgd_get_window_size( INSTANCE * my, intptr_t * params )
 {
-#if defined( WIN32 ) || ( __linux && ( defined( SDL_VIDEO_DRIVER_X11 ) ) )
-    SDL_SysWMinfo wminfo ;
+    int w, h;
 
-    SDL_VERSION( &wminfo.version );
-    if ( SDL_GetWMInfo( &wminfo ) != 1 ) return -1 ;
-#endif
+    if ( !window ) return -1;
 
-#ifdef WIN32
-    RECT Rect;
-
-    if ( GetWindowRect( wminfo.window, &Rect ) )
-    {
-        if ( params[0] ) *(( int * )( params[0] ) ) = Rect.right - Rect.left;
-        if ( params[1] ) *(( int * )( params[1] ) ) = Rect.bottom - Rect.top;
-
-        if ( GetClientRect( wminfo.window, &Rect ) )
-        {
-            if ( params[2] ) *(( int * )( params[2] ) ) = Rect.right - Rect.left;
-            if ( params[3] ) *(( int * )( params[3] ) ) = Rect.bottom - Rect.top;
-        }
-    }
-#elif __linux
-#ifdef SDL_VIDEO_DRIVER_X11
-    int res ;
-    XWindowAttributes wattr;
-
-    Window root, parent, *children = NULL;
-    unsigned int children_count;
-
-    wminfo.info.x11.lock_func();
-    if ( XQueryTree( wminfo.info.x11.display, wminfo.info.x11.window, &root, &parent, &children, &children_count ) != BadWindow )
-    {
-        if ( children ) XFree( children );
-
-        res = XGetWindowAttributes( wminfo.info.x11.display, parent, &wattr );
-        if ( res != BadDrawable && res != BadWindow )
-        {
-            if ( params[2] ) *(( int * )( params[2] ) ) = wattr.width;
-            if ( params[3] ) *(( int * )( params[3] ) ) = wattr.height;
-
-            if ( XQueryTree( wminfo.info.x11.display, parent, &root, &parent, &children, &children_count ) != BadWindow )
-            {
-                if ( children ) XFree( children );
-
-                res = XGetWindowAttributes( wminfo.info.x11.display, parent, &wattr );
-                if ( res != BadDrawable && res != BadWindow )
-                {
-                    if ( params[0] ) *(( int * )( params[0] ) ) = wattr.width;
-                    if ( params[1] ) *(( int * )( params[1] ) ) = wattr.height;
-                }
-            }
-        }
-    }
-    wminfo.info.x11.unlock_func();
-#endif
-#endif
-
+    SDL_GetWindowSize( window, &w, &h );
+    if ( params[0] ) *(( int * )( params[0] ) ) = w;
+    if ( params[1] ) *(( int * )( params[1] ) ) = h;
+    if ( params[2] ) *(( int * )( params[2] ) ) = w;
+    if ( params[3] ) *(( int * )( params[3] ) ) = h;
     return 1 ;
 }
 
@@ -236,42 +110,17 @@ static int bgd_get_window_size( INSTANCE * my, intptr_t * params )
 
 static int bgd_get_desktop_size( INSTANCE * my, intptr_t * params )
 {
-#ifdef WIN32
-    RECT Rect;
+    const SDL_DisplayMode * mode;
+    SDL_DisplayID display_id = 0;
 
-    if ( GetClientRect( GetDesktopWindow(), &Rect ) )
-    {
-        *(( int * )( params[0] ) ) = Rect.right - Rect.left;
-        *(( int * )( params[1] ) ) = Rect.bottom - Rect.top;
-    }
-#elif __linux
-#ifdef SDL_VIDEO_DRIVER_X11
-    int res ;
-    Window root, parent, *children = NULL;
-    XWindowAttributes wattr;
-    unsigned int children_count;
+    if ( window ) display_id = SDL_GetDisplayForWindow( window );
+    if ( !display_id ) display_id = SDL_GetPrimaryDisplay();
 
-    SDL_SysWMinfo wminfo ;
+    mode = SDL_GetDesktopDisplayMode( display_id );
+    if ( !mode ) return -1;
 
-    SDL_VERSION( &wminfo.version );
-    if ( SDL_GetWMInfo( &wminfo ) != 1 ) return -1 ;
-
-    wminfo.info.x11.lock_func();
-    if ( XQueryTree(wminfo.info.x11.display, wminfo.info.x11.window, &root, &parent, &children, &children_count ) != BadWindow )
-    {
-        if ( children ) XFree( children );
-
-        res = XGetWindowAttributes( wminfo.info.x11.display, root, &wattr );
-        if ( res != BadDrawable && res != BadWindow )
-        {
-            if ( params[0] ) *(( int * )( params[0] ) ) = wattr.width;
-            if ( params[1] ) *(( int * )( params[1] ) ) = wattr.height;
-        }
-    }
-    wminfo.info.x11.unlock_func();
-#endif
-#endif
-
+    if ( params[0] ) *(( int * )( params[0] ) ) = mode->w;
+    if ( params[1] ) *(( int * )( params[1] ) ) = mode->h;
     return 1 ;
 }
 

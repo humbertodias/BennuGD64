@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright ï¿½ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ï¿½ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ï¿½ 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -170,7 +170,17 @@ int gr_lock_screen()
 
         if ( !scrbitmap )
         {
+            if ( !screen || screen->w < 2 || screen->h < 2 )
+            {
+                screen_locked = 0 ;
+                return -1 ;
+            }
             scrbitmap = bitmap_new( 0, screen->w / 2, screen->h / 2, sys_pixel_format->depth ) ;
+            if ( !scrbitmap )
+            {
+                screen_locked = 0 ;
+                return -1 ;
+            }
             bitmap_add_cpoint( scrbitmap, 0, 0 ) ;
         }
     }
@@ -178,8 +188,18 @@ int gr_lock_screen()
     {
         if ( !scrbitmap || !( scrbitmap->info_flags & GI_EXTERNAL_DATA ) )
         {
+            if ( !screen || screen->w < 1 || screen->h < 1 || !screen->pixels )
+            {
+                screen_locked = 0 ;
+                return -1 ;
+            }
             if ( scrbitmap ) bitmap_destroy( scrbitmap ) ;
-            scrbitmap = bitmap_new_ex( 0, screen->w, screen->h, screen->format->BitsPerPixel, screen->pixels, screen->pitch );
+            scrbitmap = bitmap_new_ex( 0, screen->w, screen->h, bennu_surface_bpp( screen ), screen->pixels, screen->pitch );
+            if ( !scrbitmap )
+            {
+                screen_locked = 0 ;
+                return -1 ;
+            }
             bitmap_add_cpoint( scrbitmap, 0, 0 ) ;
         }
     }
@@ -202,7 +222,7 @@ void gr_unlock_screen()
         uint32_t * src32 = screen->pixels, * dst32 = scale_screen->pixels ;
         int h, w;
 
-        switch ( scale_screen->format->BitsPerPixel )
+        switch ( bennu_surface_bpp( scale_screen ) )
         {
             case    8:
                     if ( scale_resolution_orientation == 1 || scale_resolution_orientation == 3 )
@@ -220,7 +240,7 @@ void gr_unlock_screen()
                                         dst8 += scale_screen->pitch ;
                                     }
                                 }
-                                dst8 = pdst += scale_screen->format->BytesPerPixel ;
+                                dst8 = pdst += bennu_surface_bytes_pp( scale_screen ) ;
                             }
                         }
                         else
@@ -234,7 +254,7 @@ void gr_unlock_screen()
                                     dst8 += scale_screen->pitch ;
                                 }
                             }
-                            dst8 = pdst += scale_screen->format->BytesPerPixel ;
+                            dst8 = pdst += bennu_surface_bytes_pp( scale_screen ) ;
                         }
                     }
                     else
@@ -276,7 +296,7 @@ void gr_unlock_screen()
                     {
                         if ( scale_resolution_aspectratio )
                         {
-                            int inc = scale_screen->pitch / scale_screen->format->BytesPerPixel;
+                            int inc = scale_screen->pitch / bennu_surface_bytes_pp( scale_screen );
                             for ( w = 0; w < scale_screen->w; w++ )
                             {
                                 if ( scale_resolution_table_w[w] != -1 )
@@ -288,12 +308,12 @@ void gr_unlock_screen()
                                         dst16 += inc;
                                     }
                                 }
-                                dst16 = ( uint16_t * ) ( pdst += scale_screen->format->BytesPerPixel ) ;
+                                dst16 = ( uint16_t * ) ( pdst += bennu_surface_bytes_pp( scale_screen ) ) ;
                             }
                         }
                         else
                         {
-                            int inc = scale_screen->pitch / scale_screen->format->BytesPerPixel;
+                            int inc = scale_screen->pitch / bennu_surface_bytes_pp( scale_screen );
                             for ( w = 0; w < scale_screen->w; w++ )
                             {
                                 src16 = screen->pixels + scale_resolution_table_w[w];
@@ -302,7 +322,7 @@ void gr_unlock_screen()
                                     *dst16 = src16[scale_resolution_table_h[h]];
                                     dst16 += inc;
                                 }
-                                dst16 = ( uint16_t * ) ( pdst += scale_screen->format->BytesPerPixel ) ;
+                                dst16 = ( uint16_t * ) ( pdst += bennu_surface_bytes_pp( scale_screen ) ) ;
                             }
                         }
                     }
@@ -345,7 +365,7 @@ void gr_unlock_screen()
                     {
                         if ( scale_resolution_aspectratio )
                         {
-                            int inc = scale_screen->pitch / scale_screen->format->BytesPerPixel;
+                            int inc = scale_screen->pitch / bennu_surface_bytes_pp( scale_screen );
                             for ( w = 0; w < scale_screen->w; w++ )
                             {
                                 if ( scale_resolution_table_w[w] != -1 )
@@ -357,12 +377,12 @@ void gr_unlock_screen()
                                         dst32 += inc;
                                     }
                                 }
-                                dst32 = ( uint32_t * ) ( pdst += scale_screen->format->BytesPerPixel ) ;
+                                dst32 = ( uint32_t * ) ( pdst += bennu_surface_bytes_pp( scale_screen ) ) ;
                             }
                         }
                         else
                         {
-                            int inc = scale_screen->pitch / scale_screen->format->BytesPerPixel;
+                            int inc = scale_screen->pitch / bennu_surface_bytes_pp( scale_screen );
                             for ( w = 0; w < scale_screen->w; w++ )
                             {
                                 src32 = screen->pixels + scale_resolution_table_w[w];
@@ -371,7 +391,7 @@ void gr_unlock_screen()
                                     *dst32 = src32[scale_resolution_table_h[h]];
                                     dst32 += inc;
                                 }
-                                dst32 = ( uint32_t * ) ( pdst += scale_screen->format->BytesPerPixel ) ;
+                                dst32 = ( uint32_t * ) ( pdst += bennu_surface_bytes_pp( scale_screen ) ) ;
                             }
                         }
                     }
@@ -412,7 +432,7 @@ void gr_unlock_screen()
 
         if ( SDL_MUSTLOCK( scale_screen ) ) SDL_UnlockSurface( scale_screen ) ;
         if ( waitvsync ) gr_wait_vsync();
-        SDL_Flip( scale_screen ) ;
+        gr_video_present( scale_screen ) ;
     }
     else if ( enable_scale )
     {
@@ -480,7 +500,7 @@ void gr_unlock_screen()
 
         if ( SDL_MUSTLOCK( screen ) ) SDL_UnlockSurface( screen ) ;
         if ( waitvsync ) gr_wait_vsync();
-        SDL_Flip( screen ) ;
+        gr_video_present( screen ) ;
     }
     else if ( scrbitmap->info_flags & GI_EXTERNAL_DATA )
     {
@@ -496,7 +516,7 @@ void gr_unlock_screen()
         {
             if ( SDL_MUSTLOCK( screen ) ) SDL_UnlockSurface( screen ) ;
             if ( waitvsync ) gr_wait_vsync();
-            SDL_Flip( screen ) ;
+            gr_video_present( screen ) ;
         }
         else
         {
@@ -513,7 +533,7 @@ void gr_unlock_screen()
                 }
                 if ( SDL_MUSTLOCK( screen ) ) SDL_UnlockSurface( screen ) ;
                 if ( waitvsync ) gr_wait_vsync();
-                SDL_UpdateRects( screen, updaterects_count, rects ) ;
+                gr_video_present_rects( screen, rects, updaterects_count ) ;
             }
         }
     }

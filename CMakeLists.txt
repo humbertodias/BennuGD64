@@ -24,12 +24,16 @@ endif()
 
 # gcw0 param to add in builtroot
 set (STATIC_MODULES true)
-set (INTERPRETER_ONLY true)
+set (INTERPRETER_ONLY false)
 set (USE_LIBDES false)
 set (NO_SOUND false)
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   add_definitions (-DTARGET_LINUX)
+endif()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+  add_definitions (-DTARGET_MAC)
 endif()
 
 if (STATIC_MODULES)
@@ -43,8 +47,12 @@ if (NO_SOUND)
   add_definitions (-DNO_SOUND)
 endif ()
 
-find_package (SDL REQUIRED)
+find_package (SDL3 REQUIRED CONFIG)
+if (NOT NO_SOUND)
+  find_package (SDL3_mixer REQUIRED CONFIG)
+endif ()
 find_package (ZLIB REQUIRED)
+find_package (PNG REQUIRED)
 if (USE_LIBDES)
   add_definitions (-DUSE_LIBDES)
 else ()
@@ -52,8 +60,20 @@ else ()
   add_definitions (-DUSE_OPENSSL)
 endif ()
 
+# Temporary: map many SDL2 symbol names while structural API breaks are fixed.
+add_definitions (-DSDL_ENABLE_OLD_NAMES)
+
+# Propagate SDL3 headers project-wide (bgdc includes module exports that need SDL.h).
+# SDL3::SDL3 may not set INTERFACE_INCLUDE_DIRECTORIES; SDL3::Headers does.
+if (TARGET SDL3::Headers)
+  get_target_property (_SDL3_INC SDL3::Headers INTERFACE_INCLUDE_DIRECTORIES)
+  if (_SDL3_INC)
+    include_directories (${_SDL3_INC})
+  endif ()
+endif ()
+# Compat helpers (surface format accessors, etc.)
 include_directories (
-  ${SDL_INCLUDE_DIR}
+  ${CMAKE_SOURCE_DIR}/modules/libvideo
   ${ZLIB_INCLUDE_DIR}
 )
 

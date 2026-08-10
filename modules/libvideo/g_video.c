@@ -587,36 +587,46 @@ int gr_set_mode( int width, int height, int depth )
     pal_refresh( NULL ) ;
     palette_changed = 1 ;
 
-    if ( scale_resolution == -1 && enable_scale )
-    {
-        surface_width  = screen->w * 2;
-        surface_height = screen->h * 2;
-    }
+//    gr_make_trans_table();
 
-    /* Bitmaps de fondo */
-
-    /* Only allow background with same properties that video mode */
-    if (
-        !background ||
-        scr_width != screen->w || scr_height != screen->h ||
-        sys_pixel_format->depth != background->format->depth )
+    /* With classic 2x scale, SDL screen is physical (2x) while game coordinates,
+     * background, regions and dirty-rects stay at the logical resolution. */
     {
-        if ( background ) bitmap_destroy( background );
-        background = bitmap_new( 0, screen->w, screen->h, sys_pixel_format->depth ) ;
-        if ( background )
+        int logical_w = screen->w ;
+        int logical_h = screen->h ;
+
+        if ( scale_resolution == -1 && enable_scale )
         {
-            gr_clear( background ) ;
-            bitmap_add_cpoint( background, 0, 0 ) ;
+            logical_w = screen->w / 2 ;
+            logical_h = screen->h / 2 ;
         }
+
+        /* Bitmaps de fondo */
+
+        /* Only allow background with same properties that video mode */
+        if (
+            !background ||
+            background->width != ( uint32_t ) logical_w ||
+            background->height != ( uint32_t ) logical_h ||
+            sys_pixel_format->depth != background->format->depth )
+        {
+            if ( background ) bitmap_destroy( background );
+            background = bitmap_new( 0, logical_w, logical_h, sys_pixel_format->depth ) ;
+            if ( background )
+            {
+                gr_clear( background ) ;
+                bitmap_add_cpoint( background, 0, 0 ) ;
+            }
+        }
+
+        scr_width = logical_w ;
+        scr_height = logical_h ;
+
+        regions[0].x  = 0 ;
+        regions[0].y  = 0 ;
+        regions[0].x2 = logical_w - 1 ;
+        regions[0].y2 = logical_h - 1 ;
     }
-
-    scr_width = screen->w ;
-    scr_height = screen->h ;
-
-    regions[0].x  = 0 ;
-    regions[0].y  = 0 ;
-    regions[0].x2 = screen->w - 1 ;
-    regions[0].y2 = screen->h - 1 ;
 
     gr_set_icon( icon );
 

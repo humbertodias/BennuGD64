@@ -1,7 +1,7 @@
 /*
- *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright ù 2002-2006 Fenix Team (Fenix)
- *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
+ *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright © 2002-2006 Fenix Team (Fenix)
+ *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -891,19 +891,19 @@ static int __m7_start( int n, int fileid, int inid, int outid, int region, int h
     return 1;
 }
 
-static int modm7_start( INSTANCE * my, int * params )
+static int modm7_start( INSTANCE * my, intptr_t * params )
 {
     return __m7_start( params[0], params[1], params[2], params[3], params[4], params[5], 0, 0 );
 }
 
-static int modm7_start2( INSTANCE * my, int * params )
+static int modm7_start2( INSTANCE * my, intptr_t * params )
 {
     return __m7_start( params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7] );
 }
 
 /* --------------------------------------------------------------------------- */
 
-static int modm7_stop( INSTANCE * my, int * params )
+static int modm7_stop( INSTANCE * my, intptr_t * params )
 {
     int n = params[0];
 

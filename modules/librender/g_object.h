@@ -34,6 +34,7 @@ typedef void ( OBJ_DRAW )( void * what, REGION * clip );
 
 typedef struct _object
 {
+    int id ;
     int z ;
     OBJ_INFO * info ;
     OBJ_DRAW * draw ;

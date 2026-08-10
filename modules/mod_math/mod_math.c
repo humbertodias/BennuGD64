@@ -1,7 +1,7 @@
 /*
- *  Copyright � 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright � 2002-2006 Fenix Team (Fenix)
- *  Copyright � 1999-2002 Jos� Luis Cebri�n Pag�e (Fenix)
+ *  Copyright &#169; 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright &#169; 2002-2006 Fenix Team (Fenix)
+ *  Copyright &#169; 1999-2002 Jos� Luis Cebri�n Pag�e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -42,7 +42,7 @@
 /* Funciones matem�ticas */
 /* --------------------------------------------------------------------------- */
 
-static int math_abs( INSTANCE * my, int * params )
+static int math_abs( INSTANCE * my, intptr_t * params )
 {
     float num = *( float * ) &params[0] ;
     float res = ( num < 0 ) ? -num : num ;
@@ -51,7 +51,7 @@ static int math_abs( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_pow( INSTANCE * my, int * params )
+static int math_pow( INSTANCE * my, intptr_t * params )
 {
     float res = ( float )pow( *( float * ) &params[0], *( float * ) &params[1] ) ;
     return *(( int * )&res ) ;
@@ -59,7 +59,7 @@ static int math_pow( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_sqrt( INSTANCE * my, int * params )
+static int math_sqrt( INSTANCE * my, intptr_t * params )
 {
     float res = ( float )sqrt( *( float * ) &params[0] ) ;
     return *(( int * )&res ) ;
@@ -67,7 +67,7 @@ static int math_sqrt( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_cos( INSTANCE * my, int * params )
+static int math_cos( INSTANCE * my, intptr_t * params )
 {
     float param = *( float * ) &params[0] ;
     float res = ( float )cos(( double )( param * M_PI / 180000.0 ) ) ;
@@ -76,7 +76,7 @@ static int math_cos( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_sin( INSTANCE * my, int * params )
+static int math_sin( INSTANCE * my, intptr_t * params )
 {
     float param = *( float * ) &params[0] ;
     float res = ( float )sin(( double )( param * M_PI / 180000.0 ) ) ;
@@ -85,7 +85,7 @@ static int math_sin( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_tan( INSTANCE * my, int * params )
+static int math_tan( INSTANCE * my, intptr_t * params )
 {
     float param = *( float * ) &params[0] ;
     float res = ( float )tan(( double )( param * M_PI / 180000.0 ) ) ;
@@ -94,7 +94,7 @@ static int math_tan( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_acos( INSTANCE * my, int * params )
+static int math_acos( INSTANCE * my, intptr_t * params )
 {
     float param = *( float * ) &params[0] ;
     float res = ( float )( acos(( double )param ) * 180000.0 / M_PI ) ;
@@ -103,7 +103,7 @@ static int math_acos( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_asin( INSTANCE * my, int * params )
+static int math_asin( INSTANCE * my, intptr_t * params )
 {
     float param = *( float * ) &params[0] ;
     float res = ( float )( asin(( double )param ) * 180000.0 / M_PI ) ;
@@ -112,7 +112,7 @@ static int math_asin( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_atan( INSTANCE * my, int * params )
+static int math_atan( INSTANCE * my, intptr_t * params )
 {
     float param = *( float * ) &params[0] ;
     float res = ( float )( atan(( double )param ) * 180000.0 / M_PI ) ;
@@ -121,7 +121,7 @@ static int math_atan( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_atan2( INSTANCE * my, int * params )
+static int math_atan2( INSTANCE * my, intptr_t * params )
 {
     float param1 = *( float * ) &params[0],
           param2 = *( float * ) &params[1];
@@ -131,7 +131,7 @@ static int math_atan2( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_isinf( INSTANCE * my, int * params )
+static int math_isinf( INSTANCE * my, intptr_t * params )
 {
     double param = ( double ) *( float * ) &params[0] ;
     return isinf( param );
@@ -139,7 +139,7 @@ static int math_isinf( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_isnan( INSTANCE * my, int * params )
+static int math_isnan( INSTANCE * my, intptr_t * params )
 {
     double param = ( double ) *( float * ) &params[0] ;
     return isnan( param );
@@ -147,7 +147,7 @@ static int math_isnan( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_finite( INSTANCE * my, int * params )
+static int math_finite( INSTANCE * my, intptr_t * params )
 {
     double param = ( double ) *( float * ) &params[0] ;
     return isfinite( param );
@@ -155,7 +155,7 @@ static int math_finite( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_fget_angle( INSTANCE * my, int * params )
+static int math_fget_angle( INSTANCE * my, intptr_t * params )
 {
     double dx = params[2] - params[0] ;
     double dy = params[3] - params[1] ;
@@ -170,7 +170,7 @@ static int math_fget_angle( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_fget_dist( INSTANCE * my, int * params )
+static int math_fget_dist( INSTANCE * my, intptr_t * params )
 {
     double dx = params[2] - params[0] ;
     double dy = params[3] - params[1] ;
@@ -180,7 +180,7 @@ static int math_fget_dist( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_near_angle( INSTANCE * my, int * params )
+static int math_near_angle( INSTANCE * my, intptr_t * params )
 {
     int angle = params[0] ;
     int dest  = params[1] ;
@@ -210,7 +210,7 @@ static int math_near_angle( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_get_distx( INSTANCE * my, int * params )
+static int math_get_distx( INSTANCE * my, intptr_t * params )
 {
     double angle = params[0] * M_PI / 180000.0 ;
     return ( int )( params[1] * cos( angle ) ) ;
@@ -218,7 +218,7 @@ static int math_get_distx( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int math_get_disty( INSTANCE * my, int * params )
+static int math_get_disty( INSTANCE * my, intptr_t * params )
 {
     double angle = params[0] * M_PI / 180000.0 ;
     return ( int )( params[1] * -sin( angle ) ) ;

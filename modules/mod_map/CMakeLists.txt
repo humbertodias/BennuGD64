@@ -24,7 +24,7 @@ add_library (
 target_link_libraries (
   mod_map
   PNG::PNG
-  SDL3::SDL3
+  ${BENNUGD_SDL3_TARGET}
   bgload
   bgdrtm
   render

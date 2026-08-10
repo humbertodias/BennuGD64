@@ -83,13 +83,13 @@ add_executable (
 if (USE_LIBDES)
   target_link_libraries (
     bgdc
-    z
+    ZLIB::ZLIB
     des
   )
 else ()
   target_link_libraries (
     bgdc
-    z
+    ZLIB::ZLIB
     OpenSSL::Crypto
   )
 endif ()

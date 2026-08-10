@@ -49,7 +49,7 @@ Useful CMake options:
 GitHub Actions (`.github/workflows/ci.yml`) builds `bgdc` and `bgdi` for:
 
 - Linux x86_64
-- Windows x86_64
+- Windows x86_64 (MinGW-w64 UCRT64 via MSYS2)
 - macOS arm64
 - macOS x86_64
 

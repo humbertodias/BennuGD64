@@ -18,6 +18,13 @@ BUILD_TYPE="${BUILD_TYPE:-Release}"
 CMAKE_GENERATOR="${CMAKE_GENERATOR:-}"
 HOST_OS="$(uname -s)"
 
+# Toolchain detection: MSYS2/MinGW sets MSYSTEM (UCRT64/MINGW64/CLANG64).
+is_msys2() { [[ -n "${MSYSTEM:-}" ]]; }
+is_msvc_windows() {
+  # Legacy MSVC CI path (cl.exe without MSYS2). Prefer MinGW for Windows CI.
+  [[ "${RUNNER_OS:-}" == "Windows" ]] && ! is_msys2 && command -v cl >/dev/null 2>&1
+}
+
 mkdir -p "$SRC_DIR" "$PREFIX"
 # Avoid bash failing on unmatched globs in cleanup paths (esp. Windows).
 shopt -s nullglob
@@ -40,7 +47,7 @@ cmake_configure() {
   if [[ -n "${CMAKE_GENERATOR_PLATFORM:-}" ]]; then
     args+=(-A "$CMAKE_GENERATOR_PLATFORM")
   fi
-  if [[ "${RUNNER_OS:-}" == "Windows" || "$HOST_OS" == MINGW* || "$HOST_OS" == MSYS* ]]; then
+  if is_msvc_windows; then
     args+=(-DCMAKE_POLICY_DEFAULT_CMP0091=NEW)
     args+=(-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded)
     # MSVC is not a usable ASM compiler for vendored deps (CMP0194).
@@ -116,6 +123,13 @@ fetch_git() {
 }
 
 echo "==> Installing static deps into $PREFIX"
+if is_msys2; then
+  echo "    toolchain: MSYS2/${MSYSTEM} (MinGW)"
+elif is_msvc_windows; then
+  echo "    toolchain: MSVC"
+else
+  echo "    toolchain: native ($(uname -s))"
+fi
 
 # --- zlib ---
 echo "==> [1/4] zlib ${ZLIB_VERSION}"
@@ -131,7 +145,10 @@ if [[ -f "$PREFIX/lib/zlibstatic.lib" && ! -f "$PREFIX/lib/zlib.lib" ]]; then
   cp "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib"
 fi
 ZLIB_LIB=""
-for candidate in "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib" "$PREFIX/lib/libz.a" "$PREFIX/lib/z.lib"; do
+for candidate in \
+  "$PREFIX/lib/libz.a" \
+  "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib" "$PREFIX/lib/z.lib"
+do
   if [[ -f "$candidate" ]]; then ZLIB_LIB="$candidate"; break; fi
 done
 if [[ -z "$ZLIB_LIB" ]]; then
@@ -159,13 +176,51 @@ cmake_configure "$SRC_DIR/libpng" "$SRC_DIR/libpng-build" \
 cmake_build_install "$SRC_DIR/libpng-build"
 # Prefer the static archive over any accidental framework install on macOS.
 rm -rf "$PREFIX/lib/png.framework" "$PREFIX/lib/libpng.dylib" "$PREFIX/lib/libpng16.dylib"
-if [[ -f "$PREFIX/lib/libpng16_static.lib" && ! -f "$PREFIX/lib/libpng16.lib" ]]; then
-  cp "$PREFIX/lib/libpng16_static.lib" "$PREFIX/lib/libpng16.lib"
+
+# Ensure a canonical static libpng name exists under prefix/lib.
+PNG_FOUND=""
+for candidate in \
+  "$PREFIX/lib/libpng16.a" \
+  "$PREFIX/lib/libpng.a" \
+  "$PREFIX/lib/libpng16_static.lib" \
+  "$PREFIX/lib/libpng16.lib" \
+  "$PREFIX/lib/png16.lib" \
+  "$PREFIX/lib"/libpng*/libpng16.a \
+  "$PREFIX/lib"/libpng*/libpng16_static.lib \
+  "$PREFIX/lib"/libpng*/libpng16.lib
+do
+  if [[ -f "$candidate" ]]; then
+    PNG_FOUND="$candidate"
+    break
+  fi
+done
+if [[ -z "$PNG_FOUND" ]]; then
+  while IFS= read -r candidate; do
+    PNG_FOUND="$candidate"
+    break
+  done < <(find "$PREFIX" "$SRC_DIR/libpng-build" \( \
+      -name 'libpng16.a' -o -name 'libpng.a' \
+      -o -name 'libpng16_static.lib' -o -name 'libpng16.lib' -o -name 'png16.lib' \
+    \) ! -path '*/CMakeFiles/*' 2>/dev/null | head -1)
 fi
-# MSVC must not pick up a MinGW-style .a (wrong CRT / import thunks).
-if [[ "${RUNNER_OS:-}" == "Windows" || "$HOST_OS" == MINGW* || "$HOST_OS" == MSYS* || "$HOST_OS" == CYGWIN* ]]; then
-  rm -f "$PREFIX/lib"/libpng*.a "$PREFIX/lib"/libz.a
+if [[ -z "$PNG_FOUND" ]]; then
+  echo "libpng static library not found after install under $PREFIX" >&2
+  find "$PREFIX" "$SRC_DIR/libpng-build" \( -iname '*png*.lib' -o -iname '*png*.a' \) 2>/dev/null | head -50 >&2 || true
+  ls -laR "$PREFIX/lib" >&2 || true
+  exit 1
 fi
+echo "    found PNG archive: $PNG_FOUND"
+mkdir -p "$PREFIX/lib"
+case "$PNG_FOUND" in
+  *.a)
+    cp "$PNG_FOUND" "$PREFIX/lib/libpng16.a"
+    ;;
+  *)
+    # MSVC-style archive: keep .lib names for FindPNG.
+    cp "$PNG_FOUND" "$PREFIX/lib/libpng16_static.lib"
+    cp "$PNG_FOUND" "$PREFIX/lib/libpng16.lib"
+    ;;
+esac
 
 # --- SDL3 ---
 echo "==> [3/4] SDL3 ${SDL3_REF}"
@@ -190,7 +245,7 @@ cmake_build_install "$SRC_DIR/SDL-build"
 
 # --- SDL3_mixer ---
 # Use header-only decoders (stb_vorbis + dr_mp3) so we do not need git submodules
-# or vendored flac/mpg123/opus (those break easily under MSVC).
+# or vendored flac/mpg123/opus.
 # NOTE: the CMake option is SDLMIXER_EXAMPLES, not SDLMIXER_SAMPLES.
 echo "==> [4/4] SDL3_mixer ${SDL3_MIXER_REF}"
 rm -rf "$SRC_DIR/SDL_mixer-build" \
@@ -201,10 +256,8 @@ rm -rf "$SRC_DIR/SDL_mixer-build" \
 rm -f "$PREFIX/lib"/libSDL3_mixer* "$PREFIX/lib"/SDL3_mixer*
 fetch_git "https://github.com/libsdl-org/SDL_mixer.git" "$SDL3_MIXER_REF" "$SRC_DIR/SDL_mixer" 0
 
-# On MSVC, SDL_FORCE_INLINE is just __forceinline (no static). SDL_mixer's
-# stb_vorbis uses STB_FORCEINLINE without its own static, which exports
-# draw_line and collides with BennuGD's libdraw symbol.
-if [[ "${RUNNER_OS:-}" == "Windows" || "$HOST_OS" == MINGW* || "$HOST_OS" == MSYS* || "$HOST_OS" == CYGWIN* ]]; then
+# On MSVC, SDL_FORCE_INLINE lacks static and stb_vorbis exports draw_line.
+if is_msvc_windows; then
   DECODER="$SRC_DIR/SDL_mixer/src/decoder_stb_vorbis.c"
   if [[ -f "$DECODER" ]]; then
     python3 - "$DECODER" <<'PY'

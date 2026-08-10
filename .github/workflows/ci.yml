@@ -42,11 +42,28 @@ jobs:
 
     defaults:
       run:
-        shell: bash
+        # Windows builds use MSYS2 MinGW (UCRT64); other OSes use bash.
+        shell: ${{ matrix.platform == 'windows' && 'msys2 {0}' || 'bash' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup MSYS2 (MinGW UCRT64)
+        if: matrix.platform == 'windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-pkgconf
+            git
+            curl
+            zip
+            unzip
 
       - name: Install Linux build dependencies
         if: matrix.platform == 'linux'
@@ -67,16 +84,6 @@ jobs:
           brew update
           brew install cmake ninja pkg-config || true
 
-      - name: Install Windows build dependencies
-        if: matrix.platform == 'windows'
-        run: choco install ninja -y
-
-      - name: Setup MSVC environment
-        if: matrix.platform == 'windows'
-        uses: ilammy/msvc-dev-cmd@v1
-        with:
-          arch: x64
-
       - name: Resolve version
         id: meta
         run: |
@@ -92,18 +99,11 @@ jobs:
         env:
           DEPS_DIR: ${{ github.workspace }}/.deps
           CMAKE_GENERATOR: Ninja
-          CC: ${{ matrix.platform == 'windows' && 'cl' || '' }}
-          CXX: ${{ matrix.platform == 'windows' && 'cl' || '' }}
         run: |
           chmod +x scripts/ci/*.sh
-          if [[ -z "${CC}" ]]; then unset CC; fi
-          if [[ -z "${CXX}" ]]; then unset CXX; fi
-          if [[ "${{ matrix.platform }}" == "windows" ]]; then
-            command -v cl
-            command -v ninja
-            command -v cmake
-            cl 2>&1 | head -3 || true
-          fi
+          echo "toolchain: $(${CC:-cc} --version | head -1)"
+          command -v cmake
+          command -v ninja
           scripts/ci/build-static-deps.sh
 
       - name: Build BennuGD64
@@ -111,12 +111,7 @@ jobs:
           DEPS_DIR: ${{ github.workspace }}/.deps
           BUILD_DIR: ${{ github.workspace }}/build-ci
           CMAKE_GENERATOR: Ninja
-          CC: ${{ matrix.platform == 'windows' && 'cl' || '' }}
-          CXX: ${{ matrix.platform == 'windows' && 'cl' || '' }}
-        run: |
-          if [[ -z "${CC}" ]]; then unset CC; fi
-          if [[ -z "${CXX}" ]]; then unset CXX; fi
-          scripts/ci/build-bennugd.sh
+        run: scripts/ci/build-bennugd.sh
 
       - name: Smoke test binaries
         env:
@@ -131,7 +126,10 @@ jobs:
           "$BGDI" >/tmp/bgdi-help.txt 2>&1 || true
           grep -E 'BGDC|Compiler' /tmp/bgdc-help.txt
           grep -E 'BGDI|Interpreter' /tmp/bgdi-help.txt
-          if [[ "${{ matrix.platform }}" != "windows" ]]; then
+          if [[ "${{ matrix.platform }}" == "windows" ]]; then
+            echo "DLL dependencies (informational):"
+            objdump -p "$BGDI" | grep -i 'DLL Name' | head -40 || true
+          else
             echo "Dynamic libs (informational):"
             (otool -L "$BGDI" || ldd "$BGDI" || true) | head -40
           fi
@@ -187,6 +185,6 @@ jobs:
             Static builds of `bgdc` and `bgdi` for Linux, Windows and macOS.
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-            OS graphics/audio libraries (X11/Wayland, Cocoa, system audio) may still be required at runtime.
+            Windows builds use MinGW-w64 (UCRT64). OS graphics/audio libraries may still be required at runtime.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

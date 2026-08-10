@@ -1,15 +1,15 @@
-# BennuGD
+# BennuGD64
 
-[BennuGD](https://www.bennugd.org/) is a high-level, open-source game development suite that focuses on modularity and portability, making it an excellent choice for cross-platform game development
+A fork of [BennuGD](https://www.bennugd.org/) adapted to run on modern 64-bit architectures.
 
 ## Dependencies
 
 - CMake
 - SDL
+- SDL_mixer (unless `NO_SOUND` is enabled)
 - zlib
 - OpenSSL (or set `USE_LIBDES` to use the bundled DES library)
 - libX11
-- SDL_mixer (unless `NO_SOUND` is enabled)
 - libpng
 
 ## Build

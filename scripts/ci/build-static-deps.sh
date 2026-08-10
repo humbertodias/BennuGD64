@@ -177,14 +177,17 @@ cmake_configure "$SRC_DIR/SDL_mixer" "$SRC_DIR/SDL_mixer-build" \
   -DSDLMIXER_WAVPACK=OFF
 cmake_build_install "$SRC_DIR/SDL_mixer-build"
 
-# Sanity: mixer 3.2.4+ requires SDL 3.4+ APIs (e.g. SDL_PutAudioStreamDataNoCopy).
+# Sanity: mixer 3.2.4+ requires SDL 3.4+ (nm symbol checks are brittle across Apple nm variants).
 SDL_VER="$(sed -n 's/set(PACKAGE_VERSION "\([^"]*\)")/\1/p' "$PREFIX/lib/cmake/SDL3/SDL3ConfigVersion.cmake" 2>/dev/null | head -1)"
-if [[ -z "$SDL_VER" ]] || ! nm "$PREFIX/lib/libSDL3.a" 2>/dev/null | grep -q 'T _SDL_PutAudioStreamDataNoCopy$'; then
-  echo "Installed libSDL3.a is incompatible with SDL3_mixer (need SDL 3.4+ with PutAudioStreamDataNoCopy)." >&2
-  echo "Expected SDL3_REF=$SDL3_REF, found PACKAGE_VERSION=${SDL_VER:-unknown}" >&2
+if [[ -z "$SDL_VER" ]]; then
+  echo "Could not determine installed SDL3 version under $PREFIX" >&2
   exit 1
 fi
-echo "==> SDL3 $SDL_VER OK (PutAudioStreamDataNoCopy present)"
+if [[ "$(printf '%s\n' "3.4.0" "$SDL_VER" | sort -V | head -1)" != "3.4.0" ]]; then
+  echo "Installed SDL3 $SDL_VER is too old for SDL3_mixer (need >= 3.4.0, SDL3_REF=$SDL3_REF)." >&2
+  exit 1
+fi
+echo "==> SDL3 $SDL_VER OK"
 
 echo "==> Static deps ready at $PREFIX"
 ls -la "$PREFIX/lib" 2>/dev/null || ls -la "$PREFIX/lib64" 2>/dev/null || true

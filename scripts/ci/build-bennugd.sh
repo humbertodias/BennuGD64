@@ -16,6 +16,26 @@ if [[ ! -d "$PREFIX" ]]; then
   exit 1
 fi
 
+# Resolve static zlib/libpng names across Unix (.a) and MSVC (.lib).
+PNG_LIB=""
+ZLIB_LIB=""
+for candidate in \
+  "$PREFIX/lib/libpng16.a" "$PREFIX/lib/libpng16_static.lib" "$PREFIX/lib/libpng16.lib" \
+  "$PREFIX/lib/png16.lib" "$PREFIX/lib/libpng.a"
+do
+  if [[ -f "$candidate" ]]; then PNG_LIB="$candidate"; break; fi
+done
+for candidate in \
+  "$PREFIX/lib/libz.a" "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib" "$PREFIX/lib/z.lib"
+do
+  if [[ -f "$candidate" ]]; then ZLIB_LIB="$candidate"; break; fi
+done
+if [[ -z "$PNG_LIB" || -z "$ZLIB_LIB" ]]; then
+  echo "Could not find static PNG/ZLIB under $PREFIX/lib" >&2
+  ls -la "$PREFIX/lib" >&2 || true
+  exit 1
+fi
+
 args=(
   -S "$ROOT"
   -B "$BUILD_DIR"
@@ -25,9 +45,9 @@ args=(
   -DUSE_LIBDES=ON
   -DSTATIC_MODULES=ON
   -DNO_SOUND=OFF
-  -DPNG_LIBRARY="$PREFIX/lib/libpng16.a"
+  -DPNG_LIBRARY="$PNG_LIB"
   -DPNG_PNG_INCLUDE_DIR="$PREFIX/include"
-  -DZLIB_LIBRARY="$PREFIX/lib/libz.a"
+  -DZLIB_LIBRARY="$ZLIB_LIB"
   -DZLIB_INCLUDE_DIR="$PREFIX/include"
 )
 if [[ -n "$CMAKE_GENERATOR" ]]; then

@@ -96,9 +96,14 @@ jobs:
           CXX: ${{ matrix.platform == 'windows' && 'cl' || '' }}
         run: |
           chmod +x scripts/ci/*.sh
-          # Drop empty CC/CXX so Unix keep their defaults.
           if [[ -z "${CC}" ]]; then unset CC; fi
           if [[ -z "${CXX}" ]]; then unset CXX; fi
+          if [[ "${{ matrix.platform }}" == "windows" ]]; then
+            command -v cl
+            command -v ninja
+            command -v cmake
+            cl 2>&1 | head -3 || true
+          fi
           scripts/ci/build-static-deps.sh
 
       - name: Build BennuGD64

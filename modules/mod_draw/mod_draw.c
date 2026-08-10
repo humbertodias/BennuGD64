@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
+ *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ù 2002-2006 Fenix Team (Fenix)
+ *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -98,8 +98,9 @@ static int drawing_z = -512 ;
  *
  */
 
-static int _moddraw_object_info( DRAWING_OBJECT * dr, REGION * clip, int * z, int * drawme )
+static int _moddraw_object_info( void * what, REGION * clip, int * z, int * drawme )
 {
+    DRAWING_OBJECT * dr = (DRAWING_OBJECT *)what ;
     REGION newclip;
     int minx, miny, maxx, maxy;
 
@@ -177,8 +178,9 @@ static int _moddraw_object_info( DRAWING_OBJECT * dr, REGION * clip, int * z, in
  *
  */
 
-static void _moddraw_object_draw( DRAWING_OBJECT * dr, REGION * clip )
+static void _moddraw_object_draw( void * what, REGION * clip )
 {
+    DRAWING_OBJECT * dr = (DRAWING_OBJECT *)what ;
     int b8 = pixel_color8;
     int b16 = pixel_color16;
     int b32 = pixel_color32;

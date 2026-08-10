@@ -45,7 +45,7 @@ uint32_t drawing_stipple = 0xFFFFFFFF;
 /* --------------------------------------------------------------------------- */
 
 #ifdef __GNUC__
-#define _inline inline
+#define _inline static inline
 #endif
 
 _inline void _HLine8_nostipple( uint8_t * ptr, uint32_t length )

@@ -1,0 +1,45 @@
+# Out-of-tree build directories
+/build/
+/build-*/
+/out/
+/cmake-build-*/
+
+# In-source CMake artifacts
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+CMakeUserPresets.json
+
+# Generated buildsystem files (when configuring in-source)
+Makefile
+!**/Makefile.am
+!**/Makefile.in
+
+# Object files and libraries
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+
+# Project binaries
+bgdi
+bgdc
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.cache/

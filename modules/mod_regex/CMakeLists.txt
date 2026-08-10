@@ -3,6 +3,9 @@ include_directories (
   ../../core/bgdrtm/include
 )
 
+# Bundled GNU regex expects autoconf feature macros.
+add_definitions (-DSTDC_HEADERS -DHAVE_STRING_H)
+
 add_library (
   mod_regex
   ${MODULES}

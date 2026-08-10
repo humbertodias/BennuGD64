@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
+ *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ù 2002-2006 Fenix Team (Fenix)
+ *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -43,15 +43,15 @@
 #include "mod_flic.h"
 
 /* --------------------------------------------------------------------- */
-/* LibrerÌa para reproducir ficheros FLI directamente desde el disco     */
+/* Librerùa para reproducir ficheros FLI directamente desde el disco     */
 /* --------------------------------------------------------------------- */
 
 static FLIC * current_fli = 0 ;
 
 /* ----------------------------------------------------------------- */
 
-static int info_fli( FLIC * flic, REGION * clip, int * z, int * drawme ) ;
-static void draw_fli( FLIC * flic, REGION * clip ) ;
+static int info_fli( void * what, REGION * clip, int * z, int * drawme ) ;
+static void draw_fli( void * what, REGION * clip ) ;
 static void flic_destroy( FLIC * flic ) ;
 static FLIC * flic_open( const char * filename ) ;
 static FLIC * flic_do_delta( FLIC * flic ) ;
@@ -68,8 +68,9 @@ static int modflic_frame( INSTANCE * my, int * params ) ;
 
 /* ----------------------------------------------------------------- */
 
-static int info_fli( FLIC * flic, REGION * clip, int * z, int * drawme )
+static int info_fli( void * what, REGION * clip, int * z, int * drawme )
 {
+    FLIC * flic = (FLIC *)what ;
     int changed ;
     int ms ;
 
@@ -124,8 +125,9 @@ static int info_fli( FLIC * flic, REGION * clip, int * z, int * drawme )
     return 1;
 }
 
-static void draw_fli( FLIC * flic, REGION * clip )
+static void draw_fli( void * what, REGION * clip )
 {
+    FLIC * flic = (FLIC *)what ;
     if ( flic->angle || flic->size != 100 )
         gr_rotated_blit( 0,
                 clip,
@@ -197,7 +199,7 @@ static FLIC * flic_open( const char * filename )
     flic->bitmap = bitmap_new( 0, flic->header.width, flic->header.height, 8 ) ;
     if ( !flic->bitmap )
     {
-        /* TamaÒo incorrecto */
+        /* Tamaùo incorrecto */
         flic_destroy( flic ) ;
         return 0 ;
     }
@@ -509,7 +511,7 @@ static FLIC * flic_do_frame( FLIC * flic )
 
     do
     {
-        /* Recupera informaciÛn del siguiente chunk del fichero */
+        /* Recupera informaciùn del siguiente chunk del fichero */
 
         if ( !file_read( flic->fp, flic->frame, sizeof( FLIC_FRAME ) ) ) return 0 ;
 
@@ -560,7 +562,7 @@ static void flic_reset( FLIC * flic )
 }
 
 /* ----------------------------------------------------------------- */
-/* ReproducciÛn de FLI */
+/* Reproducciùn de FLI */
 
 /*
  *  FUNCTION : modflic_start

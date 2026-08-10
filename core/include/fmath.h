@@ -55,8 +55,8 @@ extern int fixtoi( fixed x );
 extern int fixceil( fixed x );
 extern fixed fcos( int x );
 extern fixed fsin( int x );
-extern fixed fmul( int x, int y );
-extern fixed fdiv( int x, int y );
+extern fixed fixmul( int x, int y );
+extern fixed fixdiv( int x, int y );
 extern void init_cos_tables();
 
 #endif

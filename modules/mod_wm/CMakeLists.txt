@@ -14,6 +14,7 @@ add_library (
 target_link_libraries (
   mod_wm
   SDL
+  X11
   bgdrtm
   video
   grbase

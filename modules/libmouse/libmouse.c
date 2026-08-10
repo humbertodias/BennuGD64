@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
+ *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ù 2002-2006 Fenix Team (Fenix)
+ *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -83,7 +83,7 @@ enum {
 
 DLVARFIXUP __bgdexport( libmouse, globals_fixup )[] =
 {
-    /* Nombre de variable global, puntero al dato, tamaÒo del elemento, cantidad de elementos */
+    /* Nombre de variable global, puntero al dato, tamaùo del elemento, cantidad de elementos */
 
     { "mouse.x"         , NULL, -1, -1 },
     { "mouse.y"         , NULL, -1, -1 },
@@ -126,7 +126,7 @@ static void do_mouse_events()
 
     /* Actualizar eventos */
 
-    /* El cambio de mouse.x/y afecta directamente al ratÛn */
+    /* El cambio de mouse.x/y afecta directamente al ratùn */
 
     if (
         ( last_mouse_x != -1 && GLOINT32( libmouse, MOUSEX ) != last_mouse_x ) ||
@@ -284,7 +284,7 @@ static void do_mouse_events()
  *      1 if the mouse has changed since last call
  */
 
-static int mouse_info( INSTANCE * i, REGION * clip, int * z, int * drawme )
+static int mouse_info( void * what, REGION * clip, int * z, int * drawme )
 {
     int mousex ;
     int mousey ;
@@ -394,7 +394,7 @@ static int mouse_info( INSTANCE * i, REGION * clip, int * z, int * drawme )
  *      None
  */
 
-static void mouse_draw( INSTANCE * i, REGION * clip )
+static void mouse_draw( void * what, REGION * clip )
 {
     int r ;
     REGION region;

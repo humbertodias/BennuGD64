@@ -3,6 +3,19 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 project (BennuGD)
 add_definitions (-DVERSION="1.0.0")
 
+# This codebase predates C23; GCC 15+ defaults to C23 where () means (void).
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
+
+# GCC 14+ / Clang treat classic C pointer mismatches as errors; keep them as warnings.
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
+  add_compile_options(
+    -Wno-error=incompatible-pointer-types
+    -Wno-error=int-conversion
+  )
+endif()
+
 # param:
 # STATIC_MODULES (instead of shared modules)
 # INTERPRETER_ONLY (generate only bgdi exec)

@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
+ *  Copyright ù 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ù 2002-2006 Fenix Team (Fenix)
+ *  Copyright ù 1999-2002 Josù Luis Cebriùn Pagùe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -67,7 +67,7 @@ typedef struct _text
     int color32 ;
     int objectid ;
     int last_value ;
-    char * text ;           /* Memoria din·mica */
+    char * text ;           /* Memoria dinùmica */
     const void * var  ;  /* CHANGED TO VOID to allow diff. data types */
     int last_z ;
     int last_color8 ;
@@ -104,7 +104,7 @@ enum {
 
 DLVARFIXUP __bgdexport( libtext, globals_fixup )[] =
 {
-    /* Nombre de variable global, puntero al dato, tamaÒo del elemento, cantidad de elementos */
+    /* Nombre de variable global, puntero al dato, tamaùo del elemento, cantidad de elementos */
     { "text_z"      , NULL, -1, -1 },
     { "text_flags"  , NULL, -1, -1 },
     { NULL          , NULL, -1, -1 }
@@ -202,8 +202,9 @@ static const char * get_text( TEXT * text )
  *
  */
 
-static int info_text( TEXT * text, REGION * bbox, int * z, int * drawme )
+static int info_text( void * what, REGION * bbox, int * z, int * drawme )
 {
+    TEXT * text = (TEXT *)what ;
     const char * str = get_text( text );
     REGION prev = *bbox;
     FONT * font;
@@ -359,8 +360,9 @@ static int info_text( TEXT * text, REGION * bbox, int * z, int * drawme )
  *
  */
 
-void draw_text( TEXT * text, REGION * clip )
+void draw_text( void * what, REGION * clip )
 {
+    TEXT * text = (TEXT *)what ;
     const char * str = get_text( text );
     int save8, save16, save32;
     FONT * font;

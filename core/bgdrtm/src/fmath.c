@@ -120,14 +120,14 @@ fixed fsin( int x )
 
 /* --------------------------------------------------------------------------- */
 
-fixed fmul( int x, int y )
+fixed fixmul( int x, int y )
 {
     return ftofix( fixtof( x ) * fixtof( y ) ) ;
 }
 
 /* --------------------------------------------------------------------------- */
 
-fixed fdiv( int x, int y )
+fixed fixdiv( int x, int y )
 {
     return ftofix( fixtof( x ) / fixtof( y ) ) ;
 }

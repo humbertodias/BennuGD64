@@ -657,8 +657,9 @@ static void show_struct( int num, char * title, int indent, void * data )
 
 static void show_var( DCB_VAR var, char * name, void * data, char * title, int indent )
 {
-    char spaces[indent+1] ;
+    char spaces[256] ;
 
+    if ( indent > ( int ) sizeof( spaces ) - 1 ) indent = ( int ) sizeof( spaces ) - 1 ;
     memset( spaces, ' ', indent ) ;
     spaces[indent] = 0 ;
 

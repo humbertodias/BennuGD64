@@ -70,37 +70,13 @@ rm -f "${ARCHIVE_BASE}.zip" "${ARCHIVE_BASE}.tar.gz"
 STAGE_PARENT="$DIST_DIR/stage"
 STAGE_NAME="$(basename "$STAGE")"
 
-make_zip() {
-  local out="$1"
-  local parent="$2"
-  local name="$3"
-  # Info-ZIP under MSYS2 has produced truncated archives with absolute Windows
-  # paths; use Python's zipfile for a portable, seekable central directory.
-  python3 - "$out" "$parent" "$name" <<'PY'
-import sys, zipfile
-from pathlib import Path
-
-out, parent, name = Path(sys.argv[1]), Path(sys.argv[2]), sys.argv[3]
-root = parent / name
-with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
-    for path in sorted(root.rglob("*")):
-        if path.is_file():
-            zf.write(path, path.relative_to(parent).as_posix())
-PY
-  python3 - "$out" <<'PY'
-import sys, zipfile
-from pathlib import Path
-out = Path(sys.argv[1])
-with zipfile.ZipFile(out) as zf:
-    bad = zf.testzip()
-    if bad is not None:
-        raise SystemExit(f"corrupt zip entry: {bad}")
-    print(f"    zip ok: {out} ({out.stat().st_size} bytes, {len(zf.namelist())} entries)")
-PY
-}
-
 if [[ "$PLATFORM" == "windows" ]]; then
-  make_zip "${ARCHIVE_BASE}.zip" "$STAGE_PARENT" "$STAGE_NAME"
+  if command -v zip >/dev/null 2>&1; then
+    (cd "$STAGE_PARENT" && zip -r "${ARCHIVE_BASE}.zip" "$STAGE_NAME")
+  else
+    powershell.exe -NoProfile -Command \
+      "Compress-Archive -Path '$STAGE_PARENT/$STAGE_NAME' -DestinationPath '${ARCHIVE_BASE}.zip' -Force"
+  fi
   echo "Wrote ${ARCHIVE_BASE}.zip"
 else
   tar -C "$STAGE_PARENT" -czf "${ARCHIVE_BASE}.tar.gz" "$STAGE_NAME"

@@ -490,7 +490,7 @@ int main( int argc, char *argv[] )
     /* destroy error messages list */
     err_destroyErrorTable();
 
-    return 1;
+    return 0;
 }
 
 /* --------------------------------------------------------------------------- */

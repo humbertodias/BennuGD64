@@ -6,12 +6,14 @@ add_library (
   mod_math
   ${MODULES}
   mod_math.c
-) 
-
-target_link_libraries (
-  mod_math
-  m
 )
+
+if (NOT WIN32)
+  target_link_libraries (
+    mod_math
+    m
+  )
+endif ()
 
 if (NOT STATIC_MODULES)
   install (

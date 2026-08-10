@@ -94,6 +94,10 @@ else ()
   )
 endif ()
 
+if (WIN32)
+  target_link_libraries (bgdc shlwapi)
+endif ()
+
 install (
   TARGETS
   bgdc

@@ -41,6 +41,7 @@ cmake_configure() {
     args+=(-A "$CMAKE_GENERATOR_PLATFORM")
   fi
   if [[ "${RUNNER_OS:-}" == "Windows" || "$HOST_OS" == MINGW* || "$HOST_OS" == MSYS* ]]; then
+    args+=(-DCMAKE_POLICY_DEFAULT_CMP0091=NEW)
     args+=(-DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded)
     # MSVC is not a usable ASM compiler for vendored deps (CMP0194).
     args+=(-DCMAKE_POLICY_DEFAULT_CMP0194=NEW)
@@ -161,6 +162,10 @@ rm -rf "$PREFIX/lib/png.framework" "$PREFIX/lib/libpng.dylib" "$PREFIX/lib/libpn
 if [[ -f "$PREFIX/lib/libpng16_static.lib" && ! -f "$PREFIX/lib/libpng16.lib" ]]; then
   cp "$PREFIX/lib/libpng16_static.lib" "$PREFIX/lib/libpng16.lib"
 fi
+# MSVC must not pick up a MinGW-style .a (wrong CRT / import thunks).
+if [[ "${RUNNER_OS:-}" == "Windows" || "$HOST_OS" == MINGW* || "$HOST_OS" == MSYS* || "$HOST_OS" == CYGWIN* ]]; then
+  rm -f "$PREFIX/lib"/libpng*.a "$PREFIX/lib"/libz.a
+fi
 
 # --- SDL3 ---
 echo "==> [3/4] SDL3 ${SDL3_REF}"
@@ -195,6 +200,28 @@ rm -rf "$SRC_DIR/SDL_mixer-build" \
   "$PREFIX/lib/pkgconfig/sdl3_mixer.pc"
 rm -f "$PREFIX/lib"/libSDL3_mixer* "$PREFIX/lib"/SDL3_mixer*
 fetch_git "https://github.com/libsdl-org/SDL_mixer.git" "$SDL3_MIXER_REF" "$SRC_DIR/SDL_mixer" 0
+
+# On MSVC, SDL_FORCE_INLINE is just __forceinline (no static). SDL_mixer's
+# stb_vorbis uses STB_FORCEINLINE without its own static, which exports
+# draw_line and collides with BennuGD's libdraw symbol.
+if [[ "${RUNNER_OS:-}" == "Windows" || "$HOST_OS" == MINGW* || "$HOST_OS" == MSYS* || "$HOST_OS" == CYGWIN* ]]; then
+  DECODER="$SRC_DIR/SDL_mixer/src/decoder_stb_vorbis.c"
+  if [[ -f "$DECODER" ]]; then
+    python3 - "$DECODER" <<'PY'
+import pathlib, sys
+p = pathlib.Path(sys.argv[1])
+text = p.read_text(encoding="utf-8")
+old = "#define STB_FORCEINLINE SDL_FORCE_INLINE"
+new = "#define STB_FORCEINLINE static SDL_FORCE_INLINE"
+if old in text:
+    p.write_text(text.replace(old, new, 1), encoding="utf-8")
+    print("    patched STB_FORCEINLINE to be static on MSVC")
+else:
+    print("    STB_FORCEINLINE patch skipped (pattern not found)")
+PY
+  fi
+fi
+
 SDL3_DIR_HINT=""
 for d in \
   "$PREFIX/lib/cmake/SDL3" \

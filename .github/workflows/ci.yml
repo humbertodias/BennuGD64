@@ -141,15 +141,17 @@ jobs:
           PLATFORM: ${{ matrix.platform }}
           ARCH: ${{ matrix.arch }}
           VERSION: ${{ steps.meta.outputs.version }}
+          # Actions already zips artifacts; skip nested zip/tar for CI uploads.
+          SKIP_ARCHIVE: "1"
         run: scripts/ci/package.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
+          # Upload the staged folder (not a pre-built zip/tar). Actions already
+          # wraps artifacts in a zip, so users only unpack once.
           name: bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}
-          path: |
-            dist/*.tar.gz
-            dist/*.zip
+          path: dist/stage/bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}/
           if-no-files-found: error
           retention-days: 14
 
@@ -166,11 +168,26 @@ jobs:
         with:
           path: artifacts
 
-      - name: Flatten release assets
+      - name: Build release archives from staged folders
         run: |
+          set -euo pipefail
           mkdir -p release-assets
-          find artifacts -type f \( -name '*.tar.gz' -o -name '*.zip' \) -print -exec cp -v {} release-assets/ \;
+          # download-artifact places each build under artifacts/<artifact-name>/.
+          for art_dir in artifacts/*/; do
+            [[ -d "$art_dir" ]] || continue
+            base="$(basename "$art_dir")"
+            echo "Packaging $base"
+            case "$base" in
+              *windows*)
+                (cd artifacts && zip -r "$GITHUB_WORKSPACE/release-assets/${base}.zip" "$base")
+                ;;
+              *)
+                tar -C artifacts -czf "$GITHUB_WORKSPACE/release-assets/${base}.tar.gz" "$base"
+                ;;
+            esac
+          done
           ls -lah release-assets
+          test -n "$(ls -A release-assets)"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

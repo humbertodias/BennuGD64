@@ -19,15 +19,27 @@ fi
 # Resolve static zlib/libpng names across Unix (.a) and MSVC (.lib).
 PNG_LIB=""
 ZLIB_LIB=""
-for candidate in \
-  "$PREFIX/lib/libpng16.a" "$PREFIX/lib/libpng16_static.lib" "$PREFIX/lib/libpng16.lib" \
-  "$PREFIX/lib/png16.lib" "$PREFIX/lib/libpng.a"
-do
+if [[ "${RUNNER_OS:-}" == "Windows" || "$(uname -s)" == MINGW* || "$(uname -s)" == MSYS* || "$(uname -s)" == CYGWIN* ]]; then
+  png_candidates=(
+    "$PREFIX/lib/libpng16_static.lib" "$PREFIX/lib/libpng16.lib" "$PREFIX/lib/png16.lib"
+    "$PREFIX/lib/libpng16.a" "$PREFIX/lib/libpng.a"
+  )
+  zlib_candidates=(
+    "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib" "$PREFIX/lib/z.lib" "$PREFIX/lib/libz.a"
+  )
+else
+  png_candidates=(
+    "$PREFIX/lib/libpng16.a" "$PREFIX/lib/libpng.a"
+    "$PREFIX/lib/libpng16_static.lib" "$PREFIX/lib/libpng16.lib" "$PREFIX/lib/png16.lib"
+  )
+  zlib_candidates=(
+    "$PREFIX/lib/libz.a" "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib" "$PREFIX/lib/z.lib"
+  )
+fi
+for candidate in "${png_candidates[@]}"; do
   if [[ -f "$candidate" ]]; then PNG_LIB="$candidate"; break; fi
 done
-for candidate in \
-  "$PREFIX/lib/libz.a" "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib" "$PREFIX/lib/z.lib"
-do
+for candidate in "${zlib_candidates[@]}"; do
   if [[ -f "$candidate" ]]; then ZLIB_LIB="$candidate"; break; fi
 done
 if [[ -z "$PNG_LIB" || -z "$ZLIB_LIB" ]]; then

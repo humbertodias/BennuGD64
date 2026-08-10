@@ -1,4 +1,6 @@
-# BennuGD (CMake)
+# BennuGD
+
+[BennuGD](https://www.bennugd.org/) is a high-level, open-source game development suite that focuses on modularity and portability, making it an excellent choice for cross-platform game development
 
 ## Dependencies
 
@@ -12,7 +14,7 @@
 
 ## Build
 
-Generate both the compiler (`bgdc`) and the interpreter (`bgdi`):
+Generate both the compiler `bgdc` and the interpreter `bgdi`:
 
 ```shell
 cmake -S . -B build
@@ -23,20 +25,5 @@ Binaries:
 
 | Tool | Path |
 |------|------|
-| `bgdc` | `build/core/bgdc/src/bgdc` |
-| `bgdi` | `build/core/bgdi/src/bgdi` |
-
-### Interpreter only
-
-To build only `bgdi`, set in the top-level `CMakeLists.txt`:
-
-```cmake
-set (INTERPRETER_ONLY true)
-```
-
-Then reconfigure and build:
-
-```shell
-cmake -S . -B build
-cmake --build build
-```
+| bgdc | build/core/bgdc/src/bgdc |
+| bgdi | build/core/bgdi/src/bgdi |

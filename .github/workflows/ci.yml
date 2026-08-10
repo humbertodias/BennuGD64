@@ -2,10 +2,10 @@ name: CI/CD
 
 on:
   push:
-    branches: [64, main]
+    branches: [64, main, cicd]
     tags: ["v*"]
   pull_request:
-    branches: [64, main]
+    branches: [64, main, cicd]
   workflow_dispatch:
 
 concurrency:

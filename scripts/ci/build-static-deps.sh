@@ -50,7 +50,9 @@ cmake_configure() {
 
 cmake_build_install() {
   local build="$1"
+  echo "    building $build"
   cmake --build "$build" --config "$BUILD_TYPE" -j"$JOBS"
+  echo "    installing $build -> $PREFIX"
   cmake --install "$build" --config "$BUILD_TYPE"
 }
 
@@ -115,17 +117,31 @@ fetch_git() {
 echo "==> Installing static deps into $PREFIX"
 
 # --- zlib ---
+echo "==> [1/4] zlib ${ZLIB_VERSION}"
 fetch_tarball "$SRC_DIR/zlib" \
   "https://github.com/madler/zlib/releases/download/v${ZLIB_VERSION}/zlib-${ZLIB_VERSION}.tar.gz"
 cmake_configure "$SRC_DIR/zlib" "$SRC_DIR/zlib-build" \
   -DBUILD_SHARED_LIBS=OFF \
-  -DZLIB_BUILD_EXAMPLES=OFF \
-  -DZLIB_BUILD_SHARED=OFF \
-  -DZLIB_BUILD_STATIC=ON
+  -DZLIB_BUILD_EXAMPLES=OFF
 cmake_build_install "$SRC_DIR/zlib-build"
 rm -f "$PREFIX/lib/libz.dylib" "$PREFIX/lib/libz."*.dylib
+# MSVC installs zlibstatic.lib; give FindZLIB a conventional zlib.lib alias.
+if [[ -f "$PREFIX/lib/zlibstatic.lib" && ! -f "$PREFIX/lib/zlib.lib" ]]; then
+  cp "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib"
+fi
+ZLIB_LIB=""
+for candidate in "$PREFIX/lib/zlibstatic.lib" "$PREFIX/lib/zlib.lib" "$PREFIX/lib/libz.a" "$PREFIX/lib/z.lib"; do
+  if [[ -f "$candidate" ]]; then ZLIB_LIB="$candidate"; break; fi
+done
+if [[ -z "$ZLIB_LIB" ]]; then
+  echo "zlib static library missing under $PREFIX/lib" >&2
+  ls -la "$PREFIX/lib" >&2 || true
+  exit 1
+fi
+echo "    using ZLIB_LIB=$ZLIB_LIB"
 
 # --- libpng ---
+echo "==> [2/4] libpng ${LIBPNG_VERSION}"
 fetch_tarball "$SRC_DIR/libpng" \
   "https://github.com/pnggroup/libpng/archive/refs/tags/v${LIBPNG_VERSION}.tar.gz" \
   "https://downloads.sourceforge.net/project/libpng/libpng16/${LIBPNG_VERSION}/libpng-${LIBPNG_VERSION}.tar.gz"
@@ -136,38 +152,59 @@ cmake_configure "$SRC_DIR/libpng" "$SRC_DIR/libpng-build" \
   -DPNG_FRAMEWORK=OFF \
   -DPNG_TESTS=OFF \
   -DPNG_TOOLS=OFF \
-  -DZLIB_ROOT="$PREFIX"
+  -DZLIB_ROOT="$PREFIX" \
+  -DZLIB_INCLUDE_DIR="$PREFIX/include" \
+  -DZLIB_LIBRARY="$ZLIB_LIB"
 cmake_build_install "$SRC_DIR/libpng-build"
 # Prefer the static archive over any accidental framework install on macOS.
 rm -rf "$PREFIX/lib/png.framework" "$PREFIX/lib/libpng.dylib" "$PREFIX/lib/libpng16.dylib"
+if [[ -f "$PREFIX/lib/libpng16_static.lib" && ! -f "$PREFIX/lib/libpng16.lib" ]]; then
+  cp "$PREFIX/lib/libpng16_static.lib" "$PREFIX/lib/libpng16.lib"
+fi
 
 # --- SDL3 ---
+echo "==> [3/4] SDL3 ${SDL3_REF}"
 # Drop stale installs when upgrading major/minor so linker never mixes 3.2 with mixer 3.2.4+.
 rm -rf "$SRC_DIR/SDL-build" \
-  "$PREFIX/lib/libSDL3"* \
   "$PREFIX/lib/cmake/SDL3" \
+  "$PREFIX/cmake/SDL3" \
   "$PREFIX/include/SDL3" \
   "$PREFIX/lib/pkgconfig/sdl3.pc"
+rm -f "$PREFIX/lib"/libSDL3* "$PREFIX/lib"/SDL3* "$PREFIX/lib"/sdl3*
 fetch_git "https://github.com/libsdl-org/SDL.git" "$SDL3_REF" "$SRC_DIR/SDL"
 cmake_configure "$SRC_DIR/SDL" "$SRC_DIR/SDL-build" \
   -DSDL_SHARED=OFF \
   -DSDL_STATIC=ON \
   -DSDL_TEST_LIBRARY=OFF \
   -DSDL_TESTS=OFF \
-  -DSDL_INSTALL_DOCS=OFF
+  -DSDL_INSTALL_DOCS=OFF \
+  -DSDL_LIBUSB=OFF \
+  -DSDL_HIDAPI_LIBUSB=OFF
 cmake_build_install "$SRC_DIR/SDL-build"
 
 # --- SDL3_mixer ---
 # Use header-only decoders (stb_vorbis + dr_mp3) so we do not need git submodules
 # or vendored flac/mpg123/opus (those break easily under MSVC).
 # NOTE: the CMake option is SDLMIXER_EXAMPLES, not SDLMIXER_SAMPLES.
+echo "==> [4/4] SDL3_mixer ${SDL3_MIXER_REF}"
 rm -rf "$SRC_DIR/SDL_mixer-build" \
-  "$PREFIX/lib/libSDL3_mixer"* \
   "$PREFIX/lib/cmake/SDL3_mixer" \
+  "$PREFIX/cmake/SDL3_mixer" \
   "$PREFIX/lib/pkgconfig/sdl3-mixer.pc" \
   "$PREFIX/lib/pkgconfig/sdl3_mixer.pc"
+rm -f "$PREFIX/lib"/libSDL3_mixer* "$PREFIX/lib"/SDL3_mixer*
 fetch_git "https://github.com/libsdl-org/SDL_mixer.git" "$SDL3_MIXER_REF" "$SRC_DIR/SDL_mixer" 0
+SDL3_DIR_HINT=""
+for d in "$PREFIX/lib/cmake/SDL3" "$PREFIX/cmake/SDL3"; do
+  if [[ -f "$d/SDL3Config.cmake" ]]; then SDL3_DIR_HINT="$d"; break; fi
+done
+if [[ -z "$SDL3_DIR_HINT" ]]; then
+  echo "SDL3Config.cmake not found after SDL3 install" >&2
+  find "$PREFIX" -name 'SDL3Config.cmake' 2>/dev/null | head >&2 || true
+  exit 1
+fi
 cmake_configure "$SRC_DIR/SDL_mixer" "$SRC_DIR/SDL_mixer-build" \
+  -DSDL3_DIR="$SDL3_DIR_HINT" \
   -DBUILD_SHARED_LIBS=OFF \
   -DSDLMIXER_DEPS_SHARED=OFF \
   -DSDLMIXER_VENDORED=OFF \
@@ -188,10 +225,20 @@ cmake_configure "$SRC_DIR/SDL_mixer" "$SRC_DIR/SDL_mixer-build" \
   -DSDLMIXER_VORBIS_TREMOR=OFF
 cmake_build_install "$SRC_DIR/SDL_mixer-build"
 
-# Sanity: mixer 3.2.4+ requires SDL 3.4+ (nm symbol checks are brittle across Apple nm variants).
-SDL_VER="$(sed -n 's/set(PACKAGE_VERSION "\([^"]*\)")/\1/p' "$PREFIX/lib/cmake/SDL3/SDL3ConfigVersion.cmake" 2>/dev/null | head -1)"
+# Sanity: mixer 3.2.4+ requires SDL 3.4+.
+SDL_VER=""
+for vf in \
+  "$PREFIX/lib/cmake/SDL3/SDL3ConfigVersion.cmake" \
+  "$PREFIX/cmake/SDL3/SDL3ConfigVersion.cmake"
+do
+  if [[ -f "$vf" ]]; then
+    SDL_VER="$(sed -n 's/set(PACKAGE_VERSION "\([^"]*\)")/\1/p' "$vf" | head -1)"
+    break
+  fi
+done
 if [[ -z "$SDL_VER" ]]; then
   echo "Could not determine installed SDL3 version under $PREFIX" >&2
+  find "$PREFIX" -name 'SDL3ConfigVersion.cmake' 2>/dev/null | head >&2 || true
   exit 1
 fi
 if [[ "$(printf '%s\n' "3.4.0" "$SDL_VER" | sort -V | head -1)" != "3.4.0" ]]; then

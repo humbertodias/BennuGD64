@@ -1,3 +1,7 @@
+[![CI/CD](https://github.com/humbertodias/BennuGD64/actions/workflows/ci.yml/badge.svg)](https://github.com/humbertodias/BennuGD64/actions/workflows/ci.yml)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/humbertodias/BennuGD64)
+![GitHub all releases](https://img.shields.io/github/downloads/humbertodias/BennuGD64/total)
+
 # BennuGD64
 
 A fork of [BennuGD](https://www.bennugd.org/) adapted to run on modern 64-bit architectures.

@@ -20,8 +20,12 @@ Windows (PowerShell):
 irm https://raw.githubusercontent.com/humbertodias/BennuGD64/main/scripts/install.ps1 | iex
 ```
 
-It will install two tools: bgdc "compiler" and bgdi "interpreter"
+It will install two tools: `bgdc` *compiler* and `bgdi` *interpreter*
 
-## Build from source
+## Getting starting
 
-See [BUILDING.md](BUILDING.md).
+Learn using the [BennuGD documentation](https://divhub.github.io/bennugd-website/docs/)
+
+Use the [FPG Editor](https://github.com/humbertodias/fpg-editor/) to make it easier.
+
+Enjoy!

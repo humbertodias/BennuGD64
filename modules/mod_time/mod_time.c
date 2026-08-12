@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright ï¿½ 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright ï¿½ 2002-2006 Fenix Team (Fenix)
+ *  Copyright ï¿½ 1999-2002 Josï¿½ Luis Cebriï¿½n Pagï¿½e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -37,22 +37,23 @@
 #include "files.h"
 #include "xstrings.h"
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 #include <time.h>
 
 /* --------------------------------------------------------------------------- */
 /* Timer                                                                       */
 
-static int modtime_get_timer( INSTANCE * my, int * params )
+static int modtime_get_timer( INSTANCE * my, intptr_t * params )
 {
     return SDL_GetTicks() ;
 }
 
 /* --------------------------------------------------------------------------- */
-/* Hora del día                                                                */
+/* Hora del dï¿½a                                                                */
 
-static int modtime_time( INSTANCE * my, int * params )
+static int modtime_time( INSTANCE * my, intptr_t * params )
 {
     return time( 0 ) ;
 }
@@ -71,7 +72,7 @@ static int modtime_time( INSTANCE * my, int * params )
  *
  */
 
-static int modtime_ftime( INSTANCE * my, int * params )
+static int modtime_ftime( INSTANCE * my, intptr_t * params )
 {
     char buffer[128] ;
     char * format ;
@@ -216,18 +217,13 @@ static int modtime_ftime( INSTANCE * my, int * params )
 
 void __bgdexport( mod_time, module_initialize )()
 {
-#ifndef TARGET_DINGUX_A320
-    if ( !SDL_WasInit( SDL_INIT_TIMER ) ) SDL_InitSubSystem( SDL_INIT_TIMER );
-#endif
+    /* SDL3: timers are always available; SDL_INIT_TIMER was removed */
 }
 
 /* --------------------------------------------------------------------------- */
 
 void __bgdexport( mod_time, module_finalize )()
 {
-#ifndef TARGET_DINGUX_A320
-    if ( SDL_WasInit( SDL_INIT_TIMER ) ) SDL_QuitSubSystem( SDL_INIT_TIMER );
-#endif
 }
 
 /* --------------------------------------------------------------------------- */

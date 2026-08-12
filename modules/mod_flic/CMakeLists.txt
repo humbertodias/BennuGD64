@@ -13,7 +13,7 @@ add_library (
 
 target_link_libraries (
   mod_flic
-  SDL
+  ${BENNUGD_SDL3_TARGET}
   bgdrtm
   render
   blit

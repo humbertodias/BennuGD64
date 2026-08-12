@@ -34,14 +34,14 @@ add_library (
 if (USE_LIBDES)
   target_link_libraries (
     bgdrtm
-    z
+    ZLIB::ZLIB
     des  
   )
 else ()
   target_link_libraries (
     bgdrtm
-    z
-    crypto
+    ZLIB::ZLIB
+    OpenSSL::Crypto
   )
 endif ()
 

@@ -14,7 +14,7 @@ add_library (
 
 target_link_libraries (
   scroll
-  SDL
+  ${BENNUGD_SDL3_TARGET}
   bgdrtm
   render
   blit

@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -34,6 +34,7 @@ typedef void ( OBJ_DRAW )( void * what, REGION * clip );
 
 typedef struct _object
 {
+    int id ;
     int z ;
     OBJ_INFO * info ;
     OBJ_DRAW * draw ;

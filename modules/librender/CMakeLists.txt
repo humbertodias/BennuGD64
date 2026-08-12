@@ -26,7 +26,7 @@ add_library (
 
 target_link_libraries (
   render
-  SDL
+  ${BENNUGD_SDL3_TARGET}
   bgdrtm
   blit
   video

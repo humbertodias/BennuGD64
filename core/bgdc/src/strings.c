@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -223,7 +223,7 @@ int string_compile( const char ** source )
 
     if ( string_used >= string_allocated ) string_alloc( 1024 ) ;
 
-    /* Hack: añade el posible fichero al DCB */
+    /* Hack: aÃ±ade el posible fichero al DCB */
 
     if ( !no_include_this_file && autoinclude && check_for_valid_pathname( string_mem + string_offset[ string_count ] ) )
         dcb_add_file( string_mem + string_offset[ string_count ] ) ;

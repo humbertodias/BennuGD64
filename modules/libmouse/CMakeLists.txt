@@ -15,7 +15,7 @@ add_library (
 
 target_link_libraries (
   mouse
-  SDL
+  ${BENNUGD_SDL3_TARGET}
   bgdrtm
   draw
   render

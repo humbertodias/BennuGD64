@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -40,7 +40,7 @@
 
 /* ----------------------------------------------------------------- */
 
-static int modfile_save( INSTANCE * my, int * params )
+static int modfile_save( INSTANCE * my, intptr_t * params )
 {
     file * fp ;
     const char * filename ;
@@ -59,7 +59,7 @@ static int modfile_save( INSTANCE * my, int * params )
     return result ;
 }
 
-static int modfile_load( INSTANCE * my, int * params )
+static int modfile_load( INSTANCE * my, intptr_t * params )
 {
     file * fp ;
     const char * filename ;
@@ -78,7 +78,7 @@ static int modfile_load( INSTANCE * my, int * params )
     return result ;
 }
 
-static int modfile_fopen( INSTANCE * my, int * params )
+static int modfile_fopen( INSTANCE * my, intptr_t * params )
 {
     static char * ops[] = { "rb0", "r+b0", "wb0", "rb", "wb6" } ;
     int r ;
@@ -91,59 +91,59 @@ static int modfile_fopen( INSTANCE * my, int * params )
     return r ;
 }
 
-static int modfile_fclose( INSTANCE * my, int * params )
+static int modfile_fclose( INSTANCE * my, intptr_t * params )
 {
     file_close(( file * )params[0] ) ;
     return 1 ;
 }
 
-static int modfile_fread( INSTANCE * my, int * params )
+static int modfile_fread( INSTANCE * my, intptr_t * params )
 {
     return loadtypes(( file * )params[0], ( void * )params[1], ( void * )params[2], params[3], 0 );
 }
 
-static int modfile_fwrite( INSTANCE * my, int * params )
+static int modfile_fwrite( INSTANCE * my, intptr_t * params )
 {
     return savetypes(( file * )params[0], ( void * )params[1], ( void * )params[2], params[3], 0 );
 }
 
-static int modfile_freadC( INSTANCE * my, int * params )
+static int modfile_freadC( INSTANCE * my, intptr_t * params )
 {
     return file_read(( file * )params[2], ( void * )params[0], params[1] );
 }
 
-static int modfile_fwriteC( INSTANCE * my, int * params )
+static int modfile_fwriteC( INSTANCE * my, intptr_t * params )
 {
     return file_write(( file * )params[2], ( void * )params[0], params[1] );
 }
 
-static int modfile_fseek( INSTANCE * my, int * params )
+static int modfile_fseek( INSTANCE * my, intptr_t * params )
 {
     return file_seek(( file * )params[0], params[1], params[2] ) ;
 }
 
-static int modfile_frewind( INSTANCE * my, int * params )
+static int modfile_frewind( INSTANCE * my, intptr_t * params )
 {
     file_rewind(( file * )params[0] ) ;
     return 1;
 }
 
-static int modfile_ftell( INSTANCE * my, int * params )
+static int modfile_ftell( INSTANCE * my, intptr_t * params )
 {
     return file_pos(( file * )params[0] ) ;
 }
 
-static int modfile_fflush( INSTANCE * my, int * params )
+static int modfile_fflush( INSTANCE * my, intptr_t * params )
 {
     return file_flush(( file * )params[0] ) ;
 }
 
-static int modfile_filelength( INSTANCE * my, int * params )
+static int modfile_filelength( INSTANCE * my, intptr_t * params )
 {
     return file_size(( file * )params[0] ) ;
 }
 
-static int modfile_fputs( INSTANCE * my, int * params )
+static int modfile_fputs( INSTANCE * my, intptr_t * params )
 {
     char * str = ( char * ) string_get( params[1] );
     int r = file_puts(( file * )params[0], str ) ;
@@ -153,7 +153,7 @@ static int modfile_fputs( INSTANCE * my, int * params )
     return r ;
 }
 
-static int modfile_fgets( INSTANCE * my, int * params )
+static int modfile_fgets( INSTANCE * my, intptr_t * params )
 {
     char buffer[1025] ;
     int len, done = 0 ;
@@ -177,7 +177,7 @@ static int modfile_fgets( INSTANCE * my, int * params )
     return str ;
 }
 
-static int modfile_file( INSTANCE * my, int * params )
+static int modfile_file( INSTANCE * my, intptr_t * params )
 {
     char buffer[1025] ;
     int str = string_new( "" ) ;
@@ -209,26 +209,26 @@ static int modfile_file( INSTANCE * my, int * params )
     return str ;
 }
 
-static int modfile_feof( INSTANCE * my, int * params )
+static int modfile_feof( INSTANCE * my, intptr_t * params )
 {
     return file_eof(( file * )params[0] ) ;
 }
 
-static int modfile_exists( INSTANCE * my, int * params )
+static int modfile_exists( INSTANCE * my, intptr_t * params )
 {
     int r = file_exists( string_get( params[0] ) ) ;
     string_discard( params[0] ) ;
     return r ;
 }
 
-static int modfile_remove( INSTANCE * my, int * params )
+static int modfile_remove( INSTANCE * my, intptr_t * params )
 {
     int r = file_remove( string_get( params[0] ) ) ;
     string_discard( params[0] ) ;
     return r ;
 }
 
-static int modfile_move( INSTANCE * my, int * params )
+static int modfile_move( INSTANCE * my, intptr_t * params )
 {
     int r = file_move( string_get( params[0] ), string_get( params[1] ) ) ;
     string_discard( params[1] ) ;

@@ -6,12 +6,14 @@ add_library (
   mod_mathi
   ${MODULES}
   mod_mathi.c
-) 
-
-target_link_libraries (
-  mod_mathi
-  m
 )
+
+if (NOT WIN32)
+  target_link_libraries (
+    mod_mathi
+    m
+  )
+endif ()
 
 if (NOT STATIC_MODULES)
   install (

@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 JosÈ Luis Cebri·n Pag¸e (Fenix)
+ *  Copyright &#169; 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright &#169; 2002-2006 Fenix Team (Fenix)
+ *  Copyright &#169; 1999-2002 Jos√© Luis Cebri√°n Pag√ºe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -74,7 +74,7 @@ DLVARFIXUP __bgdexport( mod_screen, globals_fixup )[] =
 
 /* --------------------------------------------------------------------------- */
 
-static int modscreen_define_region( INSTANCE * my, int * params )
+static int modscreen_define_region( INSTANCE * my, intptr_t * params )
 {
     REGION * orig = region_get( params[0] );
 
@@ -86,7 +86,7 @@ static int modscreen_define_region( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int modscreen_out_region( INSTANCE * my, int * params )
+static int modscreen_out_region( INSTANCE * my, intptr_t * params )
 {
     INSTANCE * proc = instance_get( params[0] ) ;
     int region = params[1] ;
@@ -132,9 +132,9 @@ static int modscreen_out_region( INSTANCE * my, int * params )
 }
 
 /* --------------------------------------------------------------------------- */
-/* Funciones gr·ficas */
+/* Funciones gr√°ficas */
 
-static int modscreen_put( INSTANCE * my, int * params )
+static int modscreen_put( INSTANCE * my, intptr_t * params )
 {
     GRAPH * map = bitmap_get( params[0], params[1] ) ;
 
@@ -147,7 +147,7 @@ static int modscreen_put( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int modscreen_xput( INSTANCE * my, int * params )
+static int modscreen_xput( INSTANCE * my, intptr_t * params )
 {
     int r ;
     GRAPH * map = bitmap_get( params[0], params[1] ) ;
@@ -166,7 +166,7 @@ static int modscreen_xput( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int modscreen_put_screen( INSTANCE * my, int * params )
+static int modscreen_put_screen( INSTANCE * my, intptr_t * params )
 {
     int     x, y ;
     GRAPH * map = bitmap_get( params[0], params[1] ) ;
@@ -190,7 +190,7 @@ static int modscreen_put_screen( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int modscreen_clear_screen( INSTANCE * my, int * params )
+static int modscreen_clear_screen( INSTANCE * my, intptr_t * params )
 {
     gr_clear( background ) ;
     return 1 ;
@@ -198,7 +198,7 @@ static int modscreen_clear_screen( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int modscreen_get_screen( INSTANCE * my, int * params )
+static int modscreen_get_screen( INSTANCE * my, intptr_t * params )
 {
     GRAPH * map = bitmap_clone( bitmap_get( 0, -1 ) );
 

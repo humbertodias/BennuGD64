@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -34,6 +34,45 @@
 static int sequencer = 0;
 
 CONTAINER * sorted_object_list = NULL;
+
+/* Opaque handles so object ids fit in 32-bit process locals on 64-bit hosts. */
+static OBJECT ** object_by_id = NULL;
+static int object_by_id_cap = 0;
+
+static int object_register( OBJECT * object )
+{
+    int id;
+
+    for ( id = 1; id < object_by_id_cap; id++ )
+    {
+        if ( !object_by_id[id] )
+        {
+            object_by_id[id] = object;
+            object->id = id;
+            return id;
+        }
+    }
+
+    {
+        int new_cap = object_by_id_cap ? object_by_id_cap * 2 : 256;
+        OBJECT ** grown = ( OBJECT ** ) realloc( object_by_id, new_cap * sizeof( OBJECT * ) );
+        if ( !grown ) return 0;
+        memset( grown + object_by_id_cap, 0, ( new_cap - object_by_id_cap ) * sizeof( OBJECT * ) );
+        object_by_id = grown;
+        id = object_by_id_cap ? object_by_id_cap : 1;
+        if ( id == 0 ) id = 1;
+        object_by_id_cap = new_cap;
+        object_by_id[id] = object;
+        object->id = id;
+        return id;
+    }
+}
+
+static OBJECT * object_from_id( int id )
+{
+    if ( id <= 0 || id >= object_by_id_cap ) return NULL;
+    return object_by_id[id];
+}
 
 /* --------------------------------------------------------------------------- */
 
@@ -180,7 +219,7 @@ int gr_new_object( int z, OBJ_INFO * info, OBJ_DRAW * draw, void * what )
 
     ctr->first_in_key = object;
 
-    return ( int ) object;
+    return object_register( object );
 }
 
 /* --------------------------------------------------------------------------- */
@@ -199,9 +238,11 @@ int gr_new_object( int z, OBJ_INFO * info, OBJ_DRAW * draw, void * what )
 void gr_destroy_object( int id )
 {
     CONTAINER * ctr ;
-    OBJECT * object = ( OBJECT * ) id ;
+    OBJECT * object = object_from_id( id );
 
     if ( !object ) return ;
+
+    object_by_id[id] = NULL ;
 
     ctr = search_container( object->z );
     if ( !ctr ) return;

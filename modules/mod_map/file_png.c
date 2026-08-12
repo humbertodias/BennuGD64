@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -58,7 +58,7 @@ GRAPH * gr_read_png( const char * filename )
     png_uint_32 width, height, rowbytes;
     int depth, color ;
 
-    /* Abre el fichero y se asegura de que screen está inicializada */
+    /* Abre el fichero y se asegura de que screen estÃ¡ inicializada */
 
     file * png = file_open( filename, "rb" ) ;
     if ( !png ) return NULL;
@@ -94,7 +94,7 @@ GRAPH * gr_read_png( const char * filename )
         return NULL;
     }
 
-    /* Recupera información sobre el PNG */
+    /* Recupera informaciÃ³n sobre el PNG */
 
     png_set_read_fn( png_ptr, png, user_read_data ) ;
     png_read_info( png_ptr, info_ptr ) ;
@@ -560,7 +560,7 @@ int gr_save_png( GRAPH * gr, const char * filename )
             for ( k = 0; k < ( unsigned )gr->height; k++ )
             {
                 ptr  = data + gr->width * k ; /* uses dword for each pixel! */
-                orig = ( uint16_t * )( gr->data + gr->pitch * k ) ;
+                orig = ( uint16_t * )( ( uint8_t * ) gr->data + gr->pitch * k ) ;
                 rowpointers[k] = ( uint8_t * )ptr ;
                 for ( i = 0 ; i < ( unsigned )gr->width ; i++ )
                 {
@@ -586,7 +586,7 @@ int gr_save_png( GRAPH * gr, const char * filename )
             for ( k = 0; k < ( unsigned )gr->height; k++ )
             {
                 ptr  = data + gr->width * k ; /* uses dword for each pixel! */
-                orig32 = ( uint32_t * )( gr->data + gr->pitch * k ) ;
+                orig32 = ( uint32_t * )( ( uint8_t * ) gr->data + gr->pitch * k ) ;
                 rowpointers[k] = ( uint8_t * )ptr ;
                 for ( i = 0 ; i < ( unsigned )gr->width ; i++ )
                 {

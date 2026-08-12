@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -55,7 +55,7 @@
 #include "xctype.h"
 
 /* ---------------------------------------------------------------------- */
-/* Módulos generales de mantenimiento de datos                            */
+/* MÃ³dulos generales de mantenimiento de datos                            */
 /* ---------------------------------------------------------------------- */
 
 #include "typedef.h"
@@ -86,9 +86,9 @@ extern char * appexename ;
 extern char * appexepath ;
 extern char * appexefullpath ;
 
-extern int autoinclude ;    /* Incluye ficheros en el DCB automáticamente */
-extern int imports[] ;      /* Códigos de cadena con nombres de imports */
-extern int nimports ;       /* Número de imports */
+extern int autoinclude ;    /* Incluye ficheros en el DCB automÃ¡ticamente */
+extern int imports[] ;      /* CÃ³digos de cadena con nombres de imports */
+extern int nimports ;       /* NÃºmero de imports */
 extern int libmode ;
 
 extern char langinfo[64] ;  /* language setting */

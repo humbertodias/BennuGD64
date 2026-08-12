@@ -1,5 +1,5 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -26,18 +26,19 @@
 
 #include "bgddl.h"
 
-#include <SDL.h>
+#include <SDL3/SDL.h>
+#include "sdl3_compat.h"
 
 /* ----------------------------------------------------------------- */
 /* Public functions                                                  */
 
-static void  dump_new_events()
+static void  dump_new_events( void )
 {
     SDL_Event event;
     /* Remove all pendings events */
 
     /* We can't return -1, just return 0 (no event) on error */
-    while ( SDL_PeepEvents( &event, 1, SDL_GETEVENT, SDL_ALLEVENTS ) > 0 );
+    while ( SDL_PeepEvents( &event, 1, SDL_GETEVENT, SDL_EVENT_FIRST, SDL_EVENT_LAST ) > 0 );
 
     /* Get new events */
     SDL_PumpEvents();
@@ -48,14 +49,13 @@ static void  dump_new_events()
 
 void __bgdexport( libsdlhandler, module_initialize )()
 {
-    if ( !SDL_WasInit( SDL_INIT_EVENTTHREAD ) ) SDL_InitSubSystem( SDL_INIT_EVENTTHREAD );
+    /* SDL2 has no SDL_INIT_EVENTTHREAD */
 }
 
 /* ----------------------------------------------------------------- */
 
 void __bgdexport( libsdlhandler, module_finalize )()
 {
-    if ( SDL_WasInit( SDL_INIT_EVENTTHREAD ) ) SDL_QuitSubSystem( SDL_INIT_EVENTTHREAD );
 }
 
 /* ----------------------------------------------------------------- */

@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -36,14 +36,14 @@
 
 /* --------------------------------------------------------------------------- */
 
-static int modcrypt_new( INSTANCE * my, int * params )
+static int modcrypt_new( INSTANCE * my, intptr_t * params )
 {
     return ( ( int ) crypt_create( params[0], ( char * ) params[1] ) );
 }
 
 /* --------------------------------------------------------------------------- */
 
-static int modcrypt_del( INSTANCE * my, int * params )
+static int modcrypt_del( INSTANCE * my, intptr_t * params )
 {
     crypt_destroy( ( crypt_handle * ) params[0] );
     return 1;
@@ -67,21 +67,21 @@ static int __crypt( crypt_handle * ch, char * in, char * out, int blocks, int en
 
 /* --------------------------------------------------------------------------- */
 
-static int modcrypt_encrypt( INSTANCE * my, int * params )
+static int modcrypt_encrypt( INSTANCE * my, intptr_t * params )
 {
     return ( __crypt( ( crypt_handle * ) params[0], ( char * ) params[1], ( char * ) params[2], params[3], 1 ) );
 }
 
 /* --------------------------------------------------------------------------- */
 
-static int modcrypt_decrypt( INSTANCE * my, int * params )
+static int modcrypt_decrypt( INSTANCE * my, intptr_t * params )
 {
     return ( __crypt( ( crypt_handle * ) params[0], ( char * ) params[1], ( char * ) params[2], params[3], 0 ) );
 }
 
 /* --------------------------------------------------------------------------- */
 
-static int modcrypt_encrypt2( INSTANCE * my, int * params )
+static int modcrypt_encrypt2( INSTANCE * my, intptr_t * params )
 {
     int r;
     crypt_handle * ch = crypt_create( params[0], ( char * ) params[1] );
@@ -92,7 +92,7 @@ static int modcrypt_encrypt2( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int modcrypt_decrypt2( INSTANCE * my, int * params )
+static int modcrypt_decrypt2( INSTANCE * my, intptr_t * params )
 {
     int r;
     crypt_handle * ch = crypt_create( params[0], ( char * ) params[1] );

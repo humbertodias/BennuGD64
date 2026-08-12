@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -38,6 +38,7 @@
 #include <windef.h>
 #include <winnls.h>
 #include "shlwapi.h"
+#include <direct.h>
 #endif
 
 #include "bgdc.h"
@@ -122,7 +123,7 @@ int main( int argc, char *argv[] )
             "\n"
             "Copyright (c) 2006-2013 SplinterGU (Fenix/BennuGD)\n"
             "Copyright (c) 2002-2006 Fenix Team (Fenix)\n"
-            "Copyright (c) 1999-2002 José Luis Cebrián Pagüe (Fenix)\n"
+            "Copyright (c) 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)\n"
             "\n" );
 
     /* Default lang to EN */
@@ -490,7 +491,7 @@ int main( int argc, char *argv[] )
     /* destroy error messages list */
     err_destroyErrorTable();
 
-    return 1;
+    return 0;
 }
 
 /* --------------------------------------------------------------------------- */

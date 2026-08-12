@@ -13,7 +13,7 @@ add_library (
 
 target_link_libraries (
   mod_wm
-  SDL
+  ${BENNUGD_SDL3_TARGET}
   bgdrtm
   video
   grbase

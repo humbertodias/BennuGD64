@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -91,7 +91,7 @@ void gr_clear_as( GRAPH * dest, int color )
 
         case 16:
         {
-            uint8_t * data = dest->data ;
+            uint8_t * data = ( uint8_t * ) dest->data ;
             int16_t * ptr ;
             int n ;
             y = dest->height;
@@ -107,7 +107,7 @@ void gr_clear_as( GRAPH * dest, int color )
 
         case 32:
         {
-            uint8_t * data = dest->data ;
+            uint8_t * data = ( uint8_t * ) dest->data ;
             uint32_t * ptr ;
             int n ;
             y = dest->height;

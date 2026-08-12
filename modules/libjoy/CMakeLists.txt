@@ -11,7 +11,7 @@ add_library (
 
 target_link_libraries (
   joy
-  SDL
+  ${BENNUGD_SDL3_TARGET}
   bgdrtm
 )
 

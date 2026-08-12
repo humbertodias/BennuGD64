@@ -1,7 +1,7 @@
 /*
- *  Copyright &#169; 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright &#169; 2002-2006 Fenix Team (Fenix)
- *  Copyright &#169; 1999-2002 Jos� Luis Cebri�n Pag�e (Fenix)
+ *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright © 2002-2006 Fenix Team (Fenix)
+ *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -36,7 +36,7 @@
 #include "bgddl.h"
 
 /* --------------------------------------------------------------------------- */
-/* Funciones matem�ticas */
+/* Funciones matemáticas */
 /* --------------------------------------------------------------------------- */
 
 static int math_abs( INSTANCE * my, intptr_t * params )

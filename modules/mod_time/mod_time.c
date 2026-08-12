@@ -1,7 +1,7 @@
 /*
- *  Copyright � 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright � 2002-2006 Fenix Team (Fenix)
- *  Copyright � 1999-2002 Jos� Luis Cebri�n Pag�e (Fenix)
+ *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright © 2002-2006 Fenix Team (Fenix)
+ *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -51,7 +51,7 @@ static int modtime_get_timer( INSTANCE * my, intptr_t * params )
 }
 
 /* --------------------------------------------------------------------------- */
-/* Hora del d�a                                                                */
+/* Hora del día                                                                */
 
 static int modtime_time( INSTANCE * my, intptr_t * params )
 {

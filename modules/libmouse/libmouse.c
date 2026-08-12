@@ -1,7 +1,7 @@
 /*
- *  Copyright � 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright � 2002-2006 Fenix Team (Fenix)
- *  Copyright � 1999-2002 Jos� Luis Cebri�n Pag�e (Fenix)
+ *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright © 2002-2006 Fenix Team (Fenix)
+ *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -84,7 +84,7 @@ enum {
 
 DLVARFIXUP __bgdexport( libmouse, globals_fixup )[] =
 {
-    /* Nombre de variable global, puntero al dato, tama�o del elemento, cantidad de elementos */
+    /* Nombre de variable global, puntero al dato, tamaño del elemento, cantidad de elementos */
 
     { "mouse.x"         , NULL, -1, -1 },
     { "mouse.y"         , NULL, -1, -1 },
@@ -127,7 +127,7 @@ static void do_mouse_events()
 
     /* Actualizar eventos */
 
-    /* El cambio de mouse.x/y afecta directamente al rat�n */
+    /* El cambio de mouse.x/y afecta directamente al ratón */
 
     if (
         ( last_mouse_x != -1 && GLOINT32( libmouse, MOUSEX ) != last_mouse_x ) ||

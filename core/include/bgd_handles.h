@@ -16,6 +16,9 @@ int   bgd_handle_put ( void * ptr );
 void * bgd_handle_get ( int handle );
 void  bgd_handle_free( int handle );
 
+/* Resolve a script value that may be a handle or a raw address. */
+void * bgd_ptr( intptr_t value );
+
 #ifdef __cplusplus
 }
 #endif

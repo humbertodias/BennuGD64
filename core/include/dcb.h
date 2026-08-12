@@ -74,7 +74,8 @@ DCB_ID ;
 #define DCB_FILE_COMPRESSED 1
 
 /* On-disk layout must stay 13 bytes (SName was historically unioned with a
- * Name pointer; that breaks LP64 where the union is 8 bytes and sizeof grows). */
+ * Name pointer; that breaks LP64 where the union is 8 bytes and sizeof grows).
+ * Compiler keeps pathnames in a parallel char** (see dcbw.c dcb_fullname). */
 typedef struct
 {
     uint32_t    SName ;

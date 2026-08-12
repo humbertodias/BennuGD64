@@ -73,12 +73,11 @@ DCB_ID ;
 
 #define DCB_FILE_COMPRESSED 1
 
+/* On-disk layout must stay 13 bytes (SName was historically unioned with a
+ * Name pointer; that breaks LP64 where the union is 8 bytes and sizeof grows). */
 typedef struct
 {
-    union {
-        uint8_t     * Name ;
-        uint32_t    SName ;
-    };
+    uint32_t    SName ;
     uint8_t     Flags ;
     uint32_t    SFile ;
     uint32_t    OFile ;

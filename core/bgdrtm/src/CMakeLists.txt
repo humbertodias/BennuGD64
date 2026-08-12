@@ -25,6 +25,7 @@ add_library (
   instance.c
   interpreter.c
   varspace_file.c
+  bgd_lowmem.c
   ../../common/debug.c
   ../../common/b_crypt.c
   ../../common/files.c

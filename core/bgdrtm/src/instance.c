@@ -38,6 +38,7 @@
 
 #include "offsets.h"
 #include "bgdrtm.h"
+#include "bgd_lowmem.h"
 #include "sysprocs_p.h"
 #include "instance.h"
 #include "xstrings.h"
@@ -323,9 +324,9 @@ INSTANCE * instance_duplicate( INSTANCE * father )
     r = ( INSTANCE * ) calloc( 1, sizeof( INSTANCE ) ) ;
     assert( r ) ;
 
-    r->pridata          = ( int * ) malloc( father->private_size + 4 ) ;
-    r->pubdata          = ( int * ) malloc( father->public_size + 4 ) ;
-    r->locdata          = ( int * ) malloc( local_size + 4 ) ;
+    r->pridata          = ( int * ) bgd_low_malloc( father->private_size + 4 ) ;
+    r->pubdata          = ( int * ) bgd_low_malloc( father->public_size + 4 ) ;
+    r->locdata          = ( int * ) bgd_low_malloc( local_size + 4 ) ;
     r->code             = father->code ;
     r->codeptr          = father->codeptr ;
     r->exitcode         = father->exitcode ;
@@ -434,9 +435,9 @@ INSTANCE * instance_new( PROCDEF * proc, INSTANCE * father )
     r = ( INSTANCE * ) calloc( 1, sizeof( INSTANCE ) ) ;
     assert( r ) ;
 
-    r->pridata          = ( int * ) malloc( proc->private_size + 4 ) ;
-    r->pubdata          = ( int * ) malloc( proc->public_size + 4 ) ;
-    r->locdata          = ( int * ) malloc( local_size + 4 ) ;
+    r->pridata          = ( int * ) bgd_low_malloc( proc->private_size + 4 ) ;
+    r->pubdata          = ( int * ) bgd_low_malloc( proc->public_size + 4 ) ;
+    r->locdata          = ( int * ) bgd_low_malloc( local_size + 4 ) ;
     r->code             = proc->code ;
     r->codeptr          = proc->code ;
     r->exitcode         = proc->exitcode ;
@@ -641,9 +642,9 @@ void instance_destroy( INSTANCE * r )
 
     if ( r->stack ) free( r->stack ) ;
 
-    if ( r->locdata ) free( r->locdata ) ;
-    if ( r->pubdata ) free( r->pubdata ) ;
-    if ( r->pridata ) free( r->pridata ) ;
+    if ( r->locdata ) bgd_low_free( r->locdata ) ;
+    if ( r->pubdata ) bgd_low_free( r->pubdata ) ;
+    if ( r->pridata ) bgd_low_free( r->pridata ) ;
     free( r ) ;
 }
 

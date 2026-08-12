@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -295,7 +295,7 @@ static int sort_variables( void * data, int key_offset, int key_type, int elemen
  *  variable as a key for sorting order.
  **/
 
-static int modsort_sort( INSTANCE * my, int * params )
+static int modsort_sort( INSTANCE * my, intptr_t * params )
 {
     /* Get the description of the data to be sorted */
 
@@ -350,7 +350,7 @@ static int modsort_sort( INSTANCE * my, int * params )
  *  Sorts an array of structs, using the given variable as a key
  **/
 
-static int modsort_ksort( INSTANCE * my, int * params )
+static int modsort_ksort( INSTANCE * my, intptr_t * params )
 {
     /* Get the description of the data to be sorted */
 
@@ -418,7 +418,7 @@ static int modsort_ksort( INSTANCE * my, int * params )
  *  or a pointer to an array, unlike the simple SORT version.
  **/
 
-static int modsort_sort_n( INSTANCE * my, int * params )
+static int modsort_sort_n( INSTANCE * my, intptr_t * params )
 {
     /* Get the description of the data to be sorted */
 
@@ -476,7 +476,7 @@ static int modsort_sort_n( INSTANCE * my, int * params )
  *  single elements, unlike the previous version of KSORT above.
  **/
 
-static int modsort_ksort_n( INSTANCE * my, int * params )
+static int modsort_ksort_n( INSTANCE * my, intptr_t * params )
 {
     /* Get the description of the data to be sorted */
 
@@ -593,7 +593,7 @@ static void QuickSort( uint8_t *Data, int inf, int sup, int *params )
  *      datatype (int=0, float=1)
  */
 
-static int modsort_quicksort( INSTANCE *my, int *params )
+static int modsort_quicksort( INSTANCE *my, intptr_t *params )
 {
 
     uint8_t *Data = ( uint8_t * )params[0];

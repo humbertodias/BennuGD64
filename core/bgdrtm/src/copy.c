@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -202,18 +202,18 @@ static int copytype( void * dst, void * src, DCB_TYPEDEF * var )
  *  Copy struct data from src to dst, using the information varspace given
  **/
 
-int bgd_copy_struct( INSTANCE * my, int * params )
+int bgd_copy_struct( INSTANCE * my, intptr_t * params )
 {
     return ( int ) copytypes(( void * )params[0], ( void * )params[1], ( DCB_TYPEDEF * )params[2], params[3], params[4] );
 }
 
-int bgd_internal_memcopy( INSTANCE * my, int * params )
+int bgd_internal_memcopy( INSTANCE * my, intptr_t * params )
 {
     memmove(( void * )params[0], ( void * )params[1], params[2] ) ;
     return 1 ;
 }
 
-int bgd_internal_copy_string_array( INSTANCE * my, int * params )
+int bgd_internal_copy_string_array( INSTANCE * my, intptr_t * params )
 {
     int n = params[ 2 ];
     while( n-- )

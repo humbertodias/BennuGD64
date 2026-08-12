@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -34,25 +34,25 @@
 
 /* --------------------------------------------------------------------------- */
 
-static int mod_scroll_start( INSTANCE * my, int * params )
+static int mod_scroll_start( INSTANCE * my, intptr_t * params )
 {
     scroll_start( params[0], params[1], params[2], params[3], params[4], params[5], 0, 0 ) ;
     return 1 ;
 }
 
-static int mod_scroll_start2( INSTANCE * my, int * params )
+static int mod_scroll_start2( INSTANCE * my, intptr_t * params )
 {
     scroll_start( params[0], params[1], params[2], params[3], params[4], params[5], params[6], params[7] ) ;
     return 1 ;
 }
 
-static int mod_scroll_stop( INSTANCE * my, int * params )
+static int mod_scroll_stop( INSTANCE * my, intptr_t * params )
 {
     scroll_stop( params[0] ) ;
     return 1 ;
 }
 
-static int mod_scroll_move( INSTANCE * my, int * params )
+static int mod_scroll_move( INSTANCE * my, intptr_t * params )
 {
     scroll_update (params[0]) ;
     return 1 ;

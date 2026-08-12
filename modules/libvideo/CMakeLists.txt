@@ -15,7 +15,7 @@ target_link_libraries (
   video
   bgdrtm
   grbase
-  SDL
+  ${BENNUGD_SDL3_TARGET}
 )
 
 if (NOT STATIC_MODULES)

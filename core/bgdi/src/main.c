@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -42,7 +42,13 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#ifndef _WIN32
 #include <unistd.h>
+#else
+#ifndef S_ISREG
+#define S_ISREG(m) (((m) & _S_IFMT) == _S_IFREG)
+#endif
+#endif
 
 #include "bgdi.h"
 #include "bgdrtm.h"
@@ -202,7 +208,7 @@ int main( int argc, char *argv[] )
                     "\n"
                     "Copyright (c) 2006-2013 SplinterGU (Fenix/BennuGD)\n"
                     "Copyright (c) 2002-2006 Fenix Team (Fenix)\n"
-                    "Copyright (c) 1999-2002 José Luis Cebrián Pagüe (Fenix)\n"
+                    "Copyright (c) 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)\n"
                     "\n"
                     "Usage: %s [options] <data code block file>[.dcb]\n"
                     "\n"

@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -58,7 +58,7 @@ enum
 /* (usada en tiempo de ejecucion)                                    */
 DLVARFIXUP __bgdexport( mod_proc, locals_fixup )[]  =
 {
-    /* Nombre de variable local, offset al dato, tamaño del elemento, cantidad de elementos */
+    /* Nombre de variable local, offset al dato, tamaÃ±o del elemento, cantidad de elementos */
     { "id", NULL, -1, -1 },
     { "reserved.process_type", NULL, -1, -1 },
     { "reserved.status", NULL, -1, -1 },
@@ -79,7 +79,7 @@ void __bgdexport( mod_proc, process_exec_hook )( INSTANCE * r )
 }
 
 /* ----------------------------------------------------------------- */
-/* Interacción entre procesos */
+/* InteracciÃ³n entre procesos */
 
 static void _modproc_kill_all()
 {
@@ -98,7 +98,7 @@ static void _modproc_kill_all()
 
 /* ----------------------------------------------------------------- */
 
-static int modproc_exit_0( INSTANCE * my, int * params )
+static int modproc_exit_0( INSTANCE * my, intptr_t * params )
 {
     exit_value = 0;
     must_exit = 1 ;
@@ -108,7 +108,7 @@ static int modproc_exit_0( INSTANCE * my, int * params )
 
 /* ----------------------------------------------------------------- */
 
-static int modproc_exit_1( INSTANCE * my, int * params )
+static int modproc_exit_1( INSTANCE * my, intptr_t * params )
 {
     printf( string_get( params[0] ) );
     printf( "\n" );
@@ -123,7 +123,7 @@ static int modproc_exit_1( INSTANCE * my, int * params )
 
 /* --------------------------------------------------------------------------- */
 
-static int modproc_exit( INSTANCE * my, int * params )
+static int modproc_exit( INSTANCE * my, intptr_t * params )
 {
     _modproc_kill_all();
 
@@ -140,7 +140,7 @@ static int modproc_exit( INSTANCE * my, int * params )
 
 /* ----------------------------------------------------------------- */
 
-static int modproc_running( INSTANCE * my, int * params )
+static int modproc_running( INSTANCE * my, intptr_t * params )
 {
     INSTANCE * i, * ctx;
 
@@ -164,7 +164,7 @@ static int modproc_running( INSTANCE * my, int * params )
 
 /* ----------------------------------------------------------------- */
 
-static int modproc_signal( INSTANCE * my, int * params )
+static int modproc_signal( INSTANCE * my, intptr_t * params )
 {
     INSTANCE * i, * ctx;
     int fake_params[2] ;
@@ -277,7 +277,7 @@ static int modproc_signal( INSTANCE * my, int * params )
 
 /* ----------------------------------------------------------------- */
 
-static int modproc_signal_action( INSTANCE * my, int * params )
+static int modproc_signal_action( INSTANCE * my, intptr_t * params )
 {
     int action = params[1];
 
@@ -395,7 +395,7 @@ static int modproc_signal_action( INSTANCE * my, int * params )
 
 /* ----------------------------------------------------------------- */
 
-static int modproc_signal_action3( INSTANCE * my, int * params )
+static int modproc_signal_action3( INSTANCE * my, intptr_t * params )
 {
     INSTANCE * i, * ctx ;
 
@@ -427,7 +427,7 @@ static int modproc_signal_action3( INSTANCE * my, int * params )
 
 /* ----------------------------------------------------------------- */
 
-static int modproc_let_me_alone( INSTANCE * my, int * params )
+static int modproc_let_me_alone( INSTANCE * my, intptr_t * params )
 {
     INSTANCE * i = first_instance ;
 
@@ -443,7 +443,7 @@ static int modproc_let_me_alone( INSTANCE * my, int * params )
 
 /* ----------------------------------------------------------------- */
 
-static int modproc_get_id( INSTANCE * my, int * params )
+static int modproc_get_id( INSTANCE * my, intptr_t * params )
 {
     INSTANCE * ptr = first_instance, ** ctx ;
 
@@ -498,7 +498,7 @@ static int modproc_get_id( INSTANCE * my, int * params )
 
 /* ----------------------------------------------------------------- */
 
-static int modproc_get_status( INSTANCE * my, int * params )
+static int modproc_get_status( INSTANCE * my, intptr_t * params )
 {
     INSTANCE * i ;
     if ( !params[0] || !( i = instance_get( params[0] ) ) ) return 0;

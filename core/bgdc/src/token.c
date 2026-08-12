@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -37,8 +37,8 @@
 
 
 /* ---------------------------------------------------------------------- */
-/* Tokenizador. La función token_next, ampliamente utilizada, recoge el   */
-/* siguiente token (identificador, operador, etc) del código fuente, y    */
+/* Tokenizador. La funciÃ³n token_next, ampliamente utilizada, recoge el   */
+/* siguiente token (identificador, operador, etc) del cÃ³digo fuente, y    */
 /* rellena la estructura global "token" con los datos del mismo.          */
 /* ---------------------------------------------------------------------- */
 
@@ -1124,7 +1124,7 @@ void token_next()
             return;
         }
 
-        /* Operadores de más de un caracter */
+        /* Operadores de mÃ¡s de un caracter */
 
         len = 0;
 

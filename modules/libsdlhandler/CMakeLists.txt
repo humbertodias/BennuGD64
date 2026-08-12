@@ -10,7 +10,7 @@ add_library (
 
 target_link_libraries (
   sdlhandler
-  SDL
+  ${BENNUGD_SDL3_TARGET}
 )
 
 if (NOT STATIC_MODULES)

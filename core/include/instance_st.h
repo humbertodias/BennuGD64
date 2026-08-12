@@ -1,7 +1,7 @@
 /*
- *  Copyright © 2006-2013 SplinterGU (Fenix/Bennugd)
- *  Copyright © 2002-2006 Fenix Team (Fenix)
- *  Copyright © 1999-2002 José Luis Cebrián Pagüe (Fenix)
+ *  Copyright Â© 2006-2013 SplinterGU (Fenix/Bennugd)
+ *  Copyright Â© 2002-2006 Fenix Team (Fenix)
+ *  Copyright Â© 1999-2002 JosÃ© Luis CebriÃ¡n PagÃ¼e (Fenix)
  *
  *  This file is part of Bennu - Game Development
  *
@@ -28,6 +28,8 @@
 
 #ifndef __INSTANCE_ST_H
 #define __INSTANCE_ST_H
+
+#include <stdint.h>
 
 #define FIRST_INSTANCE_ID   0x00010000
 #define LAST_INSTANCE_ID    0x0001ffff
@@ -88,8 +90,8 @@ typedef struct _instance
     /* The first integer at the stack is the stack size,
        with optional NO_RETURN_VALUE mask. The stack contents follows */
 
-    int * stack ;
-    int * stack_ptr ;
+    intptr_t * stack ;
+    intptr_t * stack_ptr ;
 
     /* For debugging */
 

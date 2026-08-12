@@ -18,7 +18,7 @@ target_link_libraries (
   key
   render
   grbase
-  SDL
+  ${BENNUGD_SDL3_TARGET}
   bgdrtm
 )
 

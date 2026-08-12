@@ -110,7 +110,7 @@ void file_add_xfile( file * fp, char * stubname, long offset, char * name, int s
 
 int file_read( file * fp, void * buffer, int len )
 {
-    assert( len != 0 );
+    if ( len <= 0 ) return 0;
 
     if ( fp->type == F_XFILE )
     {

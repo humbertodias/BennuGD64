@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
 
 project (BennuGD)
-add_definitions (-DVERSION="1.0.0")
+add_definitions (-DVERSION="1.0.1")
 
 # This codebase predates C23; GCC 15+ defaults to C23 where () means (void).
 set(CMAKE_C_STANDARD 17)

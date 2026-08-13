@@ -91,6 +91,10 @@ int main( int argc, char *argv[] )
     /* get my executable name */
 
 #ifdef _WIN32
+
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
+
     if ( strlen( argv[0] ) < 4 || strncmpi( &argv[0][strlen( argv[0] ) - 4], ".exe", 4 ) )
     {
         arg0 = malloc( strlen( argv[0] ) + 5 );

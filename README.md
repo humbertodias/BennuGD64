@@ -8,10 +8,18 @@ A fork of [BennuGD](https://www.bennugd.org/) adapted to run on modern 64-bit ar
 
 ## Install
 
+The installer defaults to a **static** build (modules linked into `bgdi`).
+
 Linux / macOS / Git Bash:
 
 ```shell
 curl -sL "https://raw.githubusercontent.com/humbertodias/BennuGD64/main/scripts/install.sh" | bash
+```
+
+Shared modules (`.so` / `.dylib` under `modules/`):
+
+```shell
+curl -sL "https://raw.githubusercontent.com/humbertodias/BennuGD64/main/scripts/install.sh" | BENNUGD_LINKAGE=shared bash
 ```
 
 Windows (PowerShell):
@@ -20,7 +28,15 @@ Windows (PowerShell):
 irm https://raw.githubusercontent.com/humbertodias/BennuGD64/main/scripts/install.ps1 | iex
 ```
 
-It will install two tools: `bgdc` *compiler* and `bgdi` *interpreter*
+Shared modules (`.dll` under `modules/`):
+
+```powershell
+$env:BENNUGD_LINKAGE = "shared"
+irm https://raw.githubusercontent.com/humbertodias/BennuGD64/main/scripts/install.ps1 | iex
+```
+
+It will install two tools: `bgdc` *compiler* and `bgdi` *interpreter*. Shared builds also place `libbgdrtm` next to the binaries and load plugins from `modules/`.
+
 
 ## Getting starting
 

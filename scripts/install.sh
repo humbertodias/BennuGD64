@@ -7,6 +7,7 @@ set -euo pipefail
 REPO="${BENNUGD_REPO:-humbertodias/BennuGD64}"
 INSTALL_DIR="${BENNUGD_HOME:-$HOME/bennugd}"
 VERSION="${BENNUGD_VERSION:-latest}"
+LINKAGE="${BENNUGD_LINKAGE:-static}"
 GITHUB_API="${GITHUB_API:-https://api.github.com}"
 GITHUB_DOWNLOAD="${GITHUB_DOWNLOAD:-https://github.com}"
 
@@ -53,24 +54,43 @@ resolve_version() {
 }
 
 asset_name() {
+  local suffix="${1:-}"
   if [[ "$PLATFORM" == "windows" ]]; then
-    printf 'bennugd64-%s-%s-%s.zip' "$TAG" "$PLATFORM" "$ARCH"
+    if [[ -n "$suffix" ]]; then
+      printf 'bennugd64-%s-%s-%s-%s.zip' "$TAG" "$PLATFORM" "$ARCH" "$suffix"
+    else
+      printf 'bennugd64-%s-%s-%s.zip' "$TAG" "$PLATFORM" "$ARCH"
+    fi
   else
-    printf 'bennugd64-%s-%s-%s.tar.gz' "$TAG" "$PLATFORM" "$ARCH"
+    if [[ -n "$suffix" ]]; then
+      printf 'bennugd64-%s-%s-%s-%s.tar.gz' "$TAG" "$PLATFORM" "$ARCH" "$suffix"
+    else
+      printf 'bennugd64-%s-%s-%s.tar.gz' "$TAG" "$PLATFORM" "$ARCH"
+    fi
   fi
 }
 
 download_and_extract() {
   local asset url stage extracted
-  asset="$(asset_name)"
+  case "$LINKAGE" in
+    static|shared) ;;
+    *) die "BENNUGD_LINKAGE must be static or shared (got: $LINKAGE)" ;;
+  esac
+  asset="$(asset_name "$LINKAGE")"
   url="$GITHUB_DOWNLOAD/$REPO/releases/download/$TAG/$asset"
   WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/bennugd-install.XXXXXX")"
   cleanup() { rm -rf "${WORK_DIR:-}"; }
   trap cleanup EXIT
 
   info "Downloading $asset"
-  curl -fL --progress-bar -o "$WORK_DIR/$asset" "$url" || \
-    die "Download failed (no asset for $PLATFORM/$ARCH at $TAG?): $url"
+  if ! curl -fL --progress-bar -o "$WORK_DIR/$asset" "$url"; then
+    # Older releases used unsuffixed archive names.
+    asset="$(asset_name)"
+    url="$GITHUB_DOWNLOAD/$REPO/releases/download/$TAG/$asset"
+    info "Retrying legacy asset $asset"
+    curl -fL --progress-bar -o "$WORK_DIR/$asset" "$url" || \
+      die "Download failed (no asset for $PLATFORM/$ARCH/$LINKAGE at $TAG?): $url"
+  fi
 
   stage="$WORK_DIR/extract"
   mkdir -p "$stage"
@@ -195,6 +215,7 @@ main() {
 
   info "Version : $TAG"
   info "Platform: $PLATFORM/$ARCH"
+  info "Linkage : $LINKAGE"
   info "Install : $INSTALL_DIR"
   echo
 

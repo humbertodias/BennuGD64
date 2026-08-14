@@ -5,7 +5,8 @@
 param(
     [string]$Repo = $(if ($env:BENNUGD_REPO) { $env:BENNUGD_REPO } else { "humbertodias/BennuGD64" }),
     [string]$InstallDir = $(if ($env:BENNUGD_HOME) { $env:BENNUGD_HOME } else { (Join-Path $HOME "bennugd") }),
-    [string]$Version = $(if ($env:BENNUGD_VERSION) { $env:BENNUGD_VERSION } else { "latest" })
+    [string]$Version = $(if ($env:BENNUGD_VERSION) { $env:BENNUGD_VERSION } else { "latest" }),
+    [string]$Linkage = $(if ($env:BENNUGD_LINKAGE) { $env:BENNUGD_LINKAGE } else { "static" })
 )
 
 $ErrorActionPreference = "Stop"
@@ -38,11 +39,15 @@ Write-Host "BennuGD64 installer" -ForegroundColor White
 $tag = Resolve-Tag
 $arch = Resolve-Arch
 $platform = "windows"
-$asset = "bennugd64-$tag-$platform-$arch.zip"
+if ($Linkage -notin @("static", "shared")) {
+    throw "BENNUGD_LINKAGE must be static or shared (got: $Linkage)"
+}
+$asset = "bennugd64-$tag-$platform-$arch-$Linkage.zip"
 $url = "https://github.com/$Repo/releases/download/$tag/$asset"
 
 Write-Info "Version : $tag"
 Write-Info "Platform: $platform/$arch"
+Write-Info "Linkage : $Linkage"
 Write-Info "Install : $InstallDir"
 Write-Host ""
 
@@ -52,7 +57,14 @@ New-Item -ItemType Directory -Path $tmp | Out-Null
 try {
     $zipPath = Join-Path $tmp $asset
     Write-Info "Downloading $asset"
-    Invoke-WebRequest -Uri $url -OutFile $zipPath
+    try {
+        Invoke-WebRequest -Uri $url -OutFile $zipPath
+    } catch {
+        $asset = "bennugd64-$tag-$platform-$arch.zip"
+        $url = "https://github.com/$Repo/releases/download/$tag/$asset"
+        Write-Info "Retrying legacy asset $asset"
+        Invoke-WebRequest -Uri $url -OutFile $zipPath
+    }
 
     $extractDir = Join-Path $tmp "extract"
     Expand-Archive -LiteralPath $zipPath -DestinationPath $extractDir -Force

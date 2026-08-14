@@ -21,7 +21,7 @@ env:
 
 jobs:
   build:
-    name: ${{ matrix.platform }}-${{ matrix.arch }}
+    name: ${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -30,12 +30,27 @@ jobs:
           - runner: ubuntu-22.04
             platform: linux
             arch: x86_64
+            linkage: static
+          - runner: ubuntu-22.04
+            platform: linux
+            arch: x86_64
+            linkage: shared
           - runner: windows-latest
             platform: windows
             arch: x86_64
+            linkage: static
+          - runner: windows-latest
+            platform: windows
+            arch: x86_64
+            linkage: shared
           - runner: macos-latest
             platform: macos
             arch: arm64
+            linkage: static
+          - runner: macos-latest
+            platform: macos
+            arch: arm64
+            linkage: shared
 
     defaults:
       run:
@@ -106,19 +121,27 @@ jobs:
       - name: Build BennuGD64
         env:
           DEPS_DIR: ${{ github.workspace }}/.deps
-          BUILD_DIR: ${{ github.workspace }}/build-ci
+          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
           CMAKE_GENERATOR: Ninja
+          STATIC_MODULES: ${{ matrix.linkage == 'static' && 'ON' || 'OFF' }}
         run: scripts/ci/build-bennugd.sh
 
       - name: Smoke test binaries
         env:
-          BUILD_DIR: ${{ github.workspace }}/build-ci
+          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
         run: |
           set -euo pipefail
           BGDC=$(find "$BUILD_DIR" -type f \( -name bgdc -o -name bgdc.exe \) | head -1)
           BGDI=$(find "$BUILD_DIR" -type f \( -name bgdi -o -name bgdi.exe \) | head -1)
           echo "bgdc=$BGDC"
           echo "bgdi=$BGDI"
+          RTM_LIB=$(find "$BUILD_DIR" -type f \( -name 'libbgdrtm.so' -o -name 'libbgdrtm.dll' -o -name 'bgdrtm.dll' -o -name 'libbgdrtm.dylib' \) | head -1 || true)
+          if [[ -n "${RTM_LIB:-}" ]]; then
+            RTM_DIR="$(dirname "$RTM_LIB")"
+            export LD_LIBRARY_PATH="${RTM_DIR}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+            export DYLD_LIBRARY_PATH="${RTM_DIR}${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+            export PATH="${RTM_DIR}:$PATH"
+          fi
           "$BGDC" >/tmp/bgdc-help.txt 2>&1 || true
           "$BGDI" >/tmp/bgdi-help.txt 2>&1 || true
           grep -E 'BGDC|Compiler' /tmp/bgdc-help.txt
@@ -133,11 +156,12 @@ jobs:
 
       - name: Package
         env:
-          BUILD_DIR: ${{ github.workspace }}/build-ci
+          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
           DIST_DIR: ${{ github.workspace }}/dist
           PLATFORM: ${{ matrix.platform }}
           ARCH: ${{ matrix.arch }}
           VERSION: ${{ steps.meta.outputs.version }}
+          LINKAGE: ${{ matrix.linkage }}
           # Actions already zips artifacts; skip nested zip/tar for CI uploads.
           SKIP_ARCHIVE: "1"
         run: scripts/ci/package.sh
@@ -147,8 +171,8 @@ jobs:
         with:
           # Upload the staged folder (not a pre-built zip/tar). Actions already
           # wraps artifacts in a zip, so users only unpack once.
-          name: bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}
-          path: dist/stage/bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}/
+          name: bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}
+          path: dist/stage/bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}/
           if-no-files-found: error
           retention-days: 14
 
@@ -196,7 +220,11 @@ jobs:
           generate_release_notes: true
           files: release-assets/*
           body: |
-            Static builds of `bgdc` and `bgdi` for Linux, Windows and macOS.
+            Builds of `bgdc` and `bgdi` for Linux, Windows and macOS.
+
+            Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared>.tar.gz` (`.zip` on Windows):
+            - **static** — modules linked into `bgdi`
+            - **shared** — modules as `.so`/`.dll`/`.dylib` under `modules/`
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
             Windows builds use MinGW-w64 (UCRT64). OS graphics/audio libraries may still be required at runtime.

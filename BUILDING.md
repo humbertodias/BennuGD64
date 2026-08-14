@@ -27,8 +27,10 @@ Binaries:
 
 ```shell
 ./scripts/ci/build-static-deps.sh
-./scripts/ci/build-bennugd.sh
-./scripts/ci/package.sh
+STATIC_MODULES=ON LINKAGE=static ./scripts/ci/build-bennugd.sh
+LINKAGE=static ./scripts/ci/package.sh
+STATIC_MODULES=OFF LINKAGE=shared BUILD_DIR=build-ci-shared ./scripts/ci/build-bennugd.sh
+LINKAGE=shared BUILD_DIR=build-ci-shared ./scripts/ci/package.sh
 ```
 
 ### CMake options
@@ -37,8 +39,10 @@ Binaries:
 |--------|---------|-------------|
 | `BENNUGD_STATIC_DEPS` | OFF | Prefer static zlib/libpng/SDL3/SDL3_mixer |
 | `USE_LIBDES` | OFF | Use bundled DES instead of OpenSSL |
-| `STATIC_MODULES` | ON | Link modules into `bgdi` |
+| `STATIC_MODULES` | ON | Link modules into `bgdi` (`OFF` builds shared `.so`/`.dll`) |
 | `NO_SOUND` | OFF | Build without SDL3_mixer |
+
+Release archives are named `bennugd64-<tag>-<os>-<arch>-static` or `-shared`.
 
 ## Installer options
 
@@ -48,6 +52,7 @@ The install scripts download the latest GitHub Release for your platform, unpack
 |----------|---------|-------------|
 | `BENNUGD_HOME` | `$HOME/bennugd` | Install directory |
 | `BENNUGD_VERSION` | `latest` | Release tag (for example `v1.0.0`) |
+| `BENNUGD_LINKAGE` | `static` | `static` or `shared` archive to install |
 
 ## CI/CD
 

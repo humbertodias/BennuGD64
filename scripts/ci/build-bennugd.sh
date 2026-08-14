@@ -7,6 +7,7 @@ DEPS_DIR="${DEPS_DIR:-$ROOT/.deps}"
 PREFIX="${PREFIX:-$DEPS_DIR/prefix}"
 BUILD_DIR="${BUILD_DIR:-$ROOT/build-ci}"
 BUILD_TYPE="${BUILD_TYPE:-Release}"
+STATIC_MODULES="${STATIC_MODULES:-ON}"
 JOBS="${JOBS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)}"
 CMAKE_GENERATOR="${CMAKE_GENERATOR:-}"
 
@@ -66,7 +67,7 @@ args=(
   -DCMAKE_PREFIX_PATH="$PREFIX"
   -DBENNUGD_STATIC_DEPS=ON
   -DUSE_LIBDES=ON
-  -DSTATIC_MODULES=ON
+  -DSTATIC_MODULES="$STATIC_MODULES"
   -DNO_SOUND=OFF
   -DPNG_LIBRARY="$PNG_LIB"
   -DPNG_PNG_INCLUDE_DIR="$PREFIX/include"
@@ -91,4 +92,4 @@ fi
 cmake "${args[@]}"
 cmake --build "$BUILD_DIR" --config "$BUILD_TYPE" -j"$JOBS"
 
-echo "==> Build complete in $BUILD_DIR"
+echo "==> Build complete in $BUILD_DIR (STATIC_MODULES=$STATIC_MODULES)"

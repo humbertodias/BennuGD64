@@ -16,7 +16,16 @@ case "$PLATFORM" in
   linux) PLATFORM=linux ;;
 esac
 
-STAGE="$DIST_DIR/stage/bennugd64-${VERSION}-${PLATFORM}-${ARCH}"
+LINKAGE="${LINKAGE:-static}"
+case "$LINKAGE" in
+  static|shared) ;;
+  *)
+    echo "LINKAGE must be static or shared (got: $LINKAGE)" >&2
+    exit 1
+    ;;
+esac
+
+STAGE="$DIST_DIR/stage/bennugd64-${VERSION}-${PLATFORM}-${ARCH}-${LINKAGE}"
 rm -rf "$STAGE"
 mkdir -p "$STAGE"
 
@@ -54,11 +63,32 @@ if [[ "$PLATFORM" == "windows" ]]; then
   [[ -f "$STAGE/bgdi.exe" ]] || mv "$STAGE/bgdi" "$STAGE/bgdi.exe" 2>/dev/null || true
 fi
 
+if [[ "$LINKAGE" == "shared" ]]; then
+  mkdir -p "$STAGE/modules"
+  while IFS= read -r lib; do
+    [[ -n "$lib" && -f "$lib" ]] || continue
+    base="$(basename "$lib")"
+    case "$base" in
+      libbgdrtm.*|bgdrtm.dll|libbgdrtm.dylib)
+        cp "$lib" "$STAGE/"
+        cp "$lib" "$STAGE/modules/"
+        ;;
+      *)
+        cp "$lib" "$STAGE/modules/"
+        ;;
+    esac
+  done < <(find "$BUILD_DIR" \( -path '*/CMakeFiles/*' -o -path '*/Testing/*' \) -prune -o -type f \( \
+      -name '*.so' -o -name '*.so.*' -o -name '*.dll' -o -name '*.dylib' \
+    \) -print)
+fi
+
 cp "$ROOT/README.md" "$STAGE/" 2>/dev/null || true
 cat > "$STAGE/BUILD_INFO.txt" <<EOF
 BennuGD64 ${VERSION}
 platform: ${PLATFORM}
 arch: ${ARCH}
+linkage: ${LINKAGE}
+modules: $( [[ "$LINKAGE" == "shared" ]] && echo "loaded from modules/" || echo "linked into bgdi" )
 static deps: zlib, libpng, SDL3, SDL3_mixer (stb_vorbis + dr_mp3), bundled DES
 note: OS graphics/audio system libraries may still be required at runtime (X11/Wayland/Cocoa/DirectX).
 EOF
@@ -66,7 +96,7 @@ EOF
 mkdir -p "$DIST_DIR"
 # Keep local archives for manual packaging; CI uploads the stage folder so
 # Actions artifacts are not zip-inside-zip for downloaders.
-ARCHIVE_BASE="$DIST_DIR/bennugd64-${VERSION}-${PLATFORM}-${ARCH}"
+ARCHIVE_BASE="$DIST_DIR/bennugd64-${VERSION}-${PLATFORM}-${ARCH}-${LINKAGE}"
 rm -f "${ARCHIVE_BASE}.zip" "${ARCHIVE_BASE}.tar.gz"
 
 STAGE_PARENT="$DIST_DIR/stage"

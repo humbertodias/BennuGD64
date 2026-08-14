@@ -141,10 +141,17 @@ jobs:
             export LD_LIBRARY_PATH="${RTM_DIR}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
             export DYLD_LIBRARY_PATH="${RTM_DIR}${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
             export PATH="${RTM_DIR}:$PATH"
-            # Windows loads DLLs from the exe directory first; MSYS PATH entries
-            # with mixed drive paths are not always searched.
-            cp "$RTM_LIB" "$(dirname "$BGDI")/" 2>/dev/null || true
-            cp "$RTM_LIB" "$(dirname "$BGDC")/" 2>/dev/null || true
+          fi
+          if [[ "${{ matrix.platform }}" == "windows" ]]; then
+            # Windows has no RPATH; DLLs are loaded from the exe directory.
+            while IFS= read -r dll; do
+              [[ -n "$dll" && -f "$dll" ]] || continue
+              cp "$dll" "$(dirname "$BGDI")/"
+              cp "$dll" "$(dirname "$BGDC")/"
+            done < <(find "$BUILD_DIR" -type f \( \
+              -name 'libbgdrtm.dll' -o -name 'bgdrtm.dll' -o \
+              -name 'libdes.dll' -o -name 'des.dll' \
+            \))
           fi
           "$BGDC" >/tmp/bgdc-help.txt 2>&1 || true
           "$BGDI" >/tmp/bgdi-help.txt 2>&1 || true

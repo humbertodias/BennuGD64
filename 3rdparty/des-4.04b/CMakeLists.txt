@@ -1,6 +1,6 @@
 add_library (
   des
-  STATIC
+  ${MODULES}
   cbc_cksm.c
   pcbc_enc.c
   qud_cksm.c
@@ -28,3 +28,12 @@ add_library (
   read_pwd.c
   read2pwd.c
 )
+
+if (NOT STATIC_MODULES)
+  install (
+    TARGETS
+    des
+    DESTINATION
+    /usr/lib
+  )
+endif ()

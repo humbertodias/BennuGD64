@@ -141,9 +141,17 @@ jobs:
             export LD_LIBRARY_PATH="${RTM_DIR}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
             export DYLD_LIBRARY_PATH="${RTM_DIR}${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
             export PATH="${RTM_DIR}:$PATH"
+            # Windows loads DLLs from the exe directory first; MSYS PATH entries
+            # with mixed drive paths are not always searched.
+            cp "$RTM_LIB" "$(dirname "$BGDI")/" 2>/dev/null || true
+            cp "$RTM_LIB" "$(dirname "$BGDC")/" 2>/dev/null || true
           fi
           "$BGDC" >/tmp/bgdc-help.txt 2>&1 || true
           "$BGDI" >/tmp/bgdi-help.txt 2>&1 || true
+          echo "----- bgdc output -----"
+          cat /tmp/bgdc-help.txt || true
+          echo "----- bgdi output -----"
+          cat /tmp/bgdi-help.txt || true
           grep -E 'BGDC|Compiler' /tmp/bgdc-help.txt
           grep -E 'BGDI|Interpreter' /tmp/bgdi-help.txt
           if [[ "${{ matrix.platform }}" == "windows" ]]; then

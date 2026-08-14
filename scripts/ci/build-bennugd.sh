@@ -87,6 +87,7 @@ fi
 # MinGW: avoid depending on libgcc_s_seh-1.dll for redistributable archives.
 if is_msys2; then
   args+=(-DCMAKE_EXE_LINKER_FLAGS="-static-libgcc")
+  args+=(-DCMAKE_SHARED_LINKER_FLAGS="-static-libgcc")
 fi
 
 cmake "${args[@]}"

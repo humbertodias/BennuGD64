@@ -167,7 +167,7 @@ static int modproc_running( INSTANCE * my, intptr_t * params )
 static int modproc_signal( INSTANCE * my, intptr_t * params )
 {
     INSTANCE * i, * ctx;
-    int fake_params[2] ;
+    intptr_t fake_params[2] ;
 
     if ( params[0] == ALL_PROCESS )
     {

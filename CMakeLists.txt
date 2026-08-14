@@ -28,6 +28,8 @@ if (STATIC_MODULES)
   set (MODULES "STATIC")
 else ()
   set (MODULES "SHARED")
+  # Static in-tree libs (e.g. des) and objects must be PIC to link into .so/.dylib.
+  set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   # Shared modules and libbgdrtm must resolve next to bgdi and in modules/.
   if (NOT WIN32)
     if (APPLE)

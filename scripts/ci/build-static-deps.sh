@@ -40,7 +40,14 @@ cmake_configure() {
     -DCMAKE_INSTALL_PREFIX="$PREFIX"
     -DCMAKE_PREFIX_PATH="$PREFIX"
     -DCMAKE_FIND_PACKAGE_PREFER_CONFIG=ON
+    # Needed so these static archives can later be linked into libbgdrtm.so / modules.
+    -DCMAKE_POSITION_INDEPENDENT_CODE=ON
   )
+  if ! is_msvc_windows; then
+    # zlib's CMake does not always honor POSITION_INDEPENDENT_CODE on the static target.
+    args+=(-DCMAKE_C_FLAGS=-fPIC)
+    args+=(-DCMAKE_CXX_FLAGS=-fPIC)
+  fi
   if [[ -n "$CMAKE_GENERATOR" ]]; then
     args+=(-G "$CMAKE_GENERATOR")
   fi

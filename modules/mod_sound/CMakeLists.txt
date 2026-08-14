@@ -15,6 +15,7 @@ target_link_libraries (
   ${BENNUGD_SDL3_TARGET}
   bgload
   bgdrtm
+  grbase
   ${BENNUGD_SDL3_MIXER_TARGET}
 )
 

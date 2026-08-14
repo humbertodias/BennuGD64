@@ -42,6 +42,28 @@ Binaries:
 | bgdc | `build/core/bgdc/src/bgdc` |
 | bgdi | `build/core/bgdi/src/bgdi` |
 
+## Version
+
+By default CMake reads the version from Git:
+
+- If `HEAD` is exactly a tag such as `1.2.3`, that tag is the version.
+- Otherwise it uses `git describe --tags` (for example `1.2.3-4-gabc1234`).
+
+That string is used in the `bgdc`/`bgdi` banners, the SDL window title, `BUILD_INFO.txt`, and archive names. Compiler macros (`__BGD__`, `__BGD_MINOR__`, `__BGD_PATCHLEVEL__`) take the `X.Y.Z` prefix (a leading `v` is ignored).
+
+Override it at configure time:
+
+```shell
+cmake -S . -B build -DUSE_LIBDES=ON -DBENNUGD_VERSION=1.2.3
+cmake --build build
+```
+
+`make static` / `make shared` follow the same rule unless you pass the flag through `CMAKE_FLAGS`:
+
+```shell
+make static CMAKE_FLAGS="-DUSE_LIBDES=ON -DBENNUGD_VERSION=1.2.3"
+```
+
 ## Install / package
 
 `cmake --install` writes a relocatable tree (`bgdc`, `bgdi`, `libbgdrtm` next to them, plugins in `modules/`):
@@ -56,7 +78,7 @@ cmake --install build --prefix dist/bennugd64
 |--------|---------|-------------|
 | `BENNUGD_BUNDLE_DEPS` | ON | Fetch and build zlib, libpng, SDL3, SDL3_mixer |
 | `BENNUGD_STATIC_DEPS` | OFF (ON when bundling) | Prefer static zlib/libpng/SDL3/SDL3_mixer |
-| `BENNUGD_VERSION` | *(git tag)* | Banner, `BUILD_INFO.txt` and archive name. Empty = tag on HEAD (e.g. `1.2.3`), else `git describe` |
+| `BENNUGD_VERSION` | *(git tag)* | Override the version (see [Version](#version)); empty = tag on HEAD or `git describe` |
 | `USE_LIBDES` | OFF | Use bundled DES instead of OpenSSL |
 | `STATIC_MODULES` | ON | Link modules into `bgdi` (`OFF` builds shared `.so`/`.dll`) |
 | `NO_SOUND` | OFF | Build without SDL3_mixer |

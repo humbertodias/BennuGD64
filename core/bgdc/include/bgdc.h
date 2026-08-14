@@ -44,11 +44,14 @@
 
 #include "bennugd_git.h"
 
-#ifndef BENNUGD_GIT_BANNER
-#define BENNUGD_GIT_BANNER ""
+#ifndef VERSION
+#define VERSION "0.0.0"
+#endif
+#ifndef BENNUGD_VERSION
+#define BENNUGD_VERSION VERSION
 #endif
 
-#define BGDC_VERSION     "BGDC " VERSION " (" __DATE__ " " __TIME__ ")" BENNUGD_GIT_BANNER
+#define BGDC_VERSION     "BGDC " BENNUGD_VERSION " (" __DATE__ " " __TIME__ ")"
 
 /*
  *  HEADER FILES

@@ -1,7 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
 
 project (BennuGD)
-add_definitions (-DVERSION="1.0.1")
 
 # This codebase predates C23; GCC 15+ defaults to C23 where () means (void).
 set(CMAKE_C_STANDARD 17)
@@ -22,7 +21,7 @@ option (USE_LIBDES "Use bundled DES instead of OpenSSL" OFF)
 option (NO_SOUND "Disable sound support" OFF)
 option (BENNUGD_BUNDLE_DEPS "Download and build zlib, libpng, SDL3 and SDL3_mixer via CMake FetchContent" ON)
 option (BENNUGD_STATIC_DEPS "Prefer statically linked third-party libraries" OFF)
-set (BENNUGD_PACKAGE_VERSION "dev" CACHE STRING "Version string used in cmake --install layout and BUILD_INFO.txt")
+set (BENNUGD_VERSION "" CACHE STRING "Release version (empty = git tag such as 1.2.3, else git describe)")
 
 # gcw0 / embedded default remains static modules.
 if (STATIC_MODULES)
@@ -135,6 +134,7 @@ execute_process (
   COMMAND "${CMAKE_COMMAND}"
     -DGIT_DIR=${CMAKE_SOURCE_DIR}
     -DOUT=${BENNUGD_GIT_HEADER}
+    -DBENNUGD_VERSION=${BENNUGD_VERSION}
     -P ${CMAKE_SOURCE_DIR}/cmake/git_id.cmake
 )
 add_custom_target (
@@ -142,11 +142,14 @@ add_custom_target (
   COMMAND "${CMAKE_COMMAND}"
     -DGIT_DIR=${CMAKE_SOURCE_DIR}
     -DOUT=${BENNUGD_GIT_HEADER}
+    -DBENNUGD_VERSION=${BENNUGD_VERSION}
     -P ${CMAKE_SOURCE_DIR}/cmake/git_id.cmake
   BYPRODUCTS ${BENNUGD_GIT_HEADER}
-  COMMENT "Updating git id for banners and window title"
+  COMMENT "Updating version for banners and window title"
 )
 include_directories (${CMAKE_BINARY_DIR}/generated)
+include (${CMAKE_BINARY_DIR}/generated/bennugd_version.cmake)
+set (BENNUGD_PACKAGE_VERSION "${BENNUGD_RESOLVED_VERSION}")
 
 if (USE_LIBDES)
   add_subdirectory (3rdparty)

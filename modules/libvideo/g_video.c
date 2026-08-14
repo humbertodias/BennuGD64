@@ -170,18 +170,18 @@ void gr_wait_vsync()
 
 /* --------------------------------------------------------------------------- */
 
-#ifndef BENNUGD_GIT_ID
-#define BENNUGD_GIT_ID ""
+#ifndef BENNUGD_VERSION
+#define BENNUGD_VERSION ""
 #endif
 
 static const char * gr_caption_for_window( char * title, char * buf, size_t bufsz )
 {
-    if ( !BENNUGD_GIT_ID[0] )
+    if ( !BENNUGD_VERSION[0] )
         return title ? title : "";
     if ( title && title[0] )
-        snprintf( buf, bufsz, "%s | %s", title, BENNUGD_GIT_ID );
+        snprintf( buf, bufsz, "%s | %s", title, BENNUGD_VERSION );
     else
-        snprintf( buf, bufsz, "%s", BENNUGD_GIT_ID );
+        snprintf( buf, bufsz, "%s", BENNUGD_VERSION );
     return buf;
 }
 

@@ -183,9 +183,31 @@ int main( int argc, char *argv[] )
     constants_add( code, typedef_new( TYPE_STRING ), value ) ;
 */
     strcpy( _tmp, VERSION );
-                d = strchr( _tmp, '.' ); *d = '\0'; add_simple_define( "__BGD__", _tmp );
-    d1 = d + 1; d = strchr(   d1, '.' ); *d = '\0'; add_simple_define( "__BGD_MINOR__", d1 );
-    d1 = d + 1;                                     add_simple_define( "__BGD_PATCHLEVEL__", d1 );
+    d = strchr( _tmp, '.' );
+    if ( d )
+    {
+        *d = '\0';
+        add_simple_define( "__BGD__", _tmp );
+        d1 = d + 1;
+        d = strchr( d1, '.' );
+        if ( d )
+        {
+            *d = '\0';
+            add_simple_define( "__BGD_MINOR__", d1 );
+            add_simple_define( "__BGD_PATCHLEVEL__", d + 1 );
+        }
+        else
+        {
+            add_simple_define( "__BGD_MINOR__", d1 );
+            add_simple_define( "__BGD_PATCHLEVEL__", "0" );
+        }
+    }
+    else
+    {
+        add_simple_define( "__BGD__", _tmp );
+        add_simple_define( "__BGD_MINOR__", "0" );
+        add_simple_define( "__BGD_PATCHLEVEL__", "0" );
+    }
 
     memset( &dcb, 0, sizeof( dcb ) );
 

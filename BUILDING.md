@@ -56,7 +56,7 @@ cmake --install build --prefix dist/bennugd64
 |--------|---------|-------------|
 | `BENNUGD_BUNDLE_DEPS` | ON | Fetch and build zlib, libpng, SDL3, SDL3_mixer |
 | `BENNUGD_STATIC_DEPS` | OFF (ON when bundling) | Prefer static zlib/libpng/SDL3/SDL3_mixer |
-| `BENNUGD_PACKAGE_VERSION` | `dev` | Version string in `BUILD_INFO.txt` |
+| `BENNUGD_VERSION` | *(git tag)* | Banner, `BUILD_INFO.txt` and archive name. Empty = tag on HEAD (e.g. `1.2.3`), else `git describe` |
 | `USE_LIBDES` | OFF | Use bundled DES instead of OpenSSL |
 | `STATIC_MODULES` | ON | Link modules into `bgdi` (`OFF` builds shared `.so`/`.dll`) |
 | `NO_SOUND` | OFF | Build without SDL3_mixer |
@@ -70,7 +70,7 @@ The install scripts download the latest GitHub Release for your platform, unpack
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `BENNUGD_HOME` | `$HOME/bennugd` | Install directory |
-| `BENNUGD_VERSION` | `latest` | Release tag (for example `v1.0.0`) |
+| `BENNUGD_VERSION` | `latest` | Release tag (for example `1.2.3`) |
 | `BENNUGD_LINKAGE` | `static` | `static` or `shared` archive to install |
 
 ## CI/CD
@@ -83,5 +83,5 @@ GitHub Actions (`.github/workflows/ci.yml`) builds `bgdc` and `bgdi` for:
 
 The workflow is CMake-only: `cmake -S/-B`, `cmake --build`, `cmake --install`.
 
-On tags matching `v*` (for example `v1.0.0`), the workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically. OS graphics/audio libraries may still be required at runtime.
+On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names. The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically. OS graphics/audio libraries may still be required at runtime.
 

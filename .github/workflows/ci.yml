@@ -60,6 +60,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Setup MSYS2 (MinGW UCRT64)
         if: matrix.platform == 'windows'
@@ -96,17 +99,6 @@ jobs:
           brew update
           brew install cmake ninja pkg-config || true
 
-      - name: Resolve version
-        id: meta
-        run: |
-          if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
-            VERSION="${GITHUB_REF_NAME}"
-          else
-            VERSION="0.0.0+${GITHUB_SHA::7}"
-          fi
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-
       - name: Configure
         env:
           BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
@@ -124,11 +116,20 @@ jobs:
             -DBENNUGD_BUNDLE_DEPS=ON \
             -DSTATIC_MODULES="${STATIC_MODULES}" \
             -DNO_SOUND=OFF \
-            -DBENNUGD_PACKAGE_VERSION="${{ steps.meta.outputs.version }}" \
             -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
             -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
             -DBENNUGD_SDL3_REF="${SDL3_REF}" \
             -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+
+      - name: Resolve version
+        id: meta
+        env:
+          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
+        run: |
+          VERSION="$(tr -d '[:space:]' < "$BUILD_DIR/generated/VERSION")"
+          [[ -n "$VERSION" ]] || VERSION="dev"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
 
       - name: Build
         env:
@@ -180,7 +181,7 @@ jobs:
   release:
     name: Publish GitHub Release
     needs: build
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
       contents: write

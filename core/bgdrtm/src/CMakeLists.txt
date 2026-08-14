@@ -46,6 +46,12 @@ else ()
   )
 endif ()
 
+if (UNIX)
+  target_link_libraries ( bgdrtm m )
+endif ()
+if (NOT STATIC_MODULES)
+  target_link_libraries ( bgdrtm ${CMAKE_DL_LIBS} )
+endif ()
 
 if (STATIC_MODULES)
   target_link_libraries (

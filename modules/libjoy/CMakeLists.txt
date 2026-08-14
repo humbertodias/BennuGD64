@@ -14,12 +14,3 @@ target_link_libraries (
   ${BENNUGD_SDL3_TARGET}
   bgdrtm
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    joy
-    DESTINATION
-    /usr/lib
-  )
-endif ()

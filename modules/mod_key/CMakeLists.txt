@@ -14,12 +14,3 @@ target_link_libraries (
   key
   bgdrtm
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_key
-    DESTINATION
-    /usr/lib
-  )
-endif ()

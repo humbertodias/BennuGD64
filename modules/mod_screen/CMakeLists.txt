@@ -22,12 +22,3 @@ target_link_libraries (
   blit
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_screen
-    DESTINATION
-    /usr/lib
-  )
-endif ()

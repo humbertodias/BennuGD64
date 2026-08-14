@@ -18,12 +18,3 @@ add_library (
 target_link_libraries (
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    grbase
-    DESTINATION
-    /usr/lib
-  )
-endif ()

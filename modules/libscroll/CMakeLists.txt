@@ -21,12 +21,3 @@ target_link_libraries (
   video
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    scroll
-    DESTINATION
-    /usr/lib
-  )
-endif ()

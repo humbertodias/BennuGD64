@@ -13,12 +13,3 @@ target_link_libraries (
   mod_mem
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_mem
-    DESTINATION
-    /usr/lib
-  )
-endif ()

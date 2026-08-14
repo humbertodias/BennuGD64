@@ -14,12 +14,3 @@ target_link_libraries (
   bgdrtm
   ${BENNUGD_SDL3_TARGET}
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    bgload
-    DESTINATION
-    /usr/lib
-  )
-endif ()

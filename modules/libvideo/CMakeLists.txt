@@ -19,12 +19,3 @@ target_link_libraries (
   grbase
   ${BENNUGD_SDL3_TARGET}
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    video
-    DESTINATION
-    /usr/lib
-  )
-endif ()

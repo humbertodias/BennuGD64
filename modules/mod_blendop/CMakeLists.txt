@@ -14,12 +14,3 @@ target_link_libraries (
   mod_blendop
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_blendop
-    DESTINATION
-    /usr/lib
-  )
-endif ()

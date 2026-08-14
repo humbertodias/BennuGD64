@@ -12,12 +12,3 @@ target_link_libraries (
   mod_dir
   bgdrtm
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_dir
-    DESTINATION
-    /usr/lib
-  )
-endif ()

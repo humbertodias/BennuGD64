@@ -20,12 +20,3 @@ target_link_libraries (
   render
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_m7
-    DESTINATION
-    /usr/lib
-  )
-endif ()

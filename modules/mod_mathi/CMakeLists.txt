@@ -14,12 +14,3 @@ if (NOT WIN32)
     m
   )
 endif ()
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_mathi
-    DESTINATION
-    /usr/lib
-  )
-endif ()

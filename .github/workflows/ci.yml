@@ -107,52 +107,52 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
 
-      - name: Build static dependencies
+      - name: Configure
         env:
-          DEPS_DIR: ${{ github.workspace }}/.deps
-          CMAKE_GENERATOR: Ninja
+          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
         run: |
-          chmod +x scripts/ci/*.sh
           echo "toolchain: $(${CC:-cc} --version | head -1)"
           command -v cmake
           command -v ninja
-          scripts/ci/build-static-deps.sh
+          STATIC_MODULES=ON
+          if [[ "${{ matrix.linkage }}" != "static" ]]; then
+            STATIC_MODULES=OFF
+          fi
+          cmake -S . -B "$BUILD_DIR" -G Ninja \
+            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+            -DUSE_LIBDES=ON \
+            -DBENNUGD_BUNDLE_DEPS=ON \
+            -DSTATIC_MODULES="${STATIC_MODULES}" \
+            -DNO_SOUND=OFF \
+            -DBENNUGD_PACKAGE_VERSION="${{ steps.meta.outputs.version }}" \
+            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
+            -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
+            -DBENNUGD_SDL3_REF="${SDL3_REF}" \
+            -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
 
-      - name: Build BennuGD64
+      - name: Build
         env:
-          DEPS_DIR: ${{ github.workspace }}/.deps
           BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
-          CMAKE_GENERATOR: Ninja
-          STATIC_MODULES: ${{ matrix.linkage == 'static' && 'ON' || 'OFF' }}
-        run: scripts/ci/build-bennugd.sh
+        run: cmake --build "$BUILD_DIR" --config "${BUILD_TYPE}"
+
+      - name: Install
+        env:
+          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
+          STAGE: ${{ github.workspace }}/dist/stage/bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}
+        run: cmake --install "$BUILD_DIR" --prefix "$STAGE" --config "${BUILD_TYPE}"
 
       - name: Smoke test binaries
         env:
-          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
+          STAGE: ${{ github.workspace }}/dist/stage/bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}
         run: |
           set -euo pipefail
-          BGDC=$(find "$BUILD_DIR" -type f \( -name bgdc -o -name bgdc.exe \) | head -1)
-          BGDI=$(find "$BUILD_DIR" -type f \( -name bgdi -o -name bgdi.exe \) | head -1)
+          BGDC="$STAGE/bgdc"
+          BGDI="$STAGE/bgdi"
+          [[ -f "${BGDC}.exe" ]] && BGDC="${BGDC}.exe"
+          [[ -f "${BGDI}.exe" ]] && BGDI="${BGDI}.exe"
           echo "bgdc=$BGDC"
           echo "bgdi=$BGDI"
-          RTM_LIB=$(find "$BUILD_DIR" -type f \( -name 'libbgdrtm.so' -o -name 'libbgdrtm.dll' -o -name 'bgdrtm.dll' -o -name 'libbgdrtm.dylib' \) | head -1 || true)
-          if [[ -n "${RTM_LIB:-}" ]]; then
-            RTM_DIR="$(dirname "$RTM_LIB")"
-            export LD_LIBRARY_PATH="${RTM_DIR}${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-            export DYLD_LIBRARY_PATH="${RTM_DIR}${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
-            export PATH="${RTM_DIR}:$PATH"
-          fi
-          if [[ "${{ matrix.platform }}" == "windows" ]]; then
-            # Windows has no RPATH; DLLs are loaded from the exe directory.
-            while IFS= read -r dll; do
-              [[ -n "$dll" && -f "$dll" ]] || continue
-              cp "$dll" "$(dirname "$BGDI")/"
-              cp "$dll" "$(dirname "$BGDC")/"
-            done < <(find "$BUILD_DIR" -type f \( \
-              -name 'libbgdrtm.dll' -o -name 'bgdrtm.dll' -o \
-              -name 'libdes.dll' -o -name 'des.dll' \
-            \))
-          fi
+          ls -la "$STAGE"
           "$BGDC" >/tmp/bgdc-help.txt 2>&1 || true
           "$BGDI" >/tmp/bgdi-help.txt 2>&1 || true
           echo "----- bgdc output -----"
@@ -169,23 +169,9 @@ jobs:
             (otool -L "$BGDI" || ldd "$BGDI" || true) | head -40
           fi
 
-      - name: Package
-        env:
-          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
-          DIST_DIR: ${{ github.workspace }}/dist
-          PLATFORM: ${{ matrix.platform }}
-          ARCH: ${{ matrix.arch }}
-          VERSION: ${{ steps.meta.outputs.version }}
-          LINKAGE: ${{ matrix.linkage }}
-          # Actions already zips artifacts; skip nested zip/tar for CI uploads.
-          SKIP_ARCHIVE: "1"
-        run: scripts/ci/package.sh
-
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          # Upload the staged folder (not a pre-built zip/tar). Actions already
-          # wraps artifacts in a zip, so users only unpack once.
           name: bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}
           path: dist/stage/bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}/
           if-no-files-found: error

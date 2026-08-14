@@ -15,12 +15,3 @@ target_link_libraries (
   bgdrtm
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_path
-    DESTINATION
-    /usr/lib
-  )
-endif ()

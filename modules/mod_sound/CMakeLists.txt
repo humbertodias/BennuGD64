@@ -18,12 +18,3 @@ target_link_libraries (
   grbase
   ${BENNUGD_SDL3_MIXER_TARGET}
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_sound
-    DESTINATION
-    /usr/lib
-  )
-endif ()

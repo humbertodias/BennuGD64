@@ -15,12 +15,3 @@ target_link_libraries (
   joy
   bgdrtm
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_joy
-    DESTINATION
-    /usr/lib
-  )
-endif ()

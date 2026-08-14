@@ -19,12 +19,3 @@ target_link_libraries (
   font
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_text
-    DESTINATION
-    /usr/lib
-  )
-endif ()

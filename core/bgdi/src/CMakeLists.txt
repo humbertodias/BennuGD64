@@ -29,10 +29,3 @@ else ()
     OpenSSL::Crypto
   )
 endif ()
-
-install (
-  TARGETS
-  bgdi
-  DESTINATION
-  /usr/bin
-)

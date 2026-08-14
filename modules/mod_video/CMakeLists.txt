@@ -20,12 +20,3 @@ target_link_libraries (
   video
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_video
-    DESTINATION
-    /usr/lib
-  )
-endif ()

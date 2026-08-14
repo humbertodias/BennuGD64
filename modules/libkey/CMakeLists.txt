@@ -15,12 +15,3 @@ target_link_libraries (
   bgdrtm
   video
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    key
-    DESTINATION
-    /usr/lib
-  )
-endif ()

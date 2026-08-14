@@ -22,12 +22,3 @@ target_link_libraries (
   video
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_grproc
-    DESTINATION
-    /usr/lib
-  )
-endif ()

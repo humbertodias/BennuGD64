@@ -11,12 +11,3 @@ add_library (
 target_link_libraries (
   mod_rand
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_rand
-    DESTINATION
-    /usr/lib
-  )
-endif ()

@@ -105,12 +105,3 @@ if (STATIC_MODULES)
     mod_m7    
   )
 endif ()
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    bgdrtm
-    DESTINATION
-    /usr/lib
-  )
-endif ()

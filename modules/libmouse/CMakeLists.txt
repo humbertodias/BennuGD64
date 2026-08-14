@@ -23,12 +23,3 @@ target_link_libraries (
   video
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mouse
-    DESTINATION
-    /usr/lib
-  )
-endif ()

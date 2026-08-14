@@ -12,12 +12,3 @@ target_link_libraries (
   mod_crypt
   bgdrtm
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_crypt
-    DESTINATION
-    /usr/lib
-  )
-endif ()

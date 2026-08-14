@@ -16,12 +16,3 @@ target_link_libraries (
   grbase
   blit
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    draw
-    DESTINATION
-    /usr/lib
-  )
-endif ()

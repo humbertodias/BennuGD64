@@ -12,12 +12,3 @@ add_library (
 target_link_libraries (
   mod_mouse
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_mouse
-    DESTINATION
-    /usr/lib
-  )
-endif ()

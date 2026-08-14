@@ -23,12 +23,3 @@ target_link_libraries (
   mod_regex
   bgdrtm
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_regex
-    DESTINATION
-    /usr/lib
-  )
-endif ()

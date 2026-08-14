@@ -13,12 +13,3 @@ target_link_libraries (
   mod_effects
   grbase
 )
-
-if (NOT STATIC_MODULES)
-  install (
-    TARGETS
-    mod_effects
-    DESTINATION
-    /usr/lib
-  )
-endif ()

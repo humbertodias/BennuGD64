@@ -75,6 +75,11 @@
       }
       #bar { color: var(--muted); font-size: 13px; }
       #bar button { margin-left: 8px; padding: 4px 10px; font-size: 13px; }
+      #chooser { margin-top: 18px; text-align: left; }
+      #chooser[hidden] { display: none; }
+      #chooser p { margin: 0 0 10px; color: var(--text); }
+      #chooser-list { display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow: auto; }
+      #chooser-list button { width: 100%; text-align: left; word-break: break-all; }
     </style>
   </head>
   <body>
@@ -89,6 +94,10 @@
           <button type="button" class="secondary" id="btn-demo" hidden>Run demo</button>
         </div>
         <div id="status">Loading interpreter…</div>
+        <div id="chooser" hidden>
+          <p>Several programs were found. Choose one to run:</p>
+          <div id="chooser-list"></div>
+        </div>
       </div>
       <div id="game">
         <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
@@ -107,6 +116,8 @@
       const statusEl = document.getElementById('status');
       const canvasEl = document.getElementById('canvas');
       const btnDemo = document.getElementById('btn-demo');
+      const chooserEl = document.getElementById('chooser');
+      const chooserList = document.getElementById('chooser-list');
       const DCB_RE = /\.(dcb|dat|bin)$/i;
       let ready = false;
       let starting = false;
@@ -186,15 +197,24 @@
         }));
       }
 
-      function pickDcb(paths) {
-        const dcbs = paths.filter((p) => /\.dcb$/i.test(p));
-        if (dcbs.length === 1) return dcbs[0];
-        if (dcbs.length > 1) {
-          const named = dcbs.find((p) => /\/?(main|game|index)\.dcb$/i.test(p));
-          return named || dcbs[0];
+      function listLaunchers(paths) {
+        const dcbs = paths.filter((p) => /\.dcb$/i.test(p)).sort();
+        if (dcbs.length) return dcbs;
+        return paths.filter((p) => DCB_RE.test(p)).sort();
+      }
+
+      function showChooser(launchers) {
+        chooserList.replaceChildren();
+        for (const path of launchers) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'secondary';
+          btn.textContent = path;
+          btn.onclick = () => startGame('/' + path);
+          chooserList.appendChild(btn);
         }
-        const other = paths.filter((p) => DCB_RE.test(p));
-        return other[0] || null;
+        chooserEl.hidden = false;
+        setStatus(launchers.length + ' .dcb files. Pick one to run.');
       }
 
       async function loadAndRun(pairs) {
@@ -203,6 +223,7 @@
         const files = pairs.filter((p) => p && p.file && !skipName(p.path));
         if (!files.length) return setStatus('No files dropped.', true);
 
+        chooserEl.hidden = true;
         setStatus('Copying ' + files.length + ' file(s) into memory…');
         const paths = [];
         for (const { path, file } of files) {
@@ -211,9 +232,10 @@
           paths.push(norm);
         }
 
-        const dcb = pickDcb(paths);
-        if (!dcb) return setStatus('No .dcb (or .dat/.bin) found.', true);
-        startGame('/' + dcb);
+        const launchers = listLaunchers(paths);
+        if (!launchers.length) return setStatus('No .dcb (or .dat/.bin) found.', true);
+        if (launchers.length === 1) return startGame('/' + launchers[0]);
+        showChooser(launchers);
       }
 
       function startGame(absPath) {

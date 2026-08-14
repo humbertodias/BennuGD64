@@ -1,5 +1,5 @@
-# Writes bennugd_git.h with BENNUGD_GIT_ID "branch@commit" for the window title.
-# Invoked at configure time and before compiling libvideo.
+# Writes bennugd_git.h with BENNUGD_GIT_ID "branch@commit".
+# Invoked at configure time and before compiling targets that show the id.
 
 if (NOT DEFINED GIT_DIR OR NOT DEFINED OUT)
   message(FATAL_ERROR "git_id.cmake requires -DGIT_DIR= and -DOUT=")
@@ -61,7 +61,12 @@ endif ()
 string (REPLACE "\\" "\\\\" GIT_ID "${GIT_ID}")
 string (REPLACE "\"" "\\\"" GIT_ID "${GIT_ID}")
 
-set (_content "#ifndef BENNUGD_GIT_H\n#define BENNUGD_GIT_H\n#define BENNUGD_GIT_ID \"${GIT_ID}\"\n#endif\n")
+set (_banner "")
+if (NOT GIT_ID STREQUAL "")
+  set (_banner " ${GIT_ID}")
+endif ()
+
+set (_content "#ifndef BENNUGD_GIT_H\n#define BENNUGD_GIT_H\n#define BENNUGD_GIT_ID \"${GIT_ID}\"\n#define BENNUGD_GIT_BANNER \"${_banner}\"\n#endif\n")
 set (_tmp "${OUT}.tmp")
 file (WRITE "${_tmp}" "${_content}")
 execute_process (COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${_tmp}" "${OUT}")

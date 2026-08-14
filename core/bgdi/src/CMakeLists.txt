@@ -12,6 +12,8 @@ add_executable (
   main.c
 )
 
+add_dependencies ( bgdi bennugd_git_header )
+
 if (USE_LIBDES)
   target_link_libraries (
     bgdi

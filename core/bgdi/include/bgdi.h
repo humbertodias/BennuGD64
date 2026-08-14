@@ -38,7 +38,13 @@
  *  VERSION
  */
 
-#define BGDI_VERSION     "BGDI " VERSION " (" __DATE__ " " __TIME__ ")"
+#include "bennugd_git.h"
+
+#ifndef BENNUGD_GIT_BANNER
+#define BENNUGD_GIT_BANNER ""
+#endif
+
+#define BGDI_VERSION     "BGDI " VERSION " (" __DATE__ " " __TIME__ ")" BENNUGD_GIT_BANNER
 
 /*
  *  HEADER FILES

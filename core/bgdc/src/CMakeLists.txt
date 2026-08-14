@@ -80,6 +80,8 @@ add_executable (
   ../../common/xctype.c
 )
 
+add_dependencies ( bgdc bennugd_git_header )
+
 if (USE_LIBDES)
   target_link_libraries (
     bgdc

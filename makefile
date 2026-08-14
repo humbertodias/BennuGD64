@@ -23,14 +23,6 @@ install-static: static
 install-shared: shared
 	cmake --install build-shared --prefix $(PREFIX_SHARED)
 
-build/bgdc:
-	cmake -S . -B build -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) $(CMAKE_FLAGS) -DSTATIC_MODULES=ON
-	cmake --build build --target bgdc
-
-build/bgdi:
-	cmake -S . -B build -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) $(CMAKE_FLAGS) -DSTATIC_MODULES=ON
-	cmake --build build --target bgdi
-
 clean:
 	rm -rf build build-shared
 

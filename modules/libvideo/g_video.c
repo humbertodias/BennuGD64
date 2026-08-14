@@ -28,8 +28,11 @@
 
 /* --------------------------------------------------------------------------- */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "bennugd_git.h"
 
 #include "bgdrtm.h"
 
@@ -167,10 +170,26 @@ void gr_wait_vsync()
 
 /* --------------------------------------------------------------------------- */
 
+#ifndef BENNUGD_GIT_ID
+#define BENNUGD_GIT_ID ""
+#endif
+
+static const char * gr_caption_for_window( char * title, char * buf, size_t bufsz )
+{
+    if ( !BENNUGD_GIT_ID[0] )
+        return title ? title : "";
+    if ( title && title[0] )
+        snprintf( buf, bufsz, "%s | %s", title, BENNUGD_GIT_ID );
+    else
+        snprintf( buf, bufsz, "%s", BENNUGD_GIT_ID );
+    return buf;
+}
+
 void gr_set_caption( char * title )
 {
+    char buf[512];
     apptitle = title ;
-    if ( window ) SDL_SetWindowTitle( window, title ? title : "" ) ;
+    if ( window ) SDL_SetWindowTitle( window, gr_caption_for_window( title, buf, sizeof( buf ) ) ) ;
 }
 
 /* --------------------------------------------------------------------------- */
@@ -260,6 +279,7 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 {
     int cur_w = 0, cur_h = 0;
     int recreate = 0;
+    char caption_buf[512];
 
     if ( !window )
     {
@@ -281,7 +301,7 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
             SDL_DestroyWindow( window );
             window = NULL;
         }
-        window = SDL_CreateWindow( apptitle ? apptitle : "", width, height, window_flags );
+        window = SDL_CreateWindow( gr_caption_for_window( apptitle, caption_buf, sizeof( caption_buf ) ), width, height, window_flags );
         if ( !window ) return -1;
     }
     else

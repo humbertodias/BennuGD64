@@ -3,7 +3,7 @@ name: CI/CD
 on:
   push:
     branches: [main]
-    tags: ["v*"]
+    tags: ["*"]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -59,7 +59,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup MSYS2 (MinGW UCRT64)
         if: matrix.platform == 'windows'
@@ -170,7 +170,7 @@ jobs:
           fi
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}
           path: dist/stage/bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}/
@@ -186,7 +186,7 @@ jobs:
       contents: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
 
@@ -212,7 +212,7 @@ jobs:
           test -n "$(ls -A release-assets)"
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
           name: ${{ github.ref_name }}

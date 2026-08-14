@@ -1,5 +1,6 @@
 include_directories (
   ../../core/include
+  ../libvideo
 )
 
 add_library (
@@ -12,6 +13,7 @@ target_link_libraries (
   key
   ${BENNUGD_SDL3_TARGET}
   bgdrtm
+  video
 )
 
 if (NOT STATIC_MODULES)

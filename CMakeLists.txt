@@ -30,7 +30,8 @@ else ()
   set (MODULES "SHARED")
   # Static in-tree libs (e.g. des) and objects must be PIC to link into .so/.dylib.
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
-  # Shared modules and libbgdrtm must resolve next to bgdi and in modules/.
+  # Shared modules resolve next to themselves; libbgdrtm resolves next to bgdi
+  # and one directory up from modules/.
   if (NOT WIN32)
     if (APPLE)
       set (_bennugd_rpath "@loader_path;@loader_path/modules;@loader_path/..")

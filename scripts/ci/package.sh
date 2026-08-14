@@ -70,8 +70,8 @@ if [[ "$LINKAGE" == "shared" ]]; then
     base="$(basename "$lib")"
     case "$base" in
       libbgdrtm.*|bgdrtm.dll|libbgdrtm.dylib)
+        # Runtime library for bgdi/bgdc, not a Bennu module.
         cp "$lib" "$STAGE/"
-        cp "$lib" "$STAGE/modules/"
         ;;
       *)
         cp "$lib" "$STAGE/modules/"

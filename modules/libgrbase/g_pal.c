@@ -739,6 +739,8 @@ void gr_make_trans_table()
 
     if ( trans_table_updated ) return ;
 
+    if ( !sys_pixel_format ) return ;
+
     if ( sys_pixel_format->palette )
         rgb = sys_pixel_format->palette->rgb;
     else

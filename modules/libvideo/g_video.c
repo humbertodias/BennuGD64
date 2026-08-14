@@ -256,6 +256,55 @@ static SDL_Surface * gr_create_shadow_surface( int width, int height, int depth 
 
 /* --------------------------------------------------------------------------- */
 
+static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
+{
+    int cur_w = 0, cur_h = 0;
+    int recreate = 0;
+
+    if ( !window )
+    {
+        recreate = 1;
+    }
+    else
+    {
+        SDL_GetWindowSize( window, &cur_w, &cur_h );
+        if ( cur_w != width || cur_h != height )
+            recreate = 1;
+        if ( !!( SDL_GetWindowFlags( window ) & SDL_WINDOW_FULLSCREEN ) != !!full_screen )
+            recreate = 1;
+    }
+
+    if ( recreate )
+    {
+        if ( window )
+        {
+            SDL_DestroyWindow( window );
+            window = NULL;
+        }
+        window = SDL_CreateWindow( apptitle ? apptitle : "", width, height, window_flags );
+        if ( !window ) return -1;
+    }
+    else
+    {
+        SDL_SetWindowFullscreen( window, full_screen ? true : false );
+        SDL_SetWindowSize( window, width, height );
+    }
+
+    SDL_SetWindowBordered( window, ( frameless || full_screen ) ? false : true );
+    SDL_SetWindowResizable( window, ( frameless || full_screen ) ? false : true );
+
+    if ( !full_screen )
+    {
+        SDL_RestoreWindow( window );
+        SDL_SetWindowSize( window, width, height );
+        SDL_SetWindowPosition( window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED );
+    }
+
+    return 0;
+}
+
+/* --------------------------------------------------------------------------- */
+
 int gr_set_icon( GRAPH * map )
 {
     if (( icon = map ))
@@ -302,19 +351,11 @@ int gr_set_mode( int width, int height, int depth )
     Uint32 window_flags = 0;
     char * e;
 
-    /* SDL1 SetVideoMode(0,0) used the desktop size. SDL2/3 CreateSurface(0,0)
-     * yields an empty surface and later crashes in gr_lock_screen. */
-    if ( width < 1 || height < 1 )
-    {
-        const SDL_DisplayMode * mode = SDL_GetDesktopDisplayMode( SDL_GetPrimaryDisplay() );
-        if ( mode )
-        {
-            if ( width < 1 ) width = mode->w;
-            if ( height < 1 ) height = mode->h;
-        }
-        if ( width < 1 ) width = 320;
-        if ( height < 1 ) height = 200;
-    }
+    /* SDL_CreateSurface(0,0) is invalid. Do not fall back to the desktop
+     * size: that opens a display-sized window, SetWindowSize often cannot
+     * shrink it (Wayland), and the present path then stretches the game. */
+    if ( width < 1 ) width = 320;
+    if ( height < 1 ) height = 200;
 
     surface_width = width;
     surface_height = height;
@@ -434,21 +475,8 @@ int gr_set_mode( int width, int height, int depth )
             }
         }
 
-        if ( !window )
-        {
-            window = SDL_CreateWindow( apptitle ? apptitle : "",
-                                       surface_width, surface_height, window_flags );
-        }
-        else
-        {
-            SDL_SetWindowFullscreen( window, full_screen ? true : false );
-            SDL_SetWindowSize( window, surface_width, surface_height );
-        }
-
-        if ( !window ) return -1;
-
-        SDL_SetWindowBordered( window, ( frameless || full_screen ) ? false : true );
-        SDL_SetWindowResizable( window, ( frameless || full_screen ) ? false : true );
+        if ( gr_setup_sdl_window( surface_width, surface_height, window_flags ) < 0 )
+            return -1;
 
         scale_screen = gr_create_shadow_surface( surface_width, surface_height, depth );
 
@@ -559,21 +587,8 @@ int gr_set_mode( int width, int height, int depth )
     }
     else
     {
-        if ( !window )
-        {
-            window = SDL_CreateWindow( apptitle ? apptitle : "",
-                                       surface_width, surface_height, window_flags );
-        }
-        else
-        {
-            SDL_SetWindowFullscreen( window, full_screen ? true : false );
-            SDL_SetWindowSize( window, surface_width, surface_height );
-        }
-
-        if ( !window ) return -1;
-
-        SDL_SetWindowBordered( window, ( frameless || full_screen ) ? false : true );
-        SDL_SetWindowResizable( window, ( frameless || full_screen ) ? false : true );
+        if ( gr_setup_sdl_window( surface_width, surface_height, window_flags ) < 0 )
+            return -1;
 
         screen = gr_create_shadow_surface( surface_width, surface_height, depth );
     }

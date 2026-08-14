@@ -1,5 +1,6 @@
 include_directories (
   ../../core/include
+  ../libgrbase
 )
 
 add_library (
@@ -11,6 +12,7 @@ add_library (
 target_link_libraries (
   mod_file
   bgdrtm
+  grbase
 )
 
 if (NOT STATIC_MODULES)

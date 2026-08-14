@@ -264,6 +264,12 @@ int file_gets( file * fp, char * buffer, int len )
 {
     char * result = NULL ;
 
+    if ( !fp || !buffer || len < 1 )
+    {
+        if ( buffer ) buffer[0] = 0 ;
+        return 0 ;
+    }
+
     if ( fp->type == F_XFILE )
     {
         XFILE * xf ;

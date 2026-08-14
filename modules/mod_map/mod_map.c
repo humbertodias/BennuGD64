@@ -128,8 +128,8 @@ static int modmap_get_point( INSTANCE * my, intptr_t * params )
     /* Use the center as control point if it is not there */
     if ( params[2] == 0 && ( bmp->ncpoints == 0 || bmp->cpoints[0].x == CPOINT_UNDEFINED ) )
     {
-        *( int * )params[3] = bmp->width / 2;
-        *( int * )params[4] = bmp->height / 2;
+        *( int32_t * )bgd_ptr( params[3] ) = bmp->width / 2;
+        *( int32_t * )bgd_ptr( params[4] ) = bmp->height / 2;
         return 1 ;
     }
 
@@ -138,8 +138,8 @@ static int modmap_get_point( INSTANCE * my, intptr_t * params )
     if ( bmp->cpoints[params[2]].x == CPOINT_UNDEFINED && bmp->cpoints[params[2]].y == CPOINT_UNDEFINED )
         return 0;
 
-    *( int * )params[3] = bmp->cpoints[params[2]].x ;
-    *( int * )params[4] = bmp->cpoints[params[2]].y ;
+    *( int32_t * )bgd_ptr( params[3] ) = bmp->cpoints[params[2]].x ;
+    *( int32_t * )bgd_ptr( params[4] ) = bmp->cpoints[params[2]].y ;
     return 1 ;
 }
 
@@ -179,7 +179,7 @@ static int modmap_map_buffer( INSTANCE * my, intptr_t * params )
     else
         map = background ;
 
-    return map ? ( int )map->data : 0 ;
+    return map ? bgd_handle_put( map->data ) : 0 ;
 }
 
 /* --------------------------------------------------------------------------- */

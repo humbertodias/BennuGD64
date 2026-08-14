@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BennuGD64</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #101218;
+        --panel: #1a2030;
+        --line: #2c3548;
+        --text: #e8edf7;
+        --muted: #8b96ab;
+        --accent: #5b9dff;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.45 system-ui, sans-serif;
+      }
+      #stage {
+        min-height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      #drop {
+        width: min(560px, 100%);
+        border: 2px dashed var(--line);
+        border-radius: 16px;
+        background: var(--panel);
+        padding: 36px 28px;
+        text-align: center;
+      }
+      #drop.over { border-color: var(--accent); background: #1d2a44; }
+      #drop h1 { margin: 0 0 8px; font-size: 1.35rem; font-weight: 650; }
+      #drop p { margin: 0 0 8px; color: var(--muted); }
+      #drop .hint { font-size: 13px; }
+      #actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 8px;
+        padding: 8px 14px;
+        background: var(--accent);
+        color: #081018;
+        font-weight: 650;
+        cursor: pointer;
+      }
+      button.secondary { background: #2c3548; color: var(--text); }
+      button[disabled] { opacity: 0.45; cursor: default; }
+      #status { min-height: 1.4em; margin-top: 16px; color: var(--muted); font-size: 13px; white-space: pre-wrap; }
+      #status.err { color: #ff8b8b; }
+      #game {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+      }
+      #game.on { display: flex; }
+      canvas.emscripten {
+        display: block;
+        background: #000;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+        max-width: 100%;
+        max-height: calc(100vh - 48px);
+      }
+      #bar { color: var(--muted); font-size: 13px; }
+      #bar button { margin-left: 8px; padding: 4px 10px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <div id="drop">
+        <h1>BennuGD64</h1>
+        <p>Drop a <strong>.dcb</strong> plus its assets, or a game folder.</p>
+        <p class="hint">Subfolders are kept. Names are case-sensitive. Files stay in this tab (MEMFS).</p>
+        <div id="actions">
+          <button type="button" id="btn-files">Choose files</button>
+          <button type="button" class="secondary" id="btn-folder">Choose folder</button>
+          <button type="button" class="secondary" id="btn-demo" hidden>Run demo</button>
+        </div>
+        <div id="status">Loading interpreter…</div>
+      </div>
+      <div id="game">
+        <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+        <div id="bar">
+          <span id="running-as"></span>
+          <button type="button" class="secondary" id="btn-new">New game</button>
+        </div>
+      </div>
+    </div>
+    <input id="pick-files" type="file" multiple hidden>
+    <input id="pick-folder" type="file" webkitdirectory multiple hidden>
+
+    <script>
+      const dropEl = document.getElementById('drop');
+      const gameEl = document.getElementById('game');
+      const statusEl = document.getElementById('status');
+      const canvasEl = document.getElementById('canvas');
+      const btnDemo = document.getElementById('btn-demo');
+      const DCB_RE = /\.(dcb|dat|bin)$/i;
+      let ready = false;
+      let starting = false;
+
+      function setStatus(text, err) {
+        statusEl.textContent = text || '';
+        statusEl.className = err ? 'err' : '';
+      }
+
+      function skipName(name) {
+        const base = name.split('/').pop();
+        return !base || base === '.DS_Store' || base === 'Thumbs.db' || base.startsWith('._');
+      }
+
+      function mkdirp(path) {
+        const parts = path.split('/').filter(Boolean);
+        let acc = '';
+        for (const part of parts) {
+          acc += '/' + part;
+          try { FS.mkdir(acc); } catch (e) { /* exists */ }
+        }
+      }
+
+      function writeFile(path, data) {
+        const norm = path.replace(/\\/g, '/').replace(/^\/+/, '');
+        const slash = norm.lastIndexOf('/');
+        if (slash >= 0) mkdirp(norm.slice(0, slash));
+        FS.writeFile('/' + norm, data);
+      }
+
+      function readEntries(reader) {
+        return new Promise((resolve, reject) => {
+          const all = [];
+          const next = () => {
+            reader.readEntries((batch) => {
+              if (!batch.length) return resolve(all);
+              all.push(...batch);
+              next();
+            }, reject);
+          };
+          next();
+        });
+      }
+
+      async function walkEntry(entry, prefix) {
+        const path = prefix ? prefix + entry.name : entry.name;
+        if (entry.isFile) {
+          const file = await new Promise((res, rej) => entry.file(res, rej));
+          return [{ path, file }];
+        }
+        const kids = await readEntries(entry.createReader());
+        const out = [];
+        for (const kid of kids) out.push(...await walkEntry(kid, path + '/'));
+        return out;
+      }
+
+      async function itemsFromDataTransfer(dt) {
+        const items = [...(dt.items || [])];
+        if (items.some((it) => it.webkitGetAsEntry)) {
+          const collected = [];
+          for (const it of items) {
+            const entry = it.webkitGetAsEntry && it.webkitGetAsEntry();
+            if (entry) collected.push(...await walkEntry(entry, ''));
+          }
+          if (collected.length) return collected;
+        }
+        return [...(dt.files || [])].map((file) => ({
+          path: file.webkitRelativePath || file.name,
+          file
+        }));
+      }
+
+      function itemsFromFileList(list) {
+        return [...list].map((file) => ({
+          path: file.webkitRelativePath || file.name,
+          file
+        }));
+      }
+
+      function pickDcb(paths) {
+        const dcbs = paths.filter((p) => /\.dcb$/i.test(p));
+        if (dcbs.length === 1) return dcbs[0];
+        if (dcbs.length > 1) {
+          const named = dcbs.find((p) => /\/?(main|game|index)\.dcb$/i.test(p));
+          return named || dcbs[0];
+        }
+        const other = paths.filter((p) => DCB_RE.test(p));
+        return other[0] || null;
+      }
+
+      async function loadAndRun(pairs) {
+        if (!ready) return setStatus('Interpreter is still loading…', true);
+        if (starting) return;
+        const files = pairs.filter((p) => p && p.file && !skipName(p.path));
+        if (!files.length) return setStatus('No files dropped.', true);
+
+        setStatus('Copying ' + files.length + ' file(s) into memory…');
+        const paths = [];
+        for (const { path, file } of files) {
+          const norm = path.replace(/\\/g, '/').replace(/^\/+/, '');
+          writeFile(norm, new Uint8Array(await file.arrayBuffer()));
+          paths.push(norm);
+        }
+
+        const dcb = pickDcb(paths);
+        if (!dcb) return setStatus('No .dcb (or .dat/.bin) found.', true);
+        startGame('/' + dcb);
+      }
+
+      function startGame(absPath) {
+        if (starting) return;
+        starting = true;
+        const slash = absPath.lastIndexOf('/');
+        const dir = slash > 0 ? absPath.slice(0, slash) : '/';
+        const name = absPath.slice(slash + 1);
+        try { FS.chdir(dir); } catch (e) { FS.chdir('/'); }
+        dropEl.style.display = 'none';
+        gameEl.classList.add('on');
+        document.getElementById('running-as').textContent = name;
+        canvasEl.focus();
+        setTimeout(() => {
+          try {
+            Module.callMain([name]);
+          } catch (err) {
+            starting = false;
+            dropEl.style.display = '';
+            gameEl.classList.remove('on');
+            setStatus((err && err.message) ? err.message : String(err), true);
+          }
+        }, 0);
+      }
+
+      function bindUi() {
+        dropEl.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dropEl.classList.add('over');
+        });
+        dropEl.addEventListener('dragleave', () => dropEl.classList.remove('over'));
+        dropEl.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropEl.classList.remove('over');
+          itemsFromDataTransfer(e.dataTransfer).then(loadAndRun).catch((err) => {
+            setStatus(String(err), true);
+          });
+        });
+        document.getElementById('btn-files').onclick = () => document.getElementById('pick-files').click();
+        document.getElementById('btn-folder').onclick = () => document.getElementById('pick-folder').click();
+        document.getElementById('pick-files').onchange = (e) => {
+          loadAndRun(itemsFromFileList(e.target.files));
+          e.target.value = '';
+        };
+        document.getElementById('pick-folder').onchange = (e) => {
+          loadAndRun(itemsFromFileList(e.target.files));
+          e.target.value = '';
+        };
+        document.getElementById('btn-new').onclick = () => location.reload();
+        btnDemo.onclick = () => startGame('/hello.dcb');
+      }
+
+      var Module = {
+        print: (...args) => console.log(...args),
+        printErr: (...args) => console.error(...args),
+        canvas: canvasEl,
+        noInitialRun: true,
+        onRuntimeInitialized() {
+          ready = true;
+          try {
+            if (FS.analyzePath('/hello.dcb').exists) btnDemo.hidden = false;
+          } catch (e) {}
+          setStatus('Ready. Drop a game to run it.');
+        }
+      };
+
+      canvasEl.addEventListener('webglcontextlost', (e) => {
+        setStatus('WebGL context lost — reload the page.', true);
+        e.preventDefault();
+      }, false);
+
+      bindUi();
+    </script>
+    {{{ SCRIPT }}}
+  </body>
+</html>

@@ -35,7 +35,9 @@
 
 #ifndef WIN32
 #include <unistd.h>
+#ifndef __EMSCRIPTEN__
 #include <sys/wait.h>
+#endif
 #else
 #include <process.h>
 #endif
@@ -53,7 +55,7 @@ static int modsys_exec( INSTANCE * my, intptr_t * params )
     int argc = params[2];
     char ** argv;
     int n = 0;
-#ifndef WIN32
+#if !defined(WIN32) && !defined(__EMSCRIPTEN__)
     pid_t child;
 #endif
     int status = -1;
@@ -65,7 +67,11 @@ static int modsys_exec( INSTANCE * my, intptr_t * params )
         argv[n + 1] = ( char * ) string_get((( int * )( params[3] ) )[n] );
 
     // Execute program
-#ifdef WIN32
+#ifdef __EMSCRIPTEN__
+    ( void ) mode;
+    ( void ) argc;
+    status = -1;
+#elif defined(WIN32)
     status = spawnvp( mode, filename, ( const char ** )argv );
 #else
     if (( child = fork() ) == -1 )

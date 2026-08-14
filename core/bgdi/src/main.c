@@ -138,7 +138,12 @@ int main( int argc, char *argv[] )
     appexepath = calloc( 1, ptr - appexefullpath + 1 );
     strncpy( appexepath, appexefullpath, ptr - appexefullpath );
 
+#ifdef __EMSCRIPTEN__
+    /* argv[0] is typically "this.program" in the browser. */
+    standalone = 1 ;
+#else
     standalone = ( strncmpi( appexename, "bgdi", 4 ) == 0 ) ;
+#endif
 
     /* add binary path */
     file_addp( appexepath );

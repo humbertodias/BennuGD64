@@ -73,6 +73,10 @@ int debug = 0;  /* 1 if running in debug mode      */
 #define _OS_ID          OS_LINUX
 #endif
 
+#ifdef TARGET_EMSCRIPTEN
+#define _OS_ID          OS_EMSCRIPTEN
+#endif
+
 #ifdef TARGET_BEOS
 #define _OS_ID          OS_BEOS
 #endif

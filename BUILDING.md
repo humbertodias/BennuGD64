@@ -83,6 +83,20 @@ cmake --install build --prefix dist/bennugd64
 | `STATIC_MODULES` | ON | Link modules into `bgdi` (`OFF` builds shared `.so`/`.dll`) |
 | `NO_SOUND` | OFF | Build without SDL3_mixer |
 
+### WebAssembly (experimental)
+
+Needs the [Emscripten SDK](https://emscripten.org/) (`emcmake` on `PATH`). Compile a demo DCB with native `bgdc`, then:
+
+```shell
+make static
+make wasm CMAKE_FLAGS="-DUSE_LIBDES=ON"
+python3 -m http.server 8080 --directory build-wasm/core/bgdi/src
+```
+
+Open `http://localhost:8080/bgdi.html`. Drop a `.dcb` plus assets (or a game folder) onto the page to run it. The default build also preloads `web/demo/hello.dcb` as a **Run demo** button. Asyncify lets `SDL_Delay` yield to the browser.
+
+Pushes to `main` run `.github/workflows/pages.yml`: it compiles `bgdc`, the demo DCB, then `bgdi` for wasm32 and publishes `bgdi.html` as `index.html`. In the repo set **Settings → Pages → Source** to **GitHub Actions**.
+
 Release archives are named `bennugd64-<tag>-<os>-<arch>-static` or `-shared`.
 
 ## Installer options

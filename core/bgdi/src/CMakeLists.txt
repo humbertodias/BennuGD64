@@ -29,3 +29,7 @@ else ()
     OpenSSL::Crypto
   )
 endif ()
+
+if (EMSCRIPTEN)
+  bennugd_emscripten_link (bgdi)
+endif ()

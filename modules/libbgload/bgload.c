@@ -78,7 +78,12 @@ int bgload( int ( *fn )(), intptr_t * params )
 {
     bgdata *t = prep( params );
     t->fn = fn;
+#ifdef __EMSCRIPTEN__
+    /* No pthreads in the default wasm build; load synchronously. */
+    bgDoLoad( t );
+#else
     SDL_CreateThread( bgDoLoad, "bgload", ( void * )t );
+#endif
     return 0 ;
 }
 

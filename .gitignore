@@ -1,5 +1,7 @@
 # Out-of-tree build directories
 /build/
+/build-wasm/
+/.emsdk/
 /build-*/
 /out/
 /cmake-build-*/
@@ -47,3 +49,6 @@ bgdc
 .cache/
 
 .DS_Store
+
+# Generated demo bytecode for the wasm spike
+/web/demo/*.dcb

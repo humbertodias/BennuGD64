@@ -25,6 +25,11 @@ add_library (
   set_key.c
   des_enc.c
   fcrypt_b.c
-  read_pwd.c
-  read2pwd.c
 )
+
+if (NOT EMSCRIPTEN)
+  target_sources (des PRIVATE
+    read_pwd.c
+    read2pwd.c
+  )
+endif ()

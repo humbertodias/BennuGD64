@@ -13,10 +13,12 @@ set (BENNUGD_SDL3_REF "release-3.4.14" CACHE STRING "SDL3 git tag/branch to fetc
 set (BENNUGD_SDL3_MIXER_REF "release-3.2.4" CACHE STRING "SDL3_mixer git tag/branch to fetch")
 
 # Static archives must be PIC so they can later link into .so/.dylib modules.
-set (CMAKE_POSITION_INDEPENDENT_CODE ON)
-if (NOT MSVC)
-  set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
-  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+if (NOT EMSCRIPTEN)
+  set (CMAKE_POSITION_INDEPENDENT_CODE ON)
+  if (NOT MSVC)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+  endif ()
 endif ()
 
 set (_bennugd_saved_shared "${BUILD_SHARED_LIBS}")

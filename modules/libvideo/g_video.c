@@ -54,6 +54,10 @@ GRAPH * icon = NULL ;
 SDL_Window * window = NULL ;
 SDL_Surface * screen = NULL ;
 SDL_Surface * scale_screen = NULL ;
+static SDL_Renderer * present_renderer = NULL ;
+static SDL_Texture * present_texture = NULL ;
+static int present_tex_w = 0 ;
+static int present_tex_h = 0 ;
 
 char * apptitle = NULL ;
 
@@ -201,6 +205,62 @@ void gr_set_surface_palette( SDL_Surface * surface, SDL_Color * colors, int firs
 
 /* --------------------------------------------------------------------------- */
 
+static void gr_destroy_present_renderer( void )
+{
+    if ( present_texture )
+    {
+        SDL_DestroyTexture( present_texture );
+        present_texture = NULL;
+    }
+    if ( present_renderer )
+    {
+        SDL_DestroyRenderer( present_renderer );
+        present_renderer = NULL;
+    }
+    present_tex_w = 0;
+    present_tex_h = 0;
+}
+
+/* Canvas / GLES backends (Emscripten) have no window surface; blit via a renderer. */
+static int gr_video_present_renderer( SDL_Surface * src )
+{
+    SDL_Surface * converted;
+    const SDL_PixelFormat fmt = SDL_PIXELFORMAT_XRGB8888;
+
+    if ( !present_renderer )
+    {
+        present_renderer = SDL_CreateRenderer( window, NULL );
+        if ( !present_renderer ) return 0;
+        SDL_SetRenderVSync( present_renderer, false );
+    }
+
+    if ( !present_texture || present_tex_w != src->w || present_tex_h != src->h )
+    {
+        if ( present_texture ) SDL_DestroyTexture( present_texture );
+        present_texture = SDL_CreateTexture( present_renderer, fmt, SDL_TEXTUREACCESS_STREAMING, src->w, src->h );
+        if ( !present_texture ) return 0;
+        present_tex_w = src->w;
+        present_tex_h = src->h;
+        SDL_SetTextureScaleMode( present_texture, SDL_SCALEMODE_NEAREST );
+    }
+
+    converted = src;
+    if ( src->format != fmt )
+    {
+        converted = SDL_ConvertSurface( src, fmt );
+        if ( !converted ) return 0;
+    }
+
+    SDL_UpdateTexture( present_texture, NULL, converted->pixels, converted->pitch );
+    if ( converted != src ) SDL_DestroySurface( converted );
+
+    SDL_SetRenderDrawColor( present_renderer, 0, 0, 0, 255 );
+    SDL_RenderClear( present_renderer );
+    SDL_RenderTexture( present_renderer, present_texture, NULL, NULL );
+    SDL_RenderPresent( present_renderer );
+    return 1;
+}
+
 void gr_video_present( SDL_Surface * src )
 {
     SDL_Surface * winsurf ;
@@ -208,7 +268,11 @@ void gr_video_present( SDL_Surface * src )
     if ( !window || !src ) return ;
 
     winsurf = SDL_GetWindowSurface( window );
-    if ( !winsurf ) return ;
+    if ( !winsurf )
+    {
+        gr_video_present_renderer( src );
+        return;
+    }
 
     if ( winsurf->w == src->w && winsurf->h == src->h )
         SDL_BlitSurface( src, NULL, winsurf, NULL );
@@ -228,7 +292,11 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
     if ( !window || !src || count <= 0 ) return ;
 
     winsurf = SDL_GetWindowSurface( window );
-    if ( !winsurf ) return ;
+    if ( !winsurf )
+    {
+        gr_video_present( src );
+        return ;
+    }
 
     /* Scaled windows can't map dirty rects 1:1; refresh the whole frame. */
     if ( winsurf->w != src->w || winsurf->h != src->h )
@@ -298,6 +366,7 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
     {
         if ( window )
         {
+            gr_destroy_present_renderer();
             SDL_DestroyWindow( window );
             window = NULL;
         }
@@ -770,6 +839,7 @@ void __bgdexport( libvideo, module_finalize )()
     }
     if ( window )
     {
+        gr_destroy_present_renderer();
         SDL_DestroyWindow( window );
         window = NULL;
     }

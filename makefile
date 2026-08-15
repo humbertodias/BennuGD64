@@ -28,7 +28,7 @@ install/shared: shared
 	cmake --install build-shared --prefix $(PREFIX_SHARED)
 
 # Browser interpreter (needs emsdk: source emsdk_env.sh, then this target)
-wasm:
+wasm/build:
 	@bgdc=build/core/bgdc/src/bgdc; \
 	if [ ! -x "$$bgdc" ]; then echo "Build native bgdc first (make static)"; exit 1; fi; \
 	for prg in web/demo/*.prg; do \
@@ -39,7 +39,7 @@ wasm:
 		-DSTATIC_MODULES=ON -DINTERPRETER_ONLY=ON
 	cmake --build build-wasm
 
-wasi:
+wasi/build:
 	cmake -S . -B build-wasi -G Ninja \
 	            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
 	            -DBENNUGD_WASI=ON \

@@ -23,6 +23,7 @@
         font: 15px/1.45 system-ui, sans-serif;
       }
       #stage {
+        position: relative;
         min-height: 100%;
         display: flex;
         flex-direction: column;
@@ -75,10 +76,32 @@
       }
       #bar { color: var(--muted); font-size: 13px; }
       #bar button { margin-left: 8px; padding: 4px 10px; font-size: 13px; }
-      #demos { margin-top: 18px; text-align: left; }
+      #demos {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 2;
+      }
       #demos[hidden] { display: none; }
-      #demos p { margin: 0 0 10px; }
-      #demo-list { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+      #demo-select {
+        appearance: none;
+        min-width: 220px;
+        max-width: min(420px, calc(100vw - 48px));
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 36px 8px 14px;
+        background: var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%238b96ab' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 12px center;
+        color: var(--text);
+        font: inherit;
+        font-weight: 650;
+        text-align: center;
+        cursor: pointer;
+      }
+      #demo-select:focus {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
       #chooser { margin-top: 18px; text-align: left; }
       #chooser[hidden] { display: none; }
       #chooser p { margin: 0 0 10px; color: var(--text); }
@@ -88,6 +111,11 @@
   </head>
   <body>
     <div id="stage">
+      <div id="demos" hidden>
+        <select id="demo-select" aria-label="Bundled demos">
+          <option value="" disabled selected>Bundled demos</option>
+        </select>
+      </div>
       <div id="drop">
         <h1>BennuGD64</h1>
         <p>Drop a <strong>.dcb</strong> plus its assets, or a game folder.</p>
@@ -101,10 +129,6 @@
         <div id="chooser" hidden>
           <p>Several programs were found. Choose one to run:</p>
           <div id="chooser-list"></div>
-        </div>
-        <div id="demos" hidden>
-          <p class="hint">Bundled demos</p>
-          <div id="demo-list"></div>
         </div>
       </div>
       <div id="game">
@@ -238,17 +262,21 @@
 
       function showBundledDemos() {
         const box = document.getElementById('demos');
-        const list = document.getElementById('demo-list');
+        const select = document.getElementById('demo-select');
         const demos = listBundledDemos();
-        list.replaceChildren();
+        select.replaceChildren();
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        placeholder.textContent = 'Bundled demos';
+        select.appendChild(placeholder);
         box.hidden = !demos.length;
         for (const path of demos) {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.className = 'secondary';
-          btn.textContent = demoLabel(path);
-          btn.onclick = () => startGame(path);
-          list.appendChild(btn);
+          const opt = document.createElement('option');
+          opt.value = path;
+          opt.textContent = demoLabel(path);
+          select.appendChild(opt);
         }
       }
 
@@ -348,6 +376,7 @@
         const name = absPath.slice(slash + 1);
         try { FS.chdir(dir); } catch (e) { FS.chdir('/'); }
         dropEl.style.display = 'none';
+        document.getElementById('demos').hidden = true;
         gameEl.classList.add('on');
         canvasEl.focus();
         try {
@@ -359,6 +388,7 @@
           starting = false;
           dropEl.style.display = '';
           gameEl.classList.remove('on');
+          showBundledDemos();
           setStatus((err && err.message) ? err.message : String(err), true);
         }
       }
@@ -387,6 +417,9 @@
           e.target.value = '';
         };
         document.getElementById('btn-new').onclick = () => location.reload();
+        document.getElementById('demo-select').onchange = (e) => {
+          if (e.target.value) startGame(e.target.value);
+        };
       }
 
       var Module = {

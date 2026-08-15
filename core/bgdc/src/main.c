@@ -100,6 +100,7 @@ int main( int argc, char *argv[] )
 
     /* get executable full pathname  */
     appexefullpath = getfullpath( argv[0] );
+    if ( !appexefullpath ) appexefullpath = strdup( argv[0] ? argv[0] : "" );
     if ( ( !strchr( argv[0], '\\' ) && !strchr( argv[0], '/' ) ) && !file_exists( appexefullpath ) )
     {
         char *p = whereis( appexename );
@@ -120,7 +121,12 @@ int main( int argc, char *argv[] )
 
     /* get pathname of executable */
     ptr = strstr( appexefullpath, appexename );
-    appexepath = calloc( 1, ptr - appexefullpath + 1 );
+    if ( !ptr )
+    {
+        ptr = appexefullpath + strlen( appexefullpath );
+        while ( ptr > appexefullpath && ptr[-1] != '\\' && ptr[-1] != '/' ) ptr--;
+    }
+    appexepath = calloc( 1, ( size_t )( ptr - appexefullpath ) + 1 );
     strncpy( appexepath, appexefullpath, ptr - appexefullpath );
 
     printf( BGDC_VERSION "\n"
@@ -419,8 +425,15 @@ int main( int argc, char *argv[] )
             else
             {
                 free( main_path );
-                main_path = getcwd(malloc(__MAX_PATH), __MAX_PATH);
-                strcat(main_path, PATH_SEP);
+                main_path = getcwd( malloc( __MAX_PATH ), __MAX_PATH );
+                if ( main_path )
+                {
+                    strcat( main_path, PATH_SEP );
+                }
+                else
+                {
+                    main_path = strdup( "./" );
+                }
             }
 
             /* Files names */

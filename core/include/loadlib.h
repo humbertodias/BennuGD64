@@ -32,6 +32,11 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <winbase.h>
+#elif defined(__wasi__)
+#include <unistd.h>
+#define __stdcall
+#define __dllexport
+#define __dllimport
 #else
 #define _GNU_SOURCE
 #include <dlfcn.h>

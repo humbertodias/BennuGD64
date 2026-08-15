@@ -99,3 +99,7 @@ endif ()
 if (WIN32)
   target_link_libraries (bgdc shlwapi)
 endif ()
+
+if (CMAKE_SYSTEM_NAME MATCHES "WASI")
+  set_target_properties (bgdc PROPERTIES SUFFIX ".wasm")
+endif ()

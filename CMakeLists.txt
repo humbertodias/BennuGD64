@@ -1,5 +1,13 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.16)
 
+# Must run before project() so the wasi-sdk toolchain can set CMAKE_SYSTEM_NAME.
+#   cmake -B build-wasi -DBENNUGD_WASI=ON
+#   cmake --build build-wasi --target bgdc
+option (BENNUGD_WASI "Cross-compile bgdc to wasm32-wasip1 (downloads wasi-sdk if needed)" OFF)
+if (BENNUGD_WASI)
+  include (${CMAKE_CURRENT_LIST_DIR}/cmake/FetchWasiSdk.cmake)
+endif ()
+
 project (BennuGD)
 
 # This codebase predates C23; GCC 15+ defaults to C23 where () means (void).
@@ -17,11 +25,15 @@ endif()
 
 option (STATIC_MODULES "Build modules as static libraries linked into bgdi" ON)
 option (INTERPRETER_ONLY "Generate only the bgdi executable" OFF)
+option (COMPILER_ONLY "Generate only the bgdc executable" OFF)
 option (USE_LIBDES "Use bundled DES instead of OpenSSL" OFF)
 option (NO_SOUND "Disable sound support" OFF)
 
 if (EMSCRIPTEN)
   include (${CMAKE_SOURCE_DIR}/cmake/Emscripten.cmake)
+endif ()
+if (CMAKE_SYSTEM_NAME MATCHES "WASI" OR CMAKE_C_COMPILER_TARGET MATCHES "wasm32-wasi")
+  include (${CMAKE_SOURCE_DIR}/cmake/WASI.cmake)
 endif ()
 option (BENNUGD_BUNDLE_DEPS "Download and build zlib, libpng, SDL3 and SDL3_mixer via CMake FetchContent" ON)
 option (BENNUGD_STATIC_DEPS "Prefer statically linked third-party libraries" OFF)
@@ -69,6 +81,8 @@ endif ()
 
 if (EMSCRIPTEN)
   add_definitions (-DTARGET_EMSCRIPTEN)
+elseif (CMAKE_SYSTEM_NAME MATCHES "WASI")
+  add_definitions (-DTARGET_WASI)
 elseif (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
   add_definitions (-DTARGET_LINUX)
 endif()
@@ -92,12 +106,14 @@ endif ()
 if (BENNUGD_BUNDLE_DEPS)
   include (${CMAKE_SOURCE_DIR}/cmake/FetchDeps.cmake)
 else ()
-  find_package (SDL3 REQUIRED CONFIG)
-  if (NOT NO_SOUND)
-    find_package (SDL3_mixer REQUIRED CONFIG)
+  if (NOT COMPILER_ONLY)
+    find_package (SDL3 REQUIRED CONFIG)
+    if (NOT NO_SOUND)
+      find_package (SDL3_mixer REQUIRED CONFIG)
+    endif ()
+    find_package (PNG REQUIRED)
   endif ()
   find_package (ZLIB REQUIRED)
-  find_package (PNG REQUIRED)
 endif ()
 if (USE_LIBDES)
   add_definitions (-DUSE_LIBDES)
@@ -108,7 +124,9 @@ else ()
 endif ()
 
 # Temporary: map many SDL2 symbol names while structural API breaks are fixed.
-add_definitions (-DSDL_ENABLE_OLD_NAMES)
+if (NOT COMPILER_ONLY)
+  add_definitions (-DSDL_ENABLE_OLD_NAMES)
+endif ()
 
 # Propagate SDL3 headers project-wide (bgdc includes module exports that need SDL.h).
 # SDL3::SDL3 may not set INTERFACE_INCLUDE_DIRECTORIES; SDL3::Headers does.
@@ -160,6 +178,8 @@ set (BENNUGD_PACKAGE_VERSION "${BENNUGD_RESOLVED_VERSION}")
 if (USE_LIBDES)
   add_subdirectory (3rdparty)
 endif ()
-add_subdirectory (modules)
+if (NOT COMPILER_ONLY)
+  add_subdirectory (modules)
+endif ()
 add_subdirectory (core)
 include (${CMAKE_SOURCE_DIR}/cmake/InstallLayout.cmake)

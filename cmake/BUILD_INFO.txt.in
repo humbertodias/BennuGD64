@@ -3,5 +3,5 @@ platform: @BENNUGD_PACKAGE_OS@
 arch: @BENNUGD_PACKAGE_ARCH@
 linkage: @BENNUGD_PACKAGE_LINKAGE@
 modules: @BENNUGD_PACKAGE_MODULES_NOTE@
-static deps: zlib, libpng, SDL3, SDL3_mixer (stb_vorbis + dr_mp3), bundled DES
-note: OS graphics/audio system libraries may still be required at runtime (X11/Wayland/Cocoa/DirectX).
+static deps: @BENNUGD_PACKAGE_DEPS@
+note: @BENNUGD_PACKAGE_NOTE@

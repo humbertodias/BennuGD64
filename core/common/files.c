@@ -865,10 +865,15 @@ FILE * file_fp( file * f )
 char * getfullpath( char *rel_path )
 {
     char fullpath[ __MAX_PATH ] = "";
+    if ( !rel_path || !*rel_path ) return NULL;
 #ifdef _WIN32
     GetFullPathName( rel_path, sizeof( fullpath ), fullpath, NULL );
 #else
-    realpath( rel_path, fullpath );
+    if ( !realpath( rel_path, fullpath ) || !*fullpath )
+    {
+        strncpy( fullpath, rel_path, sizeof( fullpath ) - 1 );
+        fullpath[ sizeof( fullpath ) - 1 ] = '\0';
+    }
 #endif
     if ( *fullpath ) return strdup( fullpath );
     return NULL;

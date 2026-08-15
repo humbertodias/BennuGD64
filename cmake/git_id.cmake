@@ -20,7 +20,7 @@ set (HASH "")
 set (BRANCH "")
 set (DISPLAY "")
 
-find_program (GIT_EXECUTABLE git)
+find_program (GIT_EXECUTABLE git NO_CMAKE_FIND_ROOT_PATH)
 if (GIT_EXECUTABLE)
   execute_process (
     COMMAND "${GIT_EXECUTABLE}" -C "${GIT_DIR}" rev-parse --short HEAD

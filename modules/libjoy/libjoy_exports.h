@@ -37,8 +37,18 @@
 
 #include "bgddl.h"
 
-#include <SDL3/SDL.h>
-#include "sdl3_compat.h"
+/* Hat bitmasks match SDL_HAT_* (stable since SDL 1.2); keep bgdc free of SDL.h. */
+#ifndef SDL_HAT_CENTERED
+#define SDL_HAT_CENTERED    0x00
+#define SDL_HAT_UP          0x01
+#define SDL_HAT_RIGHT       0x02
+#define SDL_HAT_DOWN        0x04
+#define SDL_HAT_LEFT        0x08
+#define SDL_HAT_RIGHTUP     (SDL_HAT_RIGHT | SDL_HAT_UP)
+#define SDL_HAT_RIGHTDOWN   (SDL_HAT_RIGHT | SDL_HAT_DOWN)
+#define SDL_HAT_LEFTUP      (SDL_HAT_LEFT  | SDL_HAT_UP)
+#define SDL_HAT_LEFTDOWN    (SDL_HAT_LEFT  | SDL_HAT_DOWN)
+#endif
 
 /* --------------------------------------------------------------------------- */
 

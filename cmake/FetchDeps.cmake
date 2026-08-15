@@ -13,7 +13,7 @@ set (BENNUGD_SDL3_REF "release-3.4.14" CACHE STRING "SDL3 git tag/branch to fetc
 set (BENNUGD_SDL3_MIXER_REF "release-3.2.4" CACHE STRING "SDL3_mixer git tag/branch to fetch")
 
 # Static archives must be PIC so they can later link into .so/.dylib modules.
-if (NOT EMSCRIPTEN)
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI")
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -71,6 +71,12 @@ file (WRITE "${CMAKE_BINARY_DIR}/cmake-overrides/FindZLIB.cmake"
 endif ()
 ")
 list (PREPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/cmake-overrides")
+
+if (COMPILER_ONLY)
+  set (BUILD_SHARED_LIBS "${_bennugd_saved_shared}")
+  set (CMAKE_SKIP_INSTALL_RULES "${_bennugd_saved_skip_install}")
+  return ()
+endif ()
 
 # --- libpng ---
 set (PNG_SHARED OFF CACHE BOOL "" FORCE)

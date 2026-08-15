@@ -34,6 +34,12 @@
 
 static void  dump_new_events( void )
 {
+#ifdef __EMSCRIPTEN__
+    /* Do not drain the queue first. Emscripten pushes KEYUP into SDL from
+     * the browser callback; discarding it left keys stuck down so games
+     * that wait for Enter to be released (character select) froze. */
+    SDL_PumpEvents();
+#else
     SDL_Event event;
     /* Remove all pendings events */
 
@@ -42,6 +48,7 @@ static void  dump_new_events( void )
 
     /* Get new events */
     SDL_PumpEvents();
+#endif
 }
 
 /* ----------------------------------------------------------------- */

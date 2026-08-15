@@ -88,7 +88,7 @@
         <h1>BennuGD64</h1>
         <p>Drop a <strong>.dcb</strong> plus its assets, or a game folder.</p>
         <p class="hint">Subfolders are kept. Names are case-sensitive. Files stay in this tab (MEMFS).</p>
-        <p class="hint">Gamepad: click the page, then press a button on the pad (browser requirement).</p>
+        <p class="hint">Gamepad: press a button on the pad before the game starts to use it as P1. Enter selects keyboard.</p>
         <div id="actions">
           <button type="button" id="btn-files">Choose files</button>
           <button type="button" class="secondary" id="btn-folder">Choose folder</button>
@@ -239,7 +239,54 @@
         showChooser(launchers);
       }
 
-      function startGame(absPath) {
+      function hasBrowserGamepad() {
+        try {
+          return [...(navigator.getGamepads() || [])].some((p) => p && p.buttons && p.buttons.length > 0);
+        } catch (e) {
+          return false;
+        }
+      }
+
+      /* Browser Gamepad API hides pads until a button press. Wait so SoRR
+       * snapshots the real device: pad → joystick P1, otherwise keyboard. */
+      function waitForControlDefault() {
+        return new Promise((resolve) => {
+          if (hasBrowserGamepad()) return resolve('pad');
+
+          const runningAs = document.getElementById('running-as');
+          runningAs.textContent = 'Press a gamepad button, or Enter for keyboard';
+
+          let done = false;
+          let keyArmed = false;
+          const finish = (kind) => {
+            if (done) return;
+            done = true;
+            window.removeEventListener('gamepadconnected', onPad);
+            window.removeEventListener('keydown', onKey);
+            window.removeEventListener('keyup', onKeyUp);
+            if (poll) clearInterval(poll);
+            resolve(kind);
+          };
+          const onPad = () => finish('pad');
+          const onKey = (e) => {
+            if (e.repeat) return;
+            keyArmed = true;
+            e.preventDefault();
+          };
+          const onKeyUp = () => {
+            if (keyArmed) finish('keyboard');
+          };
+
+          window.addEventListener('gamepadconnected', onPad);
+          window.addEventListener('keydown', onKey);
+          window.addEventListener('keyup', onKeyUp);
+          const poll = setInterval(() => {
+            if (hasBrowserGamepad()) finish('pad');
+          }, 50);
+        });
+      }
+
+      async function startGame(absPath) {
         if (starting) return;
         starting = true;
         const slash = absPath.lastIndexOf('/');
@@ -248,19 +295,18 @@
         try { FS.chdir(dir); } catch (e) { FS.chdir('/'); }
         dropEl.style.display = 'none';
         gameEl.classList.add('on');
-        document.getElementById('running-as').textContent = name;
         canvasEl.focus();
-        setStatus('Running. Press a gamepad button if the pad is not detected.');
-        setTimeout(() => {
-          try {
-            Module.callMain([name]);
-          } catch (err) {
-            starting = false;
-            dropEl.style.display = '';
-            gameEl.classList.remove('on');
-            setStatus((err && err.message) ? err.message : String(err), true);
-          }
-        }, 0);
+        try {
+          await waitForControlDefault();
+          document.getElementById('running-as').textContent = name;
+          await new Promise((r) => setTimeout(r, 150));
+          Module.callMain([name]);
+        } catch (err) {
+          starting = false;
+          dropEl.style.display = '';
+          gameEl.classList.remove('on');
+          setStatus((err && err.message) ? err.message : String(err), true);
+        }
       }
 
       function bindUi() {
@@ -308,6 +354,17 @@
         setStatus('WebGL context lost — reload the page.', true);
         e.preventDefault();
       }, false);
+
+      /* Don't focus() here: focusing during Enter keydown swallows KEYUP in
+       * the browser, and the game waits forever for Enter to be released. */
+      window.addEventListener('keydown', (e) => {
+        if (!gameEl.classList.contains('on')) return;
+        const k = e.key;
+        if (k === 'Enter' || k === ' ' || k === 'Tab' || k.startsWith('Arrow') ||
+            k === 'Backspace' || k === 'Escape')
+          e.preventDefault();
+      });
+      canvasEl.addEventListener('pointerdown', () => canvasEl.focus());
 
       bindUi();
     </script>

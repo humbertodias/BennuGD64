@@ -56,7 +56,7 @@
 #define OS_WII                  1000
 #define OS_IOS                  1002
 #define OS_ANDROID              1003
-#define OS_EMSCRIPTEN           1004
+#define OS_EMSCRIPTEN           1004  /* compile-time only; wasm runtime picks OS_WIN32 (keyboard) or OS_LINUX (pad) from connected joysticks */
 
 #endif
 

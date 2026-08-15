@@ -64,6 +64,15 @@ const bool * keystate = NULL;        /* Pointer to key states */
 
 extern SDL_Window * window ;
 
+#ifdef __EMSCRIPTEN__
+/* Browser repeat is faster than desktop. Keep a short delay, then a moderate
+ * interval — ignoring all repeats felt a bit sluggish in menus. */
+#define BENNU_WASM_REPEAT_DELAY_MS     280
+#define BENNU_WASM_REPEAT_INTERVAL_MS   70
+static Uint64 wasm_key_down_ms[ SDL_SCANCODE_COUNT ];
+static Uint64 wasm_key_repeat_ms[ SDL_SCANCODE_COUNT ];
+#endif
+
 /* ---------------------------------------------------------------------- */
 
 static int sdl_equiv[SDL_SCANCODE_COUNT] ;
@@ -317,6 +326,26 @@ static void process_key_events()
         switch ( e.type )
         {
             case SDL_KEYDOWN:
+#ifdef __EMSCRIPTEN__
+                if ( e.key.scancode < SDL_SCANCODE_COUNT )
+                {
+                    Uint64 now = SDL_GetTicks();
+                    SDL_Scancode sc = e.key.scancode;
+                    if ( e.key.repeat )
+                    {
+                        if ( now - wasm_key_down_ms[ sc ] < BENNU_WASM_REPEAT_DELAY_MS )
+                            break;
+                        if ( now - wasm_key_repeat_ms[ sc ] < BENNU_WASM_REPEAT_INTERVAL_MS )
+                            break;
+                        wasm_key_repeat_ms[ sc ] = now;
+                    }
+                    else
+                    {
+                        wasm_key_down_ms[ sc ] = now;
+                        wasm_key_repeat_ms[ sc ] = now;
+                    }
+                }
+#endif
                 ignore_key = 0;
                 /* KeyDown HotKey */
                 if ( hotkey_count )
@@ -432,7 +461,12 @@ void __bgdexport( libkey, module_initialize )()
 
     if ( !keystate ) keystate = SDL_GetKeyboardState( NULL );
 
+#ifndef __EMSCRIPTEN__
+    /* A hidden text field on the web steals focus after Enter (menus) and
+     * the next screen (character select) gets no keys. ascii comes from
+     * KEYDOWN, so text input is not needed. */
     if ( window ) SDL_StartTextInput( window );
+#endif
 }
 
 /* ---------------------------------------------------------------------- */

@@ -246,14 +246,10 @@ static int instance_go_one_turn( void )
 #ifdef __EMSCRIPTEN__
 static void bgdrtm_browser_tick( void )
 {
-    static int raf_skip = 0;
-    /* Align SET_FPS to the display refresh. Waiting `period` ms *after* a
-     * frame (and after vsync) made 60 Hz games run at ~30. */
-    const int hold = bgdrtm_rafs_per_frame();
-
-    if ( ++raf_skip < hold )
+    /* Do not count RAFs: that assumed 60 Hz and made SET_FPS games (and
+     * key() polling) run 2× on 120 Hz displays. */
+    if ( !bgdrtm_browser_frame_due() )
         return;
-    raf_skip = 0;
 
     if ( !instance_go_one_turn() )
         emscripten_cancel_main_loop();

@@ -89,7 +89,7 @@ extern void bgdrtm_exit( int n );
 
 extern void bgdrtm_set_frame_pace( int fps );
 extern double bgdrtm_frame_period_ms( void );
-extern int bgdrtm_rafs_per_frame( void );
+extern int bgdrtm_browser_frame_due( void );
 extern void bgdrtm_frame_throttle( void );
 
 /* --------------------------------------------------------------------------- */

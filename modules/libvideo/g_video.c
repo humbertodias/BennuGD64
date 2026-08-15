@@ -362,6 +362,11 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
             recreate = 1;
         if ( !!( SDL_GetWindowFlags( window ) & SDL_WINDOW_FULLSCREEN ) != !!full_screen )
             recreate = 1;
+#ifdef __EMSCRIPTEN__
+        /* Destroy+CreateWindow stacks Emscripten key listeners, so every
+         * physical keypress becomes two SDL_EVENT_KEY_DOWN. Resize in place. */
+        recreate = 0;
+#endif
     }
 
     if ( recreate )
@@ -777,6 +782,12 @@ int gr_set_mode( int width, int height, int depth )
 
     if ( background ) background->modified = 1;
 
+#ifdef __EMSCRIPTEN__
+    /* set_mode on character select can drop the menu Enter KEYUP; SoRR then
+     * waits forever for that key to be released. */
+    SDL_ResetKeyboard();
+#endif
+
     return 0;
 }
 
@@ -797,6 +808,9 @@ void __bgdexport( libvideo, module_initialize )()
 
 #ifdef __EMSCRIPTEN__
     SDL_SetHint( SDL_HINT_EMSCRIPTEN_ASYNCIFY, "1" );
+    /* Listen on the window, not the canvas: after Enter, page chrome can
+     * steal canvas focus and in-game keys would stop. */
+    SDL_SetHint( "SDL_EMSCRIPTEN_KEYBOARD_ELEMENT", "#window" );
 #endif
 
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );

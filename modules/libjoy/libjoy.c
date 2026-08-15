@@ -95,20 +95,6 @@ static void libjoy_remember_name( int slot )
 #endif
 }
 
-#ifdef __EMSCRIPTEN__
-/* SoRR snapshots NUMBER_JOY() into joytemp during MENU. The browser Gamepad
- * API reports 0 pads until a button is pressed, so that snapshot stayed 0
- * and FALTA_JOY kept showing "GamePad not found" even after the pad worked. */
-static void libjoy_placeholder( void )
-{
-    if ( _max_joys > 0 ) return;
-    _max_joys = 1;
-    _joysticks[ 0 ] = NULL;
-    _joystick_ids[ 0 ] = 0;
-    snprintf( _joystick_names[ 0 ], sizeof( _joystick_names[ 0 ] ), "Gamepad" );
-}
-#endif
-
 /* --------------------------------------------------------------------------- */
 /* libjoy_num ()                                                               */
 /* Returns the number of joysticks present in the system                       */
@@ -530,6 +516,34 @@ void  __bgdexport( libjoy, module_initialize )()
         SDL_SetJoystickEventsEnabled( true );
     }
 
+#ifdef __EMSCRIPTEN__
+    /* Only real pads. A NULL placeholder made SoRR set P1 to None and freeze
+     * character select. Keyboard vs joystick default is chosen in bgdrtm_entry
+     * from NUMBER_JOY(). The shell waits for a pad button or Enter first. */
+    SDL_UpdateJoysticks();
+    ids = SDL_GetJoysticks( &count );
+    _max_joys = 0;
+    if ( ids )
+    {
+        if ( count > MAX_JOYS ) count = MAX_JOYS;
+        for ( i = 0; i < count; i++ )
+        {
+            SDL_Joystick * js = SDL_OpenJoystick( ids[ i ] );
+            if ( !js || SDL_GetNumJoystickButtons( js ) <= 0 )
+            {
+                if ( js ) SDL_CloseJoystick( js );
+                continue;
+            }
+            _joystick_ids[ _max_joys ] = ids[ i ];
+            _joysticks[ _max_joys ] = js;
+            libjoy_remember_name( _max_joys );
+            _max_joys++;
+        }
+        SDL_free( ids );
+    }
+    return;
+#endif
+
     /* Open all joysticks */
     ids = SDL_GetJoysticks( &count );
     if ( ids )
@@ -555,15 +569,8 @@ void  __bgdexport( libjoy, module_initialize )()
     else
     {
         _max_joys = 0;
-#ifndef __EMSCRIPTEN__
         return;
-#endif
     }
-
-#ifdef __EMSCRIPTEN__
-    if ( _max_joys == 0 )
-        libjoy_placeholder();
-#endif
 
 #ifdef TARGET_CAANOO
     KIONIX_ACCEL_init();

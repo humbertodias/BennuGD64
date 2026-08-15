@@ -24,11 +24,15 @@ function (bennugd_emscripten_link target)
     "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/web/shell.html"
   )
   set_target_properties (${target} PROPERTIES SUFFIX ".html")
+  set_property (TARGET ${target} APPEND PROPERTY
+    LINK_DEPENDS "${CMAKE_SOURCE_DIR}/web/shell.html"
+  )
 
-  set (_demo_dcb "${CMAKE_SOURCE_DIR}/web/demo/hello.dcb")
-  if (EXISTS "${_demo_dcb}")
+  file (GLOB _demo_dcbs CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/web/demo/*.dcb")
+  foreach (_demo_dcb IN LISTS _demo_dcbs)
+    get_filename_component (_demo_name "${_demo_dcb}" NAME)
     target_link_options (${target} PRIVATE
-      "SHELL:--preload-file ${_demo_dcb}@hello.dcb"
+      "SHELL:--preload-file ${_demo_dcb}@demo/${_demo_name}"
     )
-  endif ()
+  endforeach ()
 endfunction ()

@@ -75,6 +75,10 @@
       }
       #bar { color: var(--muted); font-size: 13px; }
       #bar button { margin-left: 8px; padding: 4px 10px; font-size: 13px; }
+      #demos { margin-top: 18px; text-align: left; }
+      #demos[hidden] { display: none; }
+      #demos p { margin: 0 0 10px; }
+      #demo-list { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
       #chooser { margin-top: 18px; text-align: left; }
       #chooser[hidden] { display: none; }
       #chooser p { margin: 0 0 10px; color: var(--text); }
@@ -92,12 +96,15 @@
         <div id="actions">
           <button type="button" id="btn-files">Choose files</button>
           <button type="button" class="secondary" id="btn-folder">Choose folder</button>
-          <button type="button" class="secondary" id="btn-demo" hidden>Run demo</button>
         </div>
         <div id="status">Loading interpreter…</div>
         <div id="chooser" hidden>
           <p>Several programs were found. Choose one to run:</p>
           <div id="chooser-list"></div>
+        </div>
+        <div id="demos" hidden>
+          <p class="hint">Bundled demos</p>
+          <div id="demo-list"></div>
         </div>
       </div>
       <div id="game">
@@ -116,7 +123,6 @@
       const gameEl = document.getElementById('game');
       const statusEl = document.getElementById('status');
       const canvasEl = document.getElementById('canvas');
-      const btnDemo = document.getElementById('btn-demo');
       const chooserEl = document.getElementById('chooser');
       const chooserList = document.getElementById('chooser-list');
       const DCB_RE = /\.(dcb|dat|bin)$/i;
@@ -196,6 +202,54 @@
           path: file.webkitRelativePath || file.name,
           file
         }));
+      }
+
+      function demoLabel(path) {
+        return path.split('/').pop().replace(/\.dcb$/i, '');
+      }
+
+      function listBundledDemos() {
+        const found = [];
+        const seen = {};
+        const add = (path) => {
+          if (seen[path]) return;
+          seen[path] = true;
+          found.push(path);
+        };
+        const scan = (dir, recurseDemo) => {
+          let names;
+          try { names = FS.readdir(dir); } catch (e) { return; }
+          for (const name of names) {
+            if (name === '.' || name === '..') continue;
+            const path = (dir === '/' ? '/' : dir.replace(/\/?$/, '/')) + name;
+            let st;
+            try { st = FS.stat(path); } catch (e) { continue; }
+            if (FS.isDir(st.mode)) {
+              if (recurseDemo && name === 'demo') scan(path, false);
+              continue;
+            }
+            if (/\.dcb$/i.test(name)) add(path);
+          }
+        };
+        scan('/demo', false);
+        if (!found.length) scan('/', true);
+        return found.sort();
+      }
+
+      function showBundledDemos() {
+        const box = document.getElementById('demos');
+        const list = document.getElementById('demo-list');
+        const demos = listBundledDemos();
+        list.replaceChildren();
+        box.hidden = !demos.length;
+        for (const path of demos) {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'secondary';
+          btn.textContent = demoLabel(path);
+          btn.onclick = () => startGame(path);
+          list.appendChild(btn);
+        }
       }
 
       function listLaunchers(paths) {
@@ -333,7 +387,6 @@
           e.target.value = '';
         };
         document.getElementById('btn-new').onclick = () => location.reload();
-        btnDemo.onclick = () => startGame('/hello.dcb');
       }
 
       var Module = {
@@ -343,9 +396,7 @@
         noInitialRun: true,
         onRuntimeInitialized() {
           ready = true;
-          try {
-            if (FS.analyzePath('/hello.dcb').exists) btnDemo.hidden = false;
-          } catch (e) {}
+          showBundledDemos();
           setStatus('Ready. Drop a game to run it.');
         }
       };

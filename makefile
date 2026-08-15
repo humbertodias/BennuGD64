@@ -25,11 +25,12 @@ install-shared: shared
 
 # Browser interpreter (needs emsdk: source emsdk_env.sh, then this target)
 wasm:
-	@if [ ! -f web/demo/hello.dcb ]; then \
-		bgdc=build/core/bgdc/src/bgdc; \
-		if [ ! -x "$$bgdc" ]; then echo "Build native bgdc first (make static)"; exit 1; fi; \
-		"$$bgdc" -o web/demo/hello.dcb web/demo/hello.prg; \
-	fi
+	@bgdc=build/core/bgdc/src/bgdc; \
+	if [ ! -x "$$bgdc" ]; then echo "Build native bgdc first (make static)"; exit 1; fi; \
+	for prg in web/demo/*.prg; do \
+		dcb="$${prg%.prg}.dcb"; \
+		"$$bgdc" -o "$$dcb" "$$prg"; \
+	done
 	emcmake cmake -S . -B build-wasm -DCMAKE_BUILD_TYPE=Release $(CMAKE_FLAGS) \
 		-DSTATIC_MODULES=ON -DINTERPRETER_ONLY=ON
 	cmake --build build-wasm

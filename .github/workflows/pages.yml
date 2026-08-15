@@ -65,10 +65,15 @@ jobs:
             -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
           cmake --build build-host --target bgdc
 
-      - name: Compile demo DCB
+      - name: Compile demo DCBs
         run: |
-          ./build-host/core/bgdc/src/bgdc -o web/demo/hello.dcb web/demo/hello.prg
-          test -s web/demo/hello.dcb
+          set -euo pipefail
+          for prg in web/demo/*.prg; do
+            dcb="${prg%.prg}.dcb"
+            ./build-host/core/bgdc/src/bgdc -o "$dcb" "$prg"
+            test -s "$dcb"
+          done
+          ls -l web/demo/*.dcb
 
       - name: Configure wasm
         run: |

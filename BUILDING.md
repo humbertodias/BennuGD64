@@ -85,7 +85,7 @@ cmake --install build --prefix dist/bennugd64
 
 ### WebAssembly (experimental)
 
-Needs the [Emscripten SDK](https://emscripten.org/) (`emcmake` on `PATH`). Compile a demo DCB with native `bgdc`, then:
+Needs the [Emscripten SDK](https://emscripten.org/) (`emcmake` on `PATH`). Compile demo DCBs with native `bgdc`, then:
 
 ```shell
 make static
@@ -93,9 +93,9 @@ make wasm CMAKE_FLAGS="-DUSE_LIBDES=ON"
 python3 -m http.server 8080 --directory build-wasm/core/bgdi/src
 ```
 
-Open `http://localhost:8080/bgdi.html`. Drop a `.dcb` plus assets (or a game folder) onto the page to run it. The default build also preloads `web/demo/hello.dcb` as a **Run demo** button. Asyncify lets `SDL_Delay` yield to the browser.
+Open `http://localhost:8080/bgdi.html`. Drop a `.dcb` plus assets (or a game folder) onto the page to run it. Every `web/demo/*.dcb` is preloaded and listed as a bundled demo. Asyncify lets `SDL_Delay` yield to the browser.
 
-Pushes to `main` run `.github/workflows/pages.yml`: it compiles `bgdc`, the demo DCB, then `bgdi` for wasm32 and publishes `bgdi.html` as `index.html`. In the repo set **Settings → Pages → Source** to **GitHub Actions**.
+Pushes to `main` run `.github/workflows/pages.yml`: it compiles `bgdc`, every `web/demo/*.prg`, then `bgdi` for wasm32 and publishes `bgdi.html` as `index.html`. In the repo set **Settings → Pages → Source** to **GitHub Actions**.
 
 Release archives are named `bennugd64-<tag>-<os>-<arch>-static` or `-shared`.
 

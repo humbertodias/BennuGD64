@@ -3,7 +3,11 @@ CMAKE_FLAGS := -DUSE_LIBDES=ON
 PREFIX_STATIC ?= dist/bennugd64
 PREFIX_SHARED ?= dist/bennugd64-shared
 
-.PHONY: all static shared install-static install-shared wasm clean format
+WASI_SDK_VERSION ?= 33
+WASI_SDK_VERSION_FULL ?= 33.0
+ZLIB_VERSION ?= 1.3.1
+
+.PHONY: all static shared install/static install/shared install/wasmtime wasm clean format
 
 all: static
 
@@ -17,10 +21,10 @@ shared:
 	cmake -S . -B build-shared -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) $(CMAKE_FLAGS) -DSTATIC_MODULES=OFF
 	cmake --build build-shared
 
-install-static: static
+install/static: static
 	cmake --install build --prefix $(PREFIX_STATIC)
 
-install-shared: shared
+install/shared: shared
 	cmake --install build-shared --prefix $(PREFIX_SHARED)
 
 # Browser interpreter (needs emsdk: source emsdk_env.sh, then this target)
@@ -35,7 +39,26 @@ wasm:
 		-DSTATIC_MODULES=ON -DINTERPRETER_ONLY=ON
 	cmake --build build-wasm
 
-wasm-server:
+wasi:
+	cmake -S . -B build-wasi -G Ninja \
+	            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+	            -DBENNUGD_WASI=ON \
+	            -DBENNUGD_WASI_SDK_VERSION="${WASI_SDK_VERSION}" \
+	            -DBENNUGD_WASI_SDK_VERSION_FULL="${WASI_SDK_VERSION_FULL}" \
+	            -DUSE_LIBDES=ON \
+	            -DCOMPILER_ONLY=ON \
+	            -DSTATIC_MODULES=ON \
+	            -DBENNUGD_BUNDLE_DEPS=ON \
+	            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+	cmake --build build-wasi --target bgdc
+
+wasi/run:
+	wasmtime --dir=. "build-wasi/core/bgdc/src/bgdc.wasm" web/demo/hello.prg
+
+install/wasmtime:
+	curl https://wasmtime.dev/install.sh -sSf | bash
+
+wasm/server:
 	python3 -m http.server 8080 --directory build-wasm/core/bgdi/src
 
 clean:

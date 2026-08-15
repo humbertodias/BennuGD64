@@ -12,7 +12,8 @@ function (bennugd_emscripten_link target)
     -sINITIAL_MEMORY=67108864
     -sSTACK_SIZE=262144
     -sASYNCIFY=1
-    -sASYNCIFY_STACK_SIZE=65536
+    -sASYNCIFY_STACK_SIZE=524288
+    "SHELL:-sASYNCIFY_ADD=['instance_go_all','bgdrtm_frame_throttle']"
     -sFORCE_FILESYSTEM=1
     -sEXIT_RUNTIME=0
     -sINVOKE_RUN=0

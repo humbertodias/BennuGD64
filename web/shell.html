@@ -88,6 +88,7 @@
         <h1>BennuGD64</h1>
         <p>Drop a <strong>.dcb</strong> plus its assets, or a game folder.</p>
         <p class="hint">Subfolders are kept. Names are case-sensitive. Files stay in this tab (MEMFS).</p>
+        <p class="hint">Gamepad: click the page, then press a button on the pad (browser requirement).</p>
         <div id="actions">
           <button type="button" id="btn-files">Choose files</button>
           <button type="button" class="secondary" id="btn-folder">Choose folder</button>
@@ -249,6 +250,7 @@
         gameEl.classList.add('on');
         document.getElementById('running-as').textContent = name;
         canvasEl.focus();
+        setStatus('Running. Press a gamepad button if the pad is not detected.');
         setTimeout(() => {
           try {
             Module.callMain([name]);

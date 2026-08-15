@@ -24,6 +24,7 @@ add_library (
   misc.c
   instance.c
   interpreter.c
+  frame_pace.c
   varspace_file.c
   bgd_lowmem.c
   ../../common/debug.c

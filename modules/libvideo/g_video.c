@@ -231,6 +231,8 @@ static int gr_video_present_renderer( SDL_Surface * src )
     {
         present_renderer = SDL_CreateRenderer( window, NULL );
         if ( !present_renderer ) return 0;
+        /* rAF already paces the interpreter on the web; extra vsync here
+         * waits a second display tick and halves the game speed. */
         SDL_SetRenderVSync( present_renderer, false );
     }
 
@@ -792,6 +794,10 @@ void __bgdexport( libvideo, module_initialize )()
     char * e;
 
     GLODWORD( libvideo, SCALE_RESOLUTION ) = -1; // hack for backward compatibility
+
+#ifdef __EMSCRIPTEN__
+    SDL_SetHint( SDL_HINT_EMSCRIPTEN_ASYNCIFY, "1" );
+#endif
 
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
 

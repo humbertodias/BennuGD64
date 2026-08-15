@@ -42,6 +42,10 @@
 #include <assert.h>
 #include <stdint.h>
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten.h>
+#endif
+
 #include "typedef_st.h"
 
 /* ---------------------------------------------------------------------- */
@@ -113,133 +117,170 @@ static int stack_dump( INSTANCE * r )
 
 /* ---------------------------------------------------------------------- */
 
-int instance_go_all()
+/* Run until one FRAME is complete (all processes framed + hooks).
+ * Returns 1 to keep going, 0 when the program should stop. */
+static int instance_go_one_turn( void )
 {
     INSTANCE * i = NULL;
     int i_count = 0 ;
     int n;
     int status;
 
-    must_exit = 0 ;
+    if ( !first_instance )
+        return 0 ;
 
-    while ( first_instance )
+    for ( ;; )
     {
         if ( debug_mode )
         {
+            if ( handler_hook_count )
+                for ( n = 0; n < handler_hook_count; n++ )
+                    handler_hook_list[n].hook();
+            return must_exit ? 0 : 1 ;
+        }
+
+        if ( last_instance_run )
+        {
+            if ( instance_exists( last_instance_run ) )
+            {
+                i = last_instance_run;
+            }
+            else
+            {
+                last_instance_run = NULL;
+                i = instance_next_by_priority();
+            }
+        }
+        else
+        {
+            i = instance_next_by_priority();
+            i_count = 0 ;
+        }
+
+        while ( i )
+        {
+            status = LOCDWORD( i, STATUS );
+            /* If instance is KILLED or DEAD or return from some debug command, then execute it again.
+               No exec_hook is executed.
+             */
+            if ( status == STATUS_KILLED || status == STATUS_DEAD || last_instance_run )
+            {
+                /* Run instance */
+            }
+            else if ( status == STATUS_RUNNING && LOCINT32( i, FRAME_PERCENT ) < 100 )
+            {
+                /* Run instance */
+                /* Hook */
+                if ( process_exec_hook_count )
+                    for ( n = 0; n < process_exec_hook_count; n++ )
+                        process_exec_hook_list[n]( i );
+                /* Hook */
+            }
+            else
+            {
+                i = instance_next_by_priority();
+                last_instance_run = NULL;
+                continue;
+            }
+
+            i_count++;
+
+            last_instance_run = NULL;
+
+            instance_go( i );
+
+            if ( force_debug )
+            {
+                debug_mode = 1;
+                last_instance_run  = trace_instance;
+                break;
+            }
+
+            if ( must_exit ) break;
+
+            i = instance_next_by_priority();
+        }
+
+        if ( must_exit ) return 0 ;
+
+        /* If frame is complete, then update internal vars and execute main hooks. */
+
+        if ( !i_count && !force_debug )
+        {
+            /* Honors the signal-changed status of the process and
+             * saves so it is used in this loop the next frame
+             */
+
+            i = first_instance ;
+            while ( i )
+            {
+                status = LOCDWORD( i, STATUS );
+                if ( status == STATUS_RUNNING ) LOCINT32( i, FRAME_PERCENT ) -= 100 ;
+                LOCDWORD( i, SAVED_STATUS ) = status ;
+
+                if ( LOCINT32( i, SAVED_PRIORITY ) != LOCINT32( i, PRIORITY ) )
+                {
+                    LOCINT32( i, SAVED_PRIORITY ) = LOCINT32( i, PRIORITY );
+                    instance_dirty( i );
+                }
+
+                i = i->next ;
+            }
+
+            if ( !first_instance ) return 0 ;
+
             /* Hook */
             if ( handler_hook_count )
                 for ( n = 0; n < handler_hook_count; n++ )
                     handler_hook_list[n].hook();
             /* Hook */
-            if ( must_exit ) break ;
 
+            return 1 ;
         }
-        else
-        {
-            if ( last_instance_run )
-            {
-                if ( instance_exists( last_instance_run ) )
-                {
-                    i = last_instance_run;
-                }
-                else
-                {
-                    last_instance_run = NULL;
-                    i = instance_next_by_priority();
-                }
-            }
-            else
-            {
-                i = instance_next_by_priority();
-                i_count = 0 ;
-            }
 
-            while ( i )
-            {
-                status = LOCDWORD( i, STATUS );
-                /* If instance is KILLED or DEAD or return from some debug command, then execute it again.
-                   No exec_hook is executed.
-                 */
-                if ( status == STATUS_KILLED || status == STATUS_DEAD || last_instance_run )
-                {
-                    /* Run instance */
-                }
-                else if ( status == STATUS_RUNNING && LOCINT32( i, FRAME_PERCENT ) < 100 )
-                {
-                    /* Run instance */
-                    /* Hook */
-                    if ( process_exec_hook_count )
-                        for ( n = 0; n < process_exec_hook_count; n++ )
-                            process_exec_hook_list[n]( i );
-                    /* Hook */
-                }
-                else
-                {
-                    i = instance_next_by_priority();
-                    last_instance_run = NULL;
-                    continue;
-                }
+        if ( force_debug )
+            return 1 ;
+    }
+}
 
-                i_count++;
+#ifdef __EMSCRIPTEN__
+static void bgdrtm_browser_tick( void )
+{
+    static int raf_skip = 0;
+    /* Align SET_FPS to the display refresh. Waiting `period` ms *after* a
+     * frame (and after vsync) made 60 Hz games run at ~30. */
+    const int hold = bgdrtm_rafs_per_frame();
 
-                last_instance_run = NULL;
+    if ( ++raf_skip < hold )
+        return;
+    raf_skip = 0;
 
-                instance_go( i );
+    if ( !instance_go_one_turn() )
+        emscripten_cancel_main_loop();
+}
 
-                if ( force_debug )
-                {
-                    debug_mode = 1;
-                    last_instance_run  = trace_instance;
-                    break;
-                }
+int instance_go_all()
+{
+    must_exit = 0 ;
+    /* fps=0 → requestAnimationFrame. simulate_infinite_loop keeps main()
+     * parked until the game exits (no SDL_Delay / emscripten_sleep). */
+    emscripten_set_main_loop( bgdrtm_browser_tick, 0, 1 );
+    return exit_value;
+}
+#else
+int instance_go_all()
+{
+    must_exit = 0 ;
 
-                if ( must_exit ) break;
-
-                i = instance_next_by_priority();
-            }
-
-            if ( must_exit ) break ;
-
-            /* If frame is complete, then update internal vars and execute main hooks. */
-
-            if ( !i_count && !force_debug )
-            {
-                /* Honors the signal-changed status of the process and
-                 * saves so it is used in this loop the next frame
-                 */
-
-                i = first_instance ;
-                while ( i )
-                {
-                    status = LOCDWORD( i, STATUS );
-                    if ( status == STATUS_RUNNING ) LOCINT32( i, FRAME_PERCENT ) -= 100 ;
-                    LOCDWORD( i, SAVED_STATUS ) = status ;
-
-                    if ( LOCINT32( i, SAVED_PRIORITY ) != LOCINT32( i, PRIORITY ) )
-                    {
-                        LOCINT32( i, SAVED_PRIORITY ) = LOCINT32( i, PRIORITY );
-                        instance_dirty( i );
-                    }
-
-                    i = i->next ;
-                }
-
-                if ( !first_instance ) break ;
-
-                /* Hook */
-                if ( handler_hook_count )
-                    for ( n = 0; n < handler_hook_count; n++ )
-                        handler_hook_list[n].hook();
-                /* Hook */
-
-                continue ;
-            }
-        }
+    while ( first_instance )
+    {
+        if ( !instance_go_one_turn() )
+            break ;
     }
 
     return exit_value;
-
 }
+#endif
 
 /* ---------------------------------------------------------------------- */
 

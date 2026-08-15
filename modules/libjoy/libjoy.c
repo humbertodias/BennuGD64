@@ -70,7 +70,44 @@
 static int _max_joys = 0;
 static SDL_Joystick * _joysticks[MAX_JOYS];
 static SDL_JoystickID _joystick_ids[MAX_JOYS];
+static char _joystick_names[MAX_JOYS][128];
 static int _selected_joystick = -1;
+
+static int libjoy_valid( int joy )
+{
+    return joy >= 0 && joy < _max_joys && _joysticks[ joy ];
+}
+
+static void libjoy_remember_name( int slot )
+{
+    const char * name = NULL;
+    _joystick_names[ slot ][ 0 ] = 0;
+    if ( slot < 0 || slot >= MAX_JOYS ) return;
+    if ( _joysticks[ slot ] )
+        name = SDL_GetJoystickName( _joysticks[ slot ] );
+    if ( !name && _joystick_ids[ slot ] )
+        name = SDL_GetJoystickNameForID( _joystick_ids[ slot ] );
+    if ( name && name[ 0 ] )
+        snprintf( _joystick_names[ slot ], sizeof( _joystick_names[ slot ] ), "%s", name );
+#ifdef __EMSCRIPTEN__
+    else
+        snprintf( _joystick_names[ slot ], sizeof( _joystick_names[ slot ] ), "Gamepad" );
+#endif
+}
+
+#ifdef __EMSCRIPTEN__
+/* SoRR snapshots NUMBER_JOY() into joytemp during MENU. The browser Gamepad
+ * API reports 0 pads until a button is pressed, so that snapshot stayed 0
+ * and FALTA_JOY kept showing "GamePad not found" even after the pad worked. */
+static void libjoy_placeholder( void )
+{
+    if ( _max_joys > 0 ) return;
+    _max_joys = 1;
+    _joysticks[ 0 ] = NULL;
+    _joystick_ids[ 0 ] = 0;
+    snprintf( _joystick_names[ 0 ], sizeof( _joystick_names[ 0 ] ), "Gamepad" );
+}
+#endif
 
 /* --------------------------------------------------------------------------- */
 /* libjoy_num ()                                                               */
@@ -96,7 +133,17 @@ int libjoy_name( int joy )
     }
     else
     {
-        const char * name = SDL_GetJoystickNameForID( _joystick_ids[ joy ] );
+        const char * name = NULL;
+        if ( _joysticks[ joy ] )
+            name = SDL_GetJoystickName( _joysticks[ joy ] );
+        if ( !name && _joystick_ids[ joy ] )
+            name = SDL_GetJoystickNameForID( _joystick_ids[ joy ] );
+        if ( ( !name || !name[ 0 ] ) && _joystick_names[ joy ][ 0 ] )
+            name = _joystick_names[ joy ];
+#ifdef __EMSCRIPTEN__
+        if ( !name || !name[ 0 ] )
+            name = "Gamepad";
+#endif
         result = string_new( name ? name : "" );
     }
     string_use( result );
@@ -120,7 +167,7 @@ int libjoy_select( int joy )
 
 int libjoy_buttons( void )
 {
-    if ( _selected_joystick >= 0 && _selected_joystick < _max_joys )
+    if ( libjoy_valid( _selected_joystick ) )
     {
 #ifdef TARGET_CAANOO
         if ( _selected_joystick == 0 ) return 21;
@@ -137,7 +184,7 @@ int libjoy_buttons( void )
 
 int libjoy_axes( void )
 {
-    if ( _selected_joystick >= 0 && _selected_joystick < _max_joys )
+    if ( libjoy_valid( _selected_joystick ) )
     {
         return SDL_GetNumJoystickAxes( _joysticks[ _selected_joystick ] ) ;
     }
@@ -151,7 +198,7 @@ int libjoy_axes( void )
 
 int libjoy_get_button( int button )
 {
-    if ( _selected_joystick >= 0 && _selected_joystick < _max_joys )
+    if ( libjoy_valid( _selected_joystick ) )
     {
 #ifdef TARGET_CAANOO
         if ( _selected_joystick == 0 )
@@ -198,7 +245,7 @@ int libjoy_get_button( int button )
 
 int libjoy_get_position( int axis )
 {
-    if ( _selected_joystick >= 0 && _selected_joystick < _max_joys )
+    if ( libjoy_valid( _selected_joystick ) )
     {
         return SDL_GetJoystickAxis( _joysticks[ _selected_joystick ], axis ) ;
     }
@@ -212,7 +259,7 @@ int libjoy_get_position( int axis )
 
 int libjoy_hats( void )
 {
-    if ( _selected_joystick >= 0 && _selected_joystick < _max_joys )
+    if ( libjoy_valid( _selected_joystick ) )
     {
         return SDL_GetNumJoystickHats( _joysticks[ _selected_joystick ] ) ;
     }
@@ -226,7 +273,7 @@ int libjoy_hats( void )
 
 int libjoy_balls( void )
 {
-    if ( _selected_joystick >= 0 && _selected_joystick < _max_joys )
+    if ( libjoy_valid( _selected_joystick ) )
     {
         return SDL_GetNumJoystickBalls( _joysticks[ _selected_joystick ] ) ;
     }
@@ -240,7 +287,7 @@ int libjoy_balls( void )
 
 int libjoy_get_hat( int hat )
 {
-    if ( _selected_joystick >= 0 && _selected_joystick < _max_joys )
+    if ( libjoy_valid( _selected_joystick ) )
     {
         if ( hat >= 0 && hat <= SDL_GetNumJoystickHats( _joysticks[ _selected_joystick ] ) )
         {
@@ -257,7 +304,7 @@ int libjoy_get_hat( int hat )
 
 int libjoy_get_ball( int ball, int * dx, int * dy )
 {
-    if ( _selected_joystick >= 0 && _selected_joystick < _max_joys )
+    if ( libjoy_valid( _selected_joystick ) )
     {
         if ( ball >= 0 && ball <= SDL_GetNumJoystickBalls( _joysticks[ _selected_joystick ] ) )
         {
@@ -293,7 +340,7 @@ int libjoy_get_accel( int * x, int * y, int * z )
 
 int libjoy_buttons_specific( int joy )
 {
-    if ( joy >= 0 && joy < _max_joys )
+    if ( libjoy_valid( joy ) )
     {
 #ifdef TARGET_CAANOO
         if ( joy == 0 ) return 21;
@@ -310,7 +357,7 @@ int libjoy_buttons_specific( int joy )
 
 int libjoy_axes_specific( int joy )
 {
-    if ( joy >= 0 && joy < _max_joys )
+    if ( libjoy_valid( joy ) )
     {
         return SDL_GetNumJoystickAxes( _joysticks[ joy ] ) ;
     }
@@ -324,7 +371,7 @@ int libjoy_axes_specific( int joy )
 
 int libjoy_get_button_specific( int joy, int button )
 {
-    if ( joy >= 0 && joy < _max_joys )
+    if ( libjoy_valid( joy ) )
     {
 #ifdef TARGET_CAANOO
         if ( button >= 0 && ( ( joy == 0 && button <= 21 ) || ( joy != 0 && SDL_GetNumJoystickButtons( _joysticks[ joy ] ) ) ) )
@@ -378,7 +425,7 @@ int libjoy_get_button_specific( int joy, int button )
 
 int libjoy_get_position_specific( int joy, int axis )
 {
-    if ( joy >= 0 && joy < _max_joys )
+    if ( libjoy_valid( joy ) )
     {
         if ( axis >= 0 && axis <= SDL_GetNumJoystickAxes( _joysticks[ joy ] ) )
         {
@@ -398,7 +445,7 @@ int libjoy_get_position_specific( int joy, int axis )
 
 int libjoy_hats_specific( int joy )
 {
-    if ( joy >= 0 && joy < _max_joys )
+    if ( libjoy_valid( joy ) )
     {
         return SDL_GetNumJoystickHats( _joysticks[ joy ] ) ;
     }
@@ -412,7 +459,7 @@ int libjoy_hats_specific( int joy )
 
 int libjoy_balls_specific( int joy )
 {
-    if ( joy >= 0 && joy < _max_joys )
+    if ( libjoy_valid( joy ) )
     {
         return SDL_GetNumJoystickBalls( _joysticks[ joy ] ) ;
     }
@@ -426,7 +473,7 @@ int libjoy_balls_specific( int joy )
 
 int libjoy_get_hat_specific( int joy, int hat )
 {
-    if ( joy >= 0 && joy < _max_joys )
+    if ( libjoy_valid( joy ) )
     {
         if ( hat >= 0 && hat <= SDL_GetNumJoystickHats( _joysticks[ joy ] ) )
         {
@@ -443,7 +490,7 @@ int libjoy_get_hat_specific( int joy, int hat )
 
 int libjoy_get_ball_specific( int joy, int ball, int * dx, int * dy )
 {
-    if ( joy >= 0 && joy < _max_joys )
+    if ( libjoy_valid( joy ) )
     {
         if ( ball >= 0 && ball <= SDL_GetNumJoystickBalls( _joysticks[ joy ] ) )
         {
@@ -485,29 +532,38 @@ void  __bgdexport( libjoy, module_initialize )()
 
     /* Open all joysticks */
     ids = SDL_GetJoysticks( &count );
-    if ( !ids )
+    if ( ids )
+    {
+        _max_joys = count;
+        if ( _max_joys > MAX_JOYS )
+        {
+            printf( "[JOY] Warning: maximum number of joysticks exceeded (%i>%i)", _max_joys, MAX_JOYS );
+            _max_joys = MAX_JOYS;
+        }
+
+        for ( i = 0; i < _max_joys; i++ )
+        {
+            _joystick_ids[i] = ids[i];
+            _joysticks[i] = SDL_OpenJoystick( ids[i] );
+            if ( !_joysticks[ i ] ) printf( "[JOY] Failed to open joystick '%i'", i );
+            libjoy_remember_name( i );
+        }
+
+        SDL_free( ids );
+        SDL_UpdateJoysticks() ;
+    }
+    else
     {
         _max_joys = 0;
+#ifndef __EMSCRIPTEN__
         return;
+#endif
     }
 
-    _max_joys = count;
-    if ( _max_joys > MAX_JOYS )
-    {
-        printf( "[JOY] Warning: maximum number of joysticks exceeded (%i>%i)", _max_joys, MAX_JOYS );
-        _max_joys = MAX_JOYS;
-    }
-
-    for ( i = 0; i < _max_joys; i++ )
-    {
-        _joystick_ids[i] = ids[i];
-        _joysticks[i] = SDL_OpenJoystick( ids[i] );
-        if ( !_joysticks[ i ] ) printf( "[JOY] Failed to open joystick '%i'", i );
-    }
-
-    SDL_free( ids );
-
-    SDL_UpdateJoysticks() ;
+#ifdef __EMSCRIPTEN__
+    if ( _max_joys == 0 )
+        libjoy_placeholder();
+#endif
 
 #ifdef TARGET_CAANOO
     KIONIX_ACCEL_init();
@@ -521,6 +577,94 @@ void  __bgdexport( libjoy, module_initialize )()
     KIONIX_ACCEL_enable_outputs();
 #endif
 }
+
+#ifdef __EMSCRIPTEN__
+/* Browser Gamepad API only exposes a pad after a button press, and the same
+ * pad can reconnect with a new SDL id. Desktop still opens pads once at init. */
+static int libjoy_id_in_list( SDL_JoystickID id, SDL_JoystickID * ids, int count )
+{
+    int i;
+    for ( i = 0; i < count; i++ )
+        if ( ids[ i ] == id ) return 1;
+    return 0;
+}
+
+static int libjoy_name_taken( const char * name )
+{
+    int j;
+    if ( !name || !name[ 0 ] ) return 0;
+    for ( j = 0; j < _max_joys; j++ )
+        if ( _joystick_names[ j ][ 0 ] && strcmp( _joystick_names[ j ], name ) == 0 )
+            return 1;
+    return 0;
+}
+
+/* Only recycle a slot when its SDL id really disappeared — not when
+ * SDL_JoystickConnected() flickers for a frame (common in the browser). */
+static int libjoy_first_dead_slot( SDL_JoystickID * ids, int count )
+{
+    int j;
+    for ( j = 0; j < _max_joys; j++ )
+    {
+        if ( !_joysticks[ j ] ) return j;
+        if ( !libjoy_id_in_list( _joystick_ids[ j ], ids, count ) ) return j;
+    }
+    return -1;
+}
+
+static void libjoy_refresh( void )
+{
+    int count = 0, i;
+    SDL_JoystickID * ids;
+
+    SDL_UpdateJoysticks();
+    ids = SDL_GetJoysticks( &count );
+    if ( !ids )
+        return;
+
+    for ( i = 0; i < count; i++ )
+    {
+        int slot, dead;
+        SDL_Joystick * js;
+        const char * name;
+
+        if ( libjoy_id_in_list( ids[ i ], _joystick_ids, _max_joys ) )
+            continue;
+
+        js = SDL_OpenJoystick( ids[ i ] );
+        if ( !js || SDL_GetNumJoystickButtons( js ) <= 0 )
+        {
+            if ( js ) SDL_CloseJoystick( js );
+            continue;
+        }
+
+        name = SDL_GetJoystickName( js );
+        dead = libjoy_first_dead_slot( ids, count );
+        if ( dead < 0 && libjoy_name_taken( name ) )
+        {
+            /* Same physical pad under a new id while the old slot is still listed. */
+            SDL_CloseJoystick( js );
+            continue;
+        }
+
+        slot = ( dead >= 0 ) ? dead : _max_joys;
+        if ( slot >= MAX_JOYS )
+        {
+            SDL_CloseJoystick( js );
+            break;
+        }
+
+        if ( _joysticks[ slot ] ) SDL_CloseJoystick( _joysticks[ slot ] );
+        _joystick_ids[ slot ] = ids[ i ];
+        _joysticks[ slot ] = js;
+        libjoy_remember_name( slot );
+        if ( slot == _max_joys )
+            _max_joys++;
+    }
+
+    SDL_free( ids );
+}
+#endif
 
 /* ----------------------------------------------------------------- */
 
@@ -538,5 +682,13 @@ void  __bgdexport( libjoy, module_finalize )()
     if ( SDL_WasInit( SDL_INIT_JOYSTICK ) ) SDL_QuitSubSystem( SDL_INIT_JOYSTICK );
 
 }
+
+HOOK __bgdexport( libjoy, handler_hooks )[] =
+{
+#ifdef __EMSCRIPTEN__
+    { 4900, libjoy_refresh },
+#endif
+    {    0, NULL           }
+};
 
 /* ----------------------------------------------------------------- */

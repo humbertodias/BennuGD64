@@ -199,6 +199,7 @@ extern HOOK libsdlhandler_handler_hooks[];
 extern HOOK libwm_handler_hooks[];
 extern HOOK libkey_handler_hooks[];
 extern HOOK libmouse_handler_hooks[];
+extern HOOK libjoy_handler_hooks[];
 extern HOOK mod_timers_handler_hooks[];
  
 /* ---------- modules_dependency ---------- */
@@ -739,7 +740,7 @@ void fake_dl_init()
     __fake_dl[11].instance_pre_execute_hook    = NULL;
     __fake_dl[11].instance_pos_execute_hook    = NULL;
     __fake_dl[11].process_exec_hook            = NULL;
-    __fake_dl[11].handler_hooks                = NULL;
+    __fake_dl[11].handler_hooks                = libjoy_handler_hooks;
 #endif
     __fake_dl[11].modules_dependency           = libjoy_modules_dependency;
   

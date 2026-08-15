@@ -34,6 +34,9 @@ wasm:
 		-DSTATIC_MODULES=ON -DINTERPRETER_ONLY=ON
 	cmake --build build-wasm
 
+wasm-server:
+	python3 -m http.server 8080 --directory build-wasm/core/bgdi/src
+
 clean:
 	rm -rf build build-shared build-wasm
 

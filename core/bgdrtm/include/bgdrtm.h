@@ -87,6 +87,11 @@ extern void mnemonic_dump( int i, int param );
 extern void bgdrtm_entry( int argc, char * argv[] );
 extern void bgdrtm_exit( int n );
 
+extern void bgdrtm_set_frame_pace( int fps );
+extern double bgdrtm_frame_period_ms( void );
+extern int bgdrtm_rafs_per_frame( void );
+extern void bgdrtm_frame_throttle( void );
+
 /* --------------------------------------------------------------------------- */
 
 #if defined( TARGET_GP2X_WIZ ) || defined( TARGET_CAANOO )

@@ -252,8 +252,7 @@ void bgdrtm_entry( int argc, char * argv[] )
         GLODWORD( OS_ID ) = _OS_ID ;
 
 #ifdef TARGET_EMSCRIPTEN
-    /* SoRR: os_id 0 (Windows) → P1 keyboard; otherwise P1 is joy 0.
-     * Pick from pads actually opened (never a fake slot). */
+    /* SoRR: os_id 0 (Windows) → P1 keyboard; otherwise P1 is joy 0. */
     GLODWORD( OS_ID ) = libjoy_num() > 0 ? OS_LINUX : OS_WIN32;
 #endif
 

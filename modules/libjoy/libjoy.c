@@ -89,10 +89,6 @@ static void libjoy_remember_name( int slot )
         name = SDL_GetJoystickNameForID( _joystick_ids[ slot ] );
     if ( name && name[ 0 ] )
         snprintf( _joystick_names[ slot ], sizeof( _joystick_names[ slot ] ), "%s", name );
-#ifdef __EMSCRIPTEN__
-    else
-        snprintf( _joystick_names[ slot ], sizeof( _joystick_names[ slot ] ), "Gamepad" );
-#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -126,10 +122,6 @@ int libjoy_name( int joy )
             name = SDL_GetJoystickNameForID( _joystick_ids[ joy ] );
         if ( ( !name || !name[ 0 ] ) && _joystick_names[ joy ][ 0 ] )
             name = _joystick_names[ joy ];
-#ifdef __EMSCRIPTEN__
-        if ( !name || !name[ 0 ] )
-            name = "Gamepad";
-#endif
         result = string_new( name ? name : "" );
     }
     string_use( result );
@@ -500,6 +492,95 @@ int libjoy_get_accel_specific( int joy, int * x, int * y, int * z )
     return -1;
 }
 
+#ifdef __EMSCRIPTEN__
+static int libjoy_slot_for_id( SDL_JoystickID id )
+{
+    int i;
+    if ( !id ) return -1;
+    for ( i = 0; i < _max_joys; i++ )
+        if ( _joystick_ids[ i ] == id ) return i;
+    return -1;
+}
+
+static int libjoy_first_free_slot( void )
+{
+    int i;
+    for ( i = 0; i < _max_joys; i++ )
+        if ( !_joysticks[ i ] ) return i;
+    return -1;
+}
+
+static int libjoy_attach( SDL_JoystickID id )
+{
+    int slot;
+    SDL_Joystick * js;
+
+    slot = libjoy_slot_for_id( id );
+    if ( slot >= 0 && _joysticks[ slot ] )
+        return slot;
+
+    js = SDL_OpenJoystick( id );
+    if ( !js )
+        return -1;
+
+    slot = ( slot >= 0 ) ? slot : libjoy_first_free_slot();
+    if ( slot < 0 )
+    {
+        if ( _max_joys >= MAX_JOYS )
+        {
+            SDL_CloseJoystick( js );
+            return -1;
+        }
+        slot = _max_joys++;
+    }
+
+    if ( _joysticks[ slot ] && _joysticks[ slot ] != js )
+        SDL_CloseJoystick( _joysticks[ slot ] );
+    _joystick_ids[ slot ] = id;
+    _joysticks[ slot ] = js;
+    libjoy_remember_name( slot );
+    return slot;
+}
+
+static void libjoy_detach( SDL_JoystickID id )
+{
+    int slot = libjoy_slot_for_id( id );
+    if ( slot < 0 ) return;
+    if ( _joysticks[ slot ] ) SDL_CloseJoystick( _joysticks[ slot ] );
+    _joysticks[ slot ] = NULL;
+    _joystick_ids[ slot ] = 0;
+    _joystick_names[ slot ][ 0 ] = 0;
+    while ( _max_joys > 0 && !_joysticks[ _max_joys - 1 ] )
+        _max_joys--;
+}
+
+static void libjoy_refresh( void )
+{
+    SDL_Event e;
+    int count = 0, i;
+    SDL_JoystickID * ids;
+
+    SDL_UpdateJoysticks();
+
+    while ( SDL_PeepEvents( &e, 1, SDL_GETEVENT, SDL_EVENT_JOYSTICK_ADDED, SDL_EVENT_JOYSTICK_REMOVED ) > 0 )
+    {
+        if ( e.type == SDL_EVENT_JOYSTICK_ADDED )
+            libjoy_attach( e.jdevice.which );
+        else if ( e.type == SDL_EVENT_JOYSTICK_REMOVED )
+            libjoy_detach( e.jdevice.which );
+    }
+
+    /* Gamepad API can expose a pad without an ADDED event if the grant
+     * happened before SDL_InitSubSystem(JOYSTICK). */
+    ids = SDL_GetJoysticks( &count );
+    if ( !ids ) return;
+    for ( i = 0; i < count; i++ )
+        if ( libjoy_slot_for_id( ids[ i ] ) < 0 )
+            libjoy_attach( ids[ i ] );
+    SDL_free( ids );
+}
+#endif
+
 /* --------------------------------------------------------------------------- */
 /* Funciones de inicializacion del modulo/plugin                               */
 /* --------------------------------------------------------------------------- */
@@ -516,35 +597,8 @@ void  __bgdexport( libjoy, module_initialize )()
         SDL_SetJoystickEventsEnabled( true );
     }
 
-#ifdef __EMSCRIPTEN__
-    /* Only real pads. A NULL placeholder made SoRR set P1 to None and freeze
-     * character select. Keyboard vs joystick default is chosen in bgdrtm_entry
-     * from NUMBER_JOY(). The shell waits for a pad button or Enter first. */
-    SDL_UpdateJoysticks();
-    ids = SDL_GetJoysticks( &count );
-    _max_joys = 0;
-    if ( ids )
-    {
-        if ( count > MAX_JOYS ) count = MAX_JOYS;
-        for ( i = 0; i < count; i++ )
-        {
-            SDL_Joystick * js = SDL_OpenJoystick( ids[ i ] );
-            if ( !js || SDL_GetNumJoystickButtons( js ) <= 0 )
-            {
-                if ( js ) SDL_CloseJoystick( js );
-                continue;
-            }
-            _joystick_ids[ _max_joys ] = ids[ i ];
-            _joysticks[ _max_joys ] = js;
-            libjoy_remember_name( _max_joys );
-            _max_joys++;
-        }
-        SDL_free( ids );
-    }
-    return;
-#endif
-
     /* Open all joysticks */
+    SDL_UpdateJoysticks();
     ids = SDL_GetJoysticks( &count );
     if ( ids )
     {
@@ -562,6 +616,30 @@ void  __bgdexport( libjoy, module_initialize )()
             if ( !_joysticks[ i ] ) printf( "[JOY] Failed to open joystick '%i'", i );
             libjoy_remember_name( i );
         }
+
+#ifdef __EMSCRIPTEN__
+        {
+            int w = 0;
+            for ( i = 0; i < _max_joys; i++ )
+            {
+                if ( !_joysticks[ i ] ) continue;
+                if ( w != i )
+                {
+                    _joysticks[ w ] = _joysticks[ i ];
+                    _joystick_ids[ w ] = _joystick_ids[ i ];
+                    memcpy( _joystick_names[ w ], _joystick_names[ i ], sizeof( _joystick_names[ w ] ) );
+                }
+                w++;
+            }
+            for ( i = w; i < _max_joys; i++ )
+            {
+                _joysticks[ i ] = NULL;
+                _joystick_ids[ i ] = 0;
+                _joystick_names[ i ][ 0 ] = 0;
+            }
+            _max_joys = w;
+        }
+#endif
 
         SDL_free( ids );
         SDL_UpdateJoysticks() ;
@@ -584,94 +662,6 @@ void  __bgdexport( libjoy, module_initialize )()
     KIONIX_ACCEL_enable_outputs();
 #endif
 }
-
-#ifdef __EMSCRIPTEN__
-/* Browser Gamepad API only exposes a pad after a button press, and the same
- * pad can reconnect with a new SDL id. Desktop still opens pads once at init. */
-static int libjoy_id_in_list( SDL_JoystickID id, SDL_JoystickID * ids, int count )
-{
-    int i;
-    for ( i = 0; i < count; i++ )
-        if ( ids[ i ] == id ) return 1;
-    return 0;
-}
-
-static int libjoy_name_taken( const char * name )
-{
-    int j;
-    if ( !name || !name[ 0 ] ) return 0;
-    for ( j = 0; j < _max_joys; j++ )
-        if ( _joystick_names[ j ][ 0 ] && strcmp( _joystick_names[ j ], name ) == 0 )
-            return 1;
-    return 0;
-}
-
-/* Only recycle a slot when its SDL id really disappeared — not when
- * SDL_JoystickConnected() flickers for a frame (common in the browser). */
-static int libjoy_first_dead_slot( SDL_JoystickID * ids, int count )
-{
-    int j;
-    for ( j = 0; j < _max_joys; j++ )
-    {
-        if ( !_joysticks[ j ] ) return j;
-        if ( !libjoy_id_in_list( _joystick_ids[ j ], ids, count ) ) return j;
-    }
-    return -1;
-}
-
-static void libjoy_refresh( void )
-{
-    int count = 0, i;
-    SDL_JoystickID * ids;
-
-    SDL_UpdateJoysticks();
-    ids = SDL_GetJoysticks( &count );
-    if ( !ids )
-        return;
-
-    for ( i = 0; i < count; i++ )
-    {
-        int slot, dead;
-        SDL_Joystick * js;
-        const char * name;
-
-        if ( libjoy_id_in_list( ids[ i ], _joystick_ids, _max_joys ) )
-            continue;
-
-        js = SDL_OpenJoystick( ids[ i ] );
-        if ( !js || SDL_GetNumJoystickButtons( js ) <= 0 )
-        {
-            if ( js ) SDL_CloseJoystick( js );
-            continue;
-        }
-
-        name = SDL_GetJoystickName( js );
-        dead = libjoy_first_dead_slot( ids, count );
-        if ( dead < 0 && libjoy_name_taken( name ) )
-        {
-            /* Same physical pad under a new id while the old slot is still listed. */
-            SDL_CloseJoystick( js );
-            continue;
-        }
-
-        slot = ( dead >= 0 ) ? dead : _max_joys;
-        if ( slot >= MAX_JOYS )
-        {
-            SDL_CloseJoystick( js );
-            break;
-        }
-
-        if ( _joysticks[ slot ] ) SDL_CloseJoystick( _joysticks[ slot ] );
-        _joystick_ids[ slot ] = ids[ i ];
-        _joysticks[ slot ] = js;
-        libjoy_remember_name( slot );
-        if ( slot == _max_joys )
-            _max_joys++;
-    }
-
-    SDL_free( ids );
-}
-#endif
 
 /* ----------------------------------------------------------------- */
 

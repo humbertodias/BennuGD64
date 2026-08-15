@@ -106,6 +106,11 @@ set (SDL_TESTS OFF CACHE BOOL "" FORCE)
 set (SDL_INSTALL_DOCS OFF CACHE BOOL "" FORCE)
 set (SDL_LIBUSB OFF CACHE BOOL "" FORCE)
 set (SDL_HIDAPI_LIBUSB OFF CACHE BOOL "" FORCE)
+if (EMSCRIPTEN)
+  # Browser Gamepad API only. SDL's virtual joystick appears as a fake pad
+  # at init and makes games assign P1 to a stick that is not a real device.
+  set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
+endif ()
 FetchContent_Declare (
   sdl3
   GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"

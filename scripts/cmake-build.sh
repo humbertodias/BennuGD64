@@ -81,6 +81,32 @@ fi
 
 cmake --install "${BUILD_DIR}" --prefix "${STAGE}" --config "${BUILD_TYPE}"
 
+# Compile web/demo/hello.prg with the staged compiler. hello.prg never exits
+# without ESC, so we only check that a non-empty .dcb is produced.
+# Usage: compile_hello_dcb [--copy FILE]... command [args...]
+compile_hello_dcb() {
+  local smoke
+  smoke="$(mktemp -d)"
+  cp "${SRC_DIR}/web/demo/hello.prg" "${smoke}/hello.prg"
+  while [[ "${1:-}" == "--copy" ]]; do
+    shift
+    cp "$1" "${smoke}/"
+    shift
+  done
+  echo "----- compile hello.prg -----"
+  if (
+    cd "${smoke}"
+    "$@"
+    test -s hello.dcb
+    ls -l hello.dcb
+  ); then
+    rm -rf "${smoke}"
+    return 0
+  fi
+  rm -rf "${smoke}"
+  return 1
+}
+
 copy_mingw_runtime() {
   local dest="$1"
   local dll gcc_dll
@@ -117,6 +143,7 @@ smoke_unix() {
   grep -E 'BGDI|Interpreter' /tmp/bgdi-help.txt
   echo "Dynamic libs (informational):"
   (otool -L "${bgdi}" 2>/dev/null || ldd "${bgdi}" || true) | head -40
+  compile_hello_dcb "${bgdc}" -o hello.dcb hello.prg
 }
 
 smoke_windows() {
@@ -140,15 +167,7 @@ smoke_wasi() {
   echo "----- bgdc.wasm output -----"
   cat /tmp/bgdc-wasi-help.txt
   grep -E 'BGDC|Compiler' /tmp/bgdc-wasi-help.txt
-  local smoke
-  smoke="$(mktemp -d)"
-  cp "${wasm}" "${SRC_DIR}/web/demo/hello.prg" "${smoke}/"
-  (
-    cd "${smoke}"
-    wasmtime --dir=. ./bgdc.wasm -- -o hello.dcb hello.prg
-    test -s hello.dcb
-    ls -l hello.dcb
-  )
+  compile_hello_dcb --copy "${wasm}" wasmtime --dir=. ./bgdc.wasm -- -o hello.dcb hello.prg
 }
 
 case "${PLATFORM}" in

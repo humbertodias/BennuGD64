@@ -49,6 +49,7 @@ FROM linux AS wasm
 
 ARG EMSCRIPTEN_VERSION=6.0.6
 ENV EMSDK=/opt/emsdk \
+    EM_CACHE=/tmp/emscripten-cache \
     PLATFORM=wasm
 
 RUN apt-get update \

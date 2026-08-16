@@ -105,20 +105,23 @@ if [[ "${PLATFORM}" == "wasm" ]]; then
       source "${EMSDK}/emsdk_env.sh"
       set -euo pipefail
       unset CC CXX CFLAGS CXXFLAGS
+      export EM_CACHE="${HOME}/emscripten-cache"
+      mkdir -p "${EM_CACHE}"
       HOST_BUILD=/src/build-host
       WASM_BUILD=/src/build-wasm
       STAGE=/src/dist/web-wasm32-static
       FETCH_DIR="${HOST_BUILD}/_deps"
-      EXTRA=(
+      COMMON=(
         -DBENNUGD_VERSION="${BENNUGD_VERSION}"
         -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
         -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
         -DBENNUGD_SDL3_REF="${SDL3_REF}"
         -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
-        -DFETCHCONTENT_BASE_DIR="${FETCH_DIR}"
       )
       emcc -v
-      cmake --preset wasm-host "${EXTRA[@]}"
+      cmake --preset wasm-host \
+        "${COMMON[@]}" \
+        -DFETCHCONTENT_BASE_DIR="${FETCH_DIR}"
       cmake --build --preset wasm-host
       for prg in /src/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
@@ -131,7 +134,8 @@ if [[ "${PLATFORM}" == "wasm" ]]; then
         -DBENNUGD_BUNDLE_DEPS=ON \
         -DSTATIC_MODULES=ON \
         -DINTERPRETER_ONLY=ON \
-        "${EXTRA[@]}" \
+        "${COMMON[@]}" \
+        -DFETCHCONTENT_BASE_DIR="${WASM_BUILD}/_deps" \
         -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src" \
         -DFETCHCONTENT_SOURCE_DIR_LIBPNG="${FETCH_DIR}/libpng-src" \
         -DFETCHCONTENT_SOURCE_DIR_SDL3="${FETCH_DIR}/sdl3-src" \

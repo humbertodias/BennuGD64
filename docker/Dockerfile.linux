@@ -1,7 +1,7 @@
 # Native Linux toolchain. Build with:
 #   docker build -t bennugd64-linux -f docker/Dockerfile.linux docker/
 #   docker run --rm -v "$PWD":/src -w /src bennugd64-linux cmake --preset static
-# Web (Emscripten) uses this image too: bash scripts/docker-build.sh linux wasm
+# Web player: docker/Dockerfile.wasm FROM this image (scripts/docker-build.sh wasm).
 
 FROM ubuntu:22.04
 

@@ -11,7 +11,7 @@ PREFIX_SHARED ?= dist/linux-shared
 endif
 
 .PHONY: all static shared wasm wasi docker-linux docker-linux-shared \
-	docker-wasm docker-windows docker-windows-shared \
+	docker-windows docker-windows-shared \
 	wasi/run wasm/server install/wasmtime clean format
 
 all: static
@@ -29,7 +29,7 @@ shared:
 	ctest --preset shared --output-on-failure
 
 wasm:
-	bash scripts/wasm-build.sh
+	bash scripts/docker-build.sh wasm
 
 wasi:
 	cmake --preset wasi
@@ -42,9 +42,6 @@ docker-linux:
 
 docker-linux-shared:
 	bash scripts/docker-build.sh linux shared
-
-docker-wasm:
-	bash scripts/docker-build.sh linux wasm
 
 docker-windows:
 	bash scripts/docker-build.sh windows

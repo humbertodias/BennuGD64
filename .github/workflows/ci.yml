@@ -198,14 +198,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build-host/_deps
-          key: fetch-wasm-${{ hashFiles('versions.env', 'CMakePresets.json') }}
+          key: fetch-wasm-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.wasm') }}
           restore-keys: |
             fetch-wasm-
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build toolchain image
+      - name: Build Linux toolchain image
         uses: docker/build-push-action@v6
         with:
           context: docker
@@ -216,16 +216,25 @@ jobs:
           cache-from: type=gha,scope=bennugd-linux
           cache-to: type=gha,mode=max,scope=bennugd-linux
 
-      - name: Setup Emscripten
-        uses: emscripten-core/setup-emsdk@v16
+      - name: Build wasm toolchain image
+        uses: docker/build-push-action@v6
         with:
-          version: ${{ env.EMSCRIPTEN_VERSION }}
-          actions-cache-folder: emsdk-cache
+          context: docker
+          file: docker/Dockerfile.wasm
+          tags: bennugd64-wasm
+          load: true
+          provenance: false
+          build-args: |
+            EMSCRIPTEN_VERSION=${{ env.EMSCRIPTEN_VERSION }}
+          build-contexts: |
+            bennugd64-linux=docker-image://bennugd64-linux
+          cache-from: type=gha,scope=bennugd-wasm
+          cache-to: type=gha,mode=max,scope=bennugd-wasm
 
       - name: Build
         env:
           SKIP_DOCKER_BUILD: "1"
-        run: bash scripts/docker-build.sh linux wasm
+        run: bash scripts/docker-build.sh wasm
 
       - name: Resolve version
         id: meta
@@ -354,7 +363,7 @@ jobs:
             - **wasi-wasm32-static** — WASI compiler (`bgdc.wasm`); run with `wasmtime --dir=. ./bgdc.wasm -- -o out.dcb in.prg`
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-            Linux and Windows CI images come from `docker/Dockerfile.linux` and `docker/Dockerfile.windows` (MinGW-w64 cross-compile).
+            Linux, Windows, and web CI images come from `docker/Dockerfile.linux`, `docker/Dockerfile.windows` (MinGW-w64), and `docker/Dockerfile.wasm` (Emscripten on the Linux image).
             OS graphics/audio libraries may still be required at runtime.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

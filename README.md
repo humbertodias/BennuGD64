@@ -39,10 +39,11 @@ It will install two tools: `bgdc` *compiler* and `bgdi` *interpreter*. Shared bu
 
 ## Build
 
-Only Docker is required for Linux and Windows (no local compiler or CMake):
+Only Docker is required for Linux, Windows, and the web player (no local compiler or CMake):
 
 ```shell
 bash scripts/docker-build.sh linux
+bash scripts/docker-build.sh wasm
 ```
 
 See [BUILDING.md](BUILDING.md) for Windows, wasm, WASI, macOS, and native CMake.

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Build Linux or Windows artifacts in a toolchain image (CMake presets + CTest).
+# Build artifacts in a toolchain image (CMake presets + CTest).
 #
 #   bash scripts/docker-build.sh
 #   bash scripts/docker-build.sh linux shared
 #   bash scripts/docker-build.sh windows
-#   bash scripts/docker-build.sh linux wasm
+#   bash scripts/docker-build.sh wasm
 #   bash scripts/docker-build.sh linux shell
 set -euo pipefail
 
@@ -12,7 +12,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
 USAGE="usage: $0 linux|windows [static|shared|shell]
-       $0 linux wasm"
+       $0 wasm [shell]"
 
 if [[ -f "${ROOT}/versions.env" ]]; then
   set -a
@@ -34,7 +34,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows) ;;
+  linux|windows|wasm) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -45,7 +45,17 @@ IMAGE="bennugd64-${PLATFORM}"
 DOCKERFILE="docker/Dockerfile.${PLATFORM}"
 
 if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
-  docker build -t "${IMAGE}" -f "${DOCKERFILE}" docker/
+  if [[ "${PLATFORM}" == "wasm" ]]; then
+    docker build -t bennugd64-linux -f docker/Dockerfile.linux docker/
+    DOCKER_BUILDKIT=1 docker build \
+      --build-arg EMSCRIPTEN_VERSION="${EMSCRIPTEN_VERSION:-6.0.6}" \
+      --build-context bennugd64-linux=docker-image://bennugd64-linux \
+      -t bennugd64-wasm \
+      -f docker/Dockerfile.wasm \
+      docker/
+  else
+    docker build -t "${IMAGE}" -f "${DOCKERFILE}" docker/
+  fi
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
@@ -62,26 +72,17 @@ if [[ -z "${BENNUGD_VERSION:-}" ]]; then
     || echo dev)"
 fi
 
-if [[ "${SECOND}" == "wasm" ]]; then
-  if [[ "${PLATFORM}" != "linux" ]]; then
-    echo "${USAGE}" >&2
-    exit 1
-  fi
-  if [[ -z "${EMSDK:-}" || ! -f "${EMSDK}/emsdk_env.sh" ]]; then
-    echo "EMSDK must point at an Emscripten SDK (emsdk_env.sh)." >&2
-    exit 1
-  fi
+if [[ "${PLATFORM}" == "wasm" ]]; then
   echo "image: ${IMAGE}"
   echo "preset: wasm-host + emcmake"
   echo "version: ${BENNUGD_VERSION}"
   docker run --rm \
     -u "$(id -u):$(id -g)" \
     -v "${ROOT}:/src" \
-    -v "${EMSDK}:${EMSDK}" \
     -w /src \
     -e HOME=/tmp \
-    -e EMSDK="${EMSDK}" \
     -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
     -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
     -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
     -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
@@ -92,7 +93,52 @@ if [[ "${SECOND}" == "wasm" ]]; then
       # shellcheck disable=SC1091
       source "${EMSDK}/emsdk_env.sh"
       set -euo pipefail
-      bash scripts/wasm-build.sh
+      unset CC CXX CFLAGS CXXFLAGS
+      HOST_BUILD=/src/build-host
+      WASM_BUILD=/src/build-wasm
+      STAGE=/src/dist/web-wasm32-static
+      FETCH_DIR="${HOST_BUILD}/_deps"
+      EXTRA=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+        -DFETCHCONTENT_BASE_DIR="${FETCH_DIR}"
+      )
+      emcc -v
+      cmake --preset wasm-host "${EXTRA[@]}"
+      cmake --build --preset wasm-host
+      for prg in /src/web/demo/*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      emcmake cmake -S /src -B "${WASM_BUILD}" -G Ninja \
+        -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+        -DUSE_LIBDES=ON \
+        -DBENNUGD_BUNDLE_DEPS=ON \
+        -DSTATIC_MODULES=ON \
+        -DINTERPRETER_ONLY=ON \
+        "${EXTRA[@]}" \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src" \
+        -DFETCHCONTENT_SOURCE_DIR_LIBPNG="${FETCH_DIR}/libpng-src" \
+        -DFETCHCONTENT_SOURCE_DIR_SDL3="${FETCH_DIR}/sdl3-src" \
+        -DFETCHCONTENT_SOURCE_DIR_SDL3_MIXER="${FETCH_DIR}/sdl3_mixer-src"
+      cmake --build "${WASM_BUILD}" --target bgdi
+      SRC="${WASM_BUILD}/core/bgdi/src"
+      mkdir -p "${STAGE}"
+      cp "${SRC}/bgdi.html" "${STAGE}/index.html"
+      cp "${SRC}/bgdi.html" "${SRC}/bgdi.js" "${SRC}/bgdi.wasm" "${SRC}/bgdi.data" "${STAGE}/"
+      cp /src/README.md "${STAGE}/"
+      cp "${WASM_BUILD}/BUILD_INFO.txt" "${STAGE}/"
+      cp "${SRC}/bgdi.wasm.map" "${STAGE}/" 2>/dev/null || true
+      cp "${SRC}/bgdi.js.map" "${STAGE}/" 2>/dev/null || true
+      test -s "${STAGE}/index.html"
+      test -s "${STAGE}/bgdi.html"
+      test -s "${STAGE}/bgdi.js"
+      test -s "${STAGE}/bgdi.wasm"
+      test -s "${STAGE}/bgdi.data"
     '
   exit 0
 fi

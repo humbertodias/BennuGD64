@@ -72,10 +72,21 @@ if [[ -z "${BENNUGD_VERSION:-}" ]]; then
     || echo dev)"
 fi
 
+# FetchContent *-subbuild embeds the configure-time absolute path. A cache
+# from the GitHub runner or a host configure will not work at /src in Docker.
+scrub_fetchcontent() {
+  local d="$1"
+  [[ -d "${d}" ]] || return 0
+  find "${d}" -mindepth 1 -maxdepth 1 -type d \
+    \( -name '*-subbuild' -o -name '*-build' -o -name '*-tmp' \) \
+    -exec rm -rf {} +
+}
+
 if [[ "${PLATFORM}" == "wasm" ]]; then
   echo "image: ${IMAGE}"
   echo "preset: wasm-host + emcmake"
   echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-host/_deps"
   docker run --rm \
     -u "$(id -u):$(id -g)" \
     -v "${ROOT}:/src" \
@@ -165,6 +176,8 @@ fi
 echo "image: ${IMAGE}"
 echo "preset: ${PRESET}"
 echo "version: ${BENNUGD_VERSION}"
+
+scrub_fetchcontent "${ROOT}/${BUILD_DIR#/src/}/_deps"
 
 docker run --rm \
   -u "$(id -u):$(id -g)" \

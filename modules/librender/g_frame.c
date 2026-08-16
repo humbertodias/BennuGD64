@@ -145,7 +145,7 @@ void gr_wait_frame()
         return;
     }
 
-    /* Tiempo transcurrido total del ejecucion del ultimo frame (Frame time en ms) */
+    /* Tiempo transcurrido total de la ejecución del último frame (Frame time en ms) */
     * ( float * ) &GLODWORD( librender, FRAME_TIME ) = ( frame_ticks - last_frame_ticks ) / 1000.0f ;
 
     /* -------------- */
@@ -203,7 +203,7 @@ void gr_wait_frame()
         }
     }
 
-    /* Si paso 1 segundo o mas desde la ultima lectura */
+    /* Si paso 1 segundo o más desde la última lectura */
     if ( frame_ticks - FPS_init >= 1000 )
     {
         if ( fps_value )

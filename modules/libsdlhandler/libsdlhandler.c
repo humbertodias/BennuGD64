@@ -52,7 +52,7 @@ static void  dump_new_events( void )
 }
 
 /* ----------------------------------------------------------------- */
-/* Funciones de inicializacion del modulo/plugin                     */
+/* Funciones de inicialización del módulo/plugin                     */
 
 void __bgdexport( libsdlhandler, module_initialize )()
 {

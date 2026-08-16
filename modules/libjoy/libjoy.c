@@ -582,7 +582,7 @@ static void libjoy_refresh( void )
 #endif
 
 /* --------------------------------------------------------------------------- */
-/* Funciones de inicializacion del modulo/plugin                               */
+/* Funciones de inicialización del módulo/plugin                               */
 /* --------------------------------------------------------------------------- */
 
 void  __bgdexport( libjoy, module_initialize )()

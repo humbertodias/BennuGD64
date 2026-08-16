@@ -100,7 +100,7 @@ enum {
 /* --------------------------------------------------------------------------- */
 /* Son las variables que se desea acceder.                           */
 /* El interprete completa esta estructura, si la variable existe.    */
-/* (usada en tiempo de ejecucion)                                    */
+/* (usada en tiempo de ejecución)                                    */
 
 DLVARFIXUP __bgdexport( libvideo, globals_fixup )[] =
 {
@@ -531,7 +531,7 @@ int gr_set_mode( int width, int height, int depth )
         }
     }
 
-    /* Inicializa el modo grafico */
+    /* Inicializa el modo gráfico */
 
     if ( scrbitmap )
     {

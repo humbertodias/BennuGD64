@@ -42,7 +42,7 @@
 #include "mod_proc.h"
 
 /* ----------------------------------------------------------------- */
-/* Definicion de constantes (usada en tiempo de compilacion)         */
+/* Definición de constantes (usada en tiempo de compilación)         */
 
 DLCONSTANT __bgdexport( mod_proc, constants_def )[] =
 {

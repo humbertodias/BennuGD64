@@ -4116,14 +4116,14 @@ void compile_block( PROCDEF * p )
         {
             if ( token.code == identifier_onexit )  /* "ONEXIT" */
             {
-                /* Finalizo el bloque actual y todo el codigo a continuacion es onexit */
+                /* Finalizo el bloque actual y todo el código a continuación es onexit */
                 codeblock_add( code, MN_END, 0 ) ;
                 p->exitcode = code->current;
             }
 
             if ( token.code == identifier_onerror )  /* "ONERROR" */
             {
-                /* Finalizo el bloque actual y todo el codigo a continuacion es onerror */
+                /* Finalizo el bloque actual y todo el código a continuación es onerror */
                 codeblock_add( code, MN_END, 0 ) ;
                 p->errorcode = code->current;
             }

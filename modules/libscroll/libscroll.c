@@ -184,7 +184,7 @@ void scroll_update( int n )
     back  = scrolls[n].backid  ? bitmap_get( scrolls[n].fileid, scrolls[n].backid )  : 0 ;
 
     if (                        !graph ) return ; // El fondo de scroll no existe
-    if (  scrolls[n].backid  && !back  ) return ; // Grafico no existe
+    if (  scrolls[n].backid  && !back  ) return ; // Gráfico no existe
 
     data = &(( SCROLL_EXTRA_DATA * ) &GLODWORD( libscroll, SCROLLS ) )[n] ;
 
@@ -356,7 +356,7 @@ void scroll_draw( int n, REGION * clipping )
     back  = scrolls[n].backid  ? bitmap_get( scrolls[n].fileid, scrolls[n].backid )  : NULL ;
 
     if (                        !graph ) return ; // El fondo de scroll no existe
-    if (  scrolls[n].backid  && !back  ) return ; // Grafico no existe
+    if (  scrolls[n].backid  && !back  ) return ; // Gráfico no existe
 
     dest = scrolls[n].destid ? bitmap_get( scrolls[n].destfile, scrolls[n].destid ) : NULL ;
 

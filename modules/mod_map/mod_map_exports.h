@@ -153,7 +153,7 @@ DLSYSFUNCS  __bgdexport( mod_map, functions_exports )[] =
     FUNC( "FADE_ON"             , ""            , TYPE_INT      , modmap_fade_on            ),
     FUNC( "FADE_OFF"            , ""            , TYPE_INT      , modmap_fade_off           ),
 
-    /* Informacion de graficos */
+    /* Información de gráficos */
     FUNC( "MAP_INFO_SET"        , "IIII"        , TYPE_INT      , modmap_graphic_set        ),
     FUNC( "MAP_INFO_GET"        , "III"         , TYPE_INT      , modmap_graphic_info       ),
     FUNC( "MAP_INFO"            , "III"         , TYPE_INT      , modmap_graphic_info       ),
@@ -182,13 +182,13 @@ DLSYSFUNCS  __bgdexport( mod_map, functions_exports )[] =
     FUNC( "GLYPH_GET"           , "II"          , TYPE_INT      , modmap_get_glyph          ),
     FUNC( "GLYPH_SET"           , "IIII"        , TYPE_INT      , modmap_set_glyph          ),
 
-    /* Importacion de archivos graficos */
+    /* Importación de archivos gráficos */
     FUNC( "PNG_LOAD"            , "S"           , TYPE_INT      , modmap_load_png           ),
     FUNC( "PNG_LOAD"            , "SP"          , TYPE_INT      , modmap_bgload_png         ),
     FUNC( "PCX_LOAD"            , "S"           , TYPE_INT      , modmap_load_pcx           ),
     FUNC( "PCX_LOAD"            , "SP"          , TYPE_INT      , modmap_bgload_pcx         ),
 
-    /* Exportacion de mapas Graficos */
+    /* Exportación de mapas Gráficos */
     FUNC( "PNG_SAVE"            , "IIS"         , TYPE_INT      , modmap_save_png           ),
 
     /* ------------ Compatibility ------------ */
@@ -252,13 +252,13 @@ DLSYSFUNCS  __bgdexport( mod_map, functions_exports )[] =
     FUNC( "GET_GLYPH"           , "II"          , TYPE_INT      , modmap_get_glyph          ),
     FUNC( "SET_GLYPH"           , "IIII"        , TYPE_INT      , modmap_set_glyph          ),
 
-    /* Importacion de archivos graficos */
+    /* Importación de archivos gráficos */
     FUNC( "LOAD_PNG"            , "S"           , TYPE_INT      , modmap_load_png           ),
     FUNC( "LOAD_PNG"            , "SP"          , TYPE_INT      , modmap_bgload_png         ),
     FUNC( "LOAD_PCX"            , "S"           , TYPE_INT      , modmap_load_pcx           ),
     FUNC( "LOAD_PCX"            , "SP"          , TYPE_INT      , modmap_bgload_pcx         ),
 
-    /* Exportacion de mapas Graficos */
+    /* Exportación de mapas Gráficos */
     FUNC( "SAVE_PNG"            , "IIS"         , TYPE_INT      , modmap_save_png           ),
 
     FUNC( 0                     , 0             , 0             , 0                         )

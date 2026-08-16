@@ -38,7 +38,7 @@
 #if defined(__BGDC__) || !defined(__STATIC__)
 
 /* ----------------------------------------------------------------- */
-/* Definicion de constantes (usada en tiempo de compilacion)         */
+/* Definición de constantes (usada en tiempo de compilación)         */
 DLCONSTANT  __bgdexport( mod_cd, constants_def )[] =
 {
     { "CD_TRAYEMPTY", TYPE_INT, 0  },
@@ -50,7 +50,7 @@ DLCONSTANT  __bgdexport( mod_cd, constants_def )[] =
 } ;
 
 /* ----------------------------------------------------------------- */
-/* Definicion de variables globales (usada en tiempo de compilacion) */
+/* Definición de variables globales (usada en tiempo de compilación) */
 char * __bgdexport( mod_cd, globals_def ) =
     "STRUCT cdinfo\n"
     " current_track;\n"

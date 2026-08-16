@@ -50,7 +50,7 @@ enum {
 /* --------------------------------------------------------------------------- */
 /* Son las variables que se desea acceder.                           */
 /* El interprete completa esta estructura, si la variable existe.    */
-/* (usada en tiempo de ejecucion)                                    */
+/* (usada en tiempo de ejecución)                                    */
 
 DLVARFIXUP  __bgdexport( libwm, globals_fixup )[] =
 {

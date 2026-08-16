@@ -2849,7 +2849,7 @@ void __bgdexport( mod_debug, process_exec_hook )( INSTANCE * r )
 }
 
 /* --------------------------------------------------------------------------- */
-/* Funciones de inicializacion del modulo/plugin                               */
+/* Funciones de inicialización del módulo/plugin                               */
 
 void __bgdexport( mod_debug, module_initialize )()
 {

@@ -47,7 +47,7 @@ DLCONSTANT __bgdexport( mod_text, constants_def )[] =
 {
     { "ALL_TEXT"            , TYPE_INT  , 0                     },
 
-    /* Alineacion de textos */
+    /* Alineación de textos */
     { "ALIGN_TOP_LEFT"      , TYPE_INT  , ALIGN_TOP_LEFT        },
     { "ALIGN_TOP"           , TYPE_INT  , ALIGN_TOP             },
     { "ALIGN_TOP_RIGHT"     , TYPE_INT  , ALIGN_TOP_RIGHT       },

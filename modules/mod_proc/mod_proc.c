@@ -55,7 +55,7 @@ enum
 /* ----------------------------------------------------------------- */
 /* Son las variables que se desea acceder.                           */
 /* El interprete completa esta estructura, si la variable existe.    */
-/* (usada en tiempo de ejecucion)                                    */
+/* (usada en tiempo de ejecución)                                    */
 DLVARFIXUP __bgdexport( mod_proc, locals_fixup )[]  =
 {
     /* Nombre de variable local, offset al dato, tamaño del elemento, cantidad de elementos */

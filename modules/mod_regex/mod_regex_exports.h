@@ -38,7 +38,7 @@
 #if defined(__BGDC__) || !defined(__STATIC__)
 
 /* ----------------------------------------------------------------- */
-/* Definicion de variables globales (usada en tiempo de compilacion) */
+/* Definición de variables globales (usada en tiempo de compilación) */
 
 char * __bgdexport( mod_regex, globals_def ) =
     "STRING regex_reg[15];\n"

@@ -42,7 +42,7 @@
 #include "mod_m7.h"
 
 /* --------------------------------------------------------------------------- */
-/* Definicion de constantes (usada en tiempo de compilacion)         */
+/* Definición de constantes (usada en tiempo de compilación)         */
 
 DLCONSTANT __bgdexport( mod_m7, constants_def )[] =
 {
@@ -51,7 +51,7 @@ DLCONSTANT __bgdexport( mod_m7, constants_def )[] =
 } ;
 
 /* --------------------------------------------------------------------------- */
-/* Definicion de variables globales (usada en tiempo de compilacion) */
+/* Definición de variables globales (usada en tiempo de compilación) */
 char * __bgdexport( mod_m7, globals_def ) =
     "STRUCT m7[9]\n"
     "camera;\n"
@@ -65,7 +65,7 @@ char * __bgdexport( mod_m7, globals_def ) =
     "END\n" ;
 
 /* --------------------------------------------------------------------------- */
-/* Definicion de variables locales (usada en tiempo de compilacion)  */
+/* Definición de variables locales (usada en tiempo de compilación)  */
 char * __bgdexport( mod_m7, locals_def ) =
     "ctype;\n"
     "cnumber;\n"

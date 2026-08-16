@@ -63,7 +63,7 @@ int grlib_newid()
         }
     }
 
-    // Ya no tengo mas espacio, entonces busco alguno libre entre ~+32 desde el ultimo fijo y ~-32 del ultimo asignado
+    // Ya no tengo más espacio, entonces busco alguno libre entre ~+32 desde el último fijo y ~-32 del último asignado
 
     ini = ( libs_last < libs_allocated ) ? ( libs_last >> 5 ) : 0 ;
     lim = ( libs_allocated >> 5 ) ;

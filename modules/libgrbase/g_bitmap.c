@@ -382,7 +382,7 @@ int bitmap_next_code()
         }
     }
 
-    // Ya no tengo mas espacio, entonces busco alguno libre entre ~+32 desde el ultimo fijo y ~-32 del ultimo asignado
+    // Ya no tengo más espacio, entonces busco alguno libre entre ~+32 desde el último fijo y ~-32 del último asignado
 
     ini = ( map_code_last < map_code_allocated ) ? ( map_code_last >> 5 ) : 0 ;
     lim = ( map_code_allocated >> 5 ) ;

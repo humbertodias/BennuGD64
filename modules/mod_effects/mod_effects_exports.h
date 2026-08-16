@@ -63,7 +63,7 @@ DLCONSTANT __bgdexport( mod_effects, constants_def )[] =
 #endif
 
 /* ----------------------------------------------------------------- */
-/* Declaracion de funciones                                          */
+/* Declaración de funciones                                          */
 
 DLSYSFUNCS  __bgdexport( mod_effects, functions_exports )[] =
 {

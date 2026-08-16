@@ -2599,7 +2599,7 @@ void hq2x( uint8_t *srcPtr, uint32_t srcPitch, uint8_t *dstPtr, uint32_t dstPitc
 
     q += 2;
 
-    /* Proxima linea */
+    /* Próxima línea */
     p += nextlineSrc - width;
     q += ( nextlineDst - width ) * 2;
 
@@ -2644,7 +2644,7 @@ void hq2x( uint8_t *srcPtr, uint32_t srcPitch, uint8_t *dstPtr, uint32_t dstPitc
         q += ( nextlineDst - width ) * 2;
     }
 
-    /********************* ultima linea **************************/
+    /********************* última línea **************************/
 
     w1 = 0; w4 = 0; w7 = 0;
     w2 = *( p - nextlineSrc ); w5 = *( p ); w8 = 0;

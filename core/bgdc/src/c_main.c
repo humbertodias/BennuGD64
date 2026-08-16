@@ -714,17 +714,17 @@ void compile_process()
 
     tcode = token.code ;
 
-    if ( tcode == identifier_declare )   /* Es una declaracion? */
+    if ( tcode == identifier_declare )   /* Es una declaración? */
     {
         is_declare = 1;
         token_next() ;
         tcode = token.code;
     }
 
-    /* Es funcion? */
+    /* Es función? */
     if ( tcode == identifier_function ) is_function = 1;
 
-    if (( tcode == identifier_process || tcode == identifier_function ) )   /* Si proceso o funcion, obtengo el signo */
+    if (( tcode == identifier_process || tcode == identifier_function ) )   /* Si proceso o función, obtengo el signo */
     {
         token_next() ;
         tcode = token.code;
@@ -867,7 +867,7 @@ void compile_process()
         type = typeb;
         ctype = ctypeb;
 
-        /* Recogo signo del parametro */
+        /* Recogo signo del parámetro */
         if ( token.type == IDENTIFIER && token.code == identifier_unsigned )
         {
             unsigned_prefix = 1;
@@ -879,7 +879,7 @@ void compile_process()
             token_next();
         }
 
-        /* Recogo tipo del parametro */
+        /* Recogo tipo del parámetro */
         if ( token.type == IDENTIFIER && token.code == identifier_dword )
         {
             type_implicit = 0;

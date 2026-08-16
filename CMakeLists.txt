@@ -16,11 +16,15 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
 # GCC 14+ / Clang treat classic C pointer mismatches as errors; keep them as warnings.
+# Sources are UTF-8 (Spanish/Portuguese comments and copyright).
 if (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
   add_compile_options(
+    -finput-charset=UTF-8
     -Wno-error=incompatible-pointer-types
     -Wno-error=int-conversion
   )
+elseif (MSVC)
+  add_compile_options(/utf-8)
 endif()
 
 option (STATIC_MODULES "Build modules as static libraries linked into bgdi" ON)

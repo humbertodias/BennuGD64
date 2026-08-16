@@ -338,7 +338,7 @@ int dcb_save( const char * filename, int options, const char * stubname )
             dcb.proc[n].sentence[i].OCode = procs[n]->sentences[i].offset;      ARRANGE_DWORD( &dcb.proc[n].sentence[i].OCode );
         }
 
-        /* Splinter, tipos de parametros */
+        /* Splinter, tipos de parámetros */
 
         dcb.proc[n].privar = ( DCB_VAR * ) calloc( procs[n]->privars->count, sizeof( DCB_VAR ) );
         for ( i = 0; i < procs[n]->privars->count; i++ )

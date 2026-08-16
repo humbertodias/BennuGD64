@@ -42,7 +42,7 @@
 /* rellena la estructura global "token" con los datos del mismo.          */
 /* ---------------------------------------------------------------------- */
 
-int line_count = 0 ; /* Se pone a 0, ya que lo incremente con cada \n, y hasta no obtener un \n no se procesa la linea (Splinter) */
+int line_count = 0 ; /* Se pone a 0, ya que lo incremente con cada \n, y hasta no obtener un \n no se procesa la línea (Splinter) */
 int current_file = 0 ;
 
 static int prepro_sp = 0 ;

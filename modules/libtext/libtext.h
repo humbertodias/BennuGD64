@@ -55,7 +55,7 @@
 #define TEXT_CHAR           11
 #define TEXT_POINTER        12
 
-/* Alineacion para textos */
+/* Alineación para textos */
 #define ALIGN_TOP_LEFT      0
 #define ALIGN_TOP           1
 #define ALIGN_TOP_RIGHT     2

@@ -305,7 +305,7 @@ int draw_instance_info( INSTANCE * i, REGION * region, int * z, int * drawme )
 
     coordz = LOCINT32( librender, i, COORDZ );
 
-    /* Si tiene grafico o xgraph o (ctype == 0 y esta corriendo o congelado) */
+    /* Si tiene gráfico o xgraph o (ctype == 0 y esta corriendo o congelado) */
 
     if ( LOCDWORD( librender, i, CTYPE ) == C_SCREEN && ( status == STATUS_RUNNING || status == STATUS_FROZEN ) )
         * drawme = 1;

@@ -348,7 +348,7 @@ INSTANCE * instance_duplicate( INSTANCE * father )
     if ( father->public_size > 0 ) memcpy( r->pubdata, father->pubdata, r->public_size ) ;
     if ( local_size > 0 ) memcpy( r->locdata, father->locdata, local_size ) ;
 
-    /* Inicializa datos de jerarquia */
+    /* Inicializa datos de jerarquía */
 
     /* Crea el proceso clónico como si lo hubiera llamado el padre */
 
@@ -459,7 +459,7 @@ INSTANCE * instance_new( PROCDEF * proc, INSTANCE * father )
     if ( proc->public_size > 0 ) memcpy( r->pubdata, proc->pubdata, proc->public_size ) ;
     if ( local_size > 0 ) memcpy( r->locdata, localdata, local_size ) ;
 
-    /* Inicializa datos de jerarquia */
+    /* Inicializa datos de jerarquía */
 
     LOCDWORD( r, PROCESS_TYPE ) = proc->type ;
     LOCDWORD( r, PROCESS_ID )   = pid ;
@@ -615,7 +615,7 @@ void instance_destroy( INSTANCE * r )
     for ( n = 0 ; n < r->proc->pubstring_count ; n++ ) string_discard( PUBDWORD( r, r->proc->pubstrings[n] ) ) ; /* Strings publicas */
     for ( n = 0 ; n < local_strings ; n++ ) string_discard( LOCDWORD( r, localstr[n] ) ) ; /* Strings locales */
 
-    /* Actualiza árbol de jerarquias */
+    /* Actualiza árbol de jerarquías */
 
     bigbro = instance_get( LOCDWORD( r, BIGBRO ) ) ; /* Tengo hermano mayor? */
     if ( bigbro ) LOCDWORD( bigbro, SMALLBRO ) = LOCDWORD( r, SMALLBRO ) ; /* El hermano menor de mi hermano mayor es mi hermano menor */

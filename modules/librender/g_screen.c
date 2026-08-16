@@ -474,7 +474,7 @@ void gr_unlock_screen()
             scr = scrbitmap;
         }
 
-        /* Esto podria ir en un modulo aparte */
+        /* Esto podría ir en un módulo aparte */
         switch ( scale_mode )
         {
             case SCALE_SCALE2X:

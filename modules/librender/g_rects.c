@@ -152,8 +152,8 @@ int gr_mark_rects( REGION * rects )
 
                     for ( ch = y + 1; ch < DIRTYROWS; ch++ )
                     {
-                        /* Si hay algun hueco en el ancho de las siguiente lineas, corto aca,
-                           y deja esta linea para otra recta */
+                        /* Si hay algún hueco en el ancho de las siguiente líneas, corto aca,
+                           y deja esta línea para otra recta */
                         for ( x2 = x; ( x2 < cw ) && ( zonearray[ x2 ] & ( 1 << ch ) ); x2++ );
 
                         if ( x2 < cw ) break;
@@ -180,8 +180,8 @@ int gr_mark_rects( REGION * rects )
 
                 for ( ch = y + 1; ch < DIRTYROWS; ch++ )
                 {
-                    /* Si hay algun hueco en el ancho de las siguiente lineas, corto aca,
-                       y deja esta linea para otra recta */
+                    /* Si hay algún hueco en el ancho de las siguiente líneas, corto aca,
+                       y deja esta línea para otra recta */
                     for ( x2 = x; ( x2 < cw ) && ( zonearray[ ch ][ x2 ] ); x2++ );
 
                     if ( x2 < cw ) break;

@@ -34,7 +34,7 @@
 #if defined(__BGDC__) || !defined(__STATIC__)
 
 /* ----------------------------------------------------------------- */
-/* Definicion de variables globales (usada en tiempo de compilacion) */
+/* Definición de variables globales (usada en tiempo de compilación) */
 
 char * __bgdexport( libwm, globals_def ) =
     "exit_status = 0;\n"                /* SDL_QUIT status */

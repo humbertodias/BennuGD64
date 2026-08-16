@@ -212,7 +212,7 @@ enum {
 /* ---------------------------------------------------------------------- */
 /* Son las variables que se desea acceder.                           */
 /* El interprete completa esta estructura, si la variable existe.    */
-/* (usada en tiempo de ejecucion)                                    */
+/* (usada en tiempo de ejecución)                                    */
 
 DLVARFIXUP  __bgdexport( libkey, globals_fixup )[] =
 {
@@ -441,7 +441,7 @@ HOOK __bgdexport( libkey, handler_hooks )[] =
 } ;
 
 /* ---------------------------------------------------------------------- */
-/* Funciones de inicializacion del modulo/plugin                     */
+/* Funciones de inicialización del módulo/plugin                     */
 
 void __bgdexport( libkey, module_initialize )()
 {

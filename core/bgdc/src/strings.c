@@ -172,10 +172,10 @@ int string_compile( const char ** source )
                     if ( *ptr == '\n' ) line_count++ ;
                     ptr++ ;
                 }
-                /* Si despues de saltar todos los espacios, no tengo un delimitador de string, salgo */
+                /* Si después de saltar todos los espacios, no tengo un delimitador de string, salgo */
                 if ( *ptr != c )
                 {
-                    ( *source ) = ptr; /* Fix: Splinter, por problema con numeracion de lineas */
+                    ( *source ) = ptr; /* Fix: Splinter, por problema con numeración de líneas */
                     break ;
                 }
 

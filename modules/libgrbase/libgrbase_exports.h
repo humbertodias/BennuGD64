@@ -38,7 +38,7 @@
 #include "bgddl.h"
 
 /* --------------------------------------------------------------------------- */
-/* Definicion de variables globales (usada en tiempo de compilacion)           */
+/* Definición de variables globales (usada en tiempo de compilación)           */
 
 char * __bgdexport( libgrbase, globals_def ) =
     "alpha_steps = 16;\n"

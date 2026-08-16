@@ -46,7 +46,7 @@ DLCONSTANT __bgdexport( mod_mathi, constants_def )[] =
 #endif
 
 /* --------------------------------------------------------------------------- */
-/* Declaracion de funciones                                                    */
+/* Declaración de funciones                                                    */
 
 DLSYSFUNCS __bgdexport( mod_mathi, functions_exports )[] =
 {

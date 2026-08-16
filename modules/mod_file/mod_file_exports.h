@@ -58,7 +58,7 @@ DLCONSTANT  __bgdexport( mod_file, constants_def)[] =
 #endif
 
 /* ----------------------------------------------------------------- */
-/* Declaracion de funciones                                          */
+/* Declaración de funciones                                          */
 
 DLSYSFUNCS  __bgdexport( mod_file, functions_exports)[] =
 {

@@ -72,7 +72,7 @@ static int reserved_channels = 0;
 /* --------------------------------------------------------------------------- */
 /* Son las variables que se desea acceder.                                     */
 /* El interprete completa esta estructura, si la variable existe.              */
-/* (usada en tiempo de ejecucion)                                              */
+/* (usada en tiempo de ejecución)                                              */
 
 DLVARFIXUP  __bgdexport( mod_sound, globals_fixup )[] =
 {
@@ -1951,7 +1951,7 @@ static int modsound_close( INSTANCE * my, intptr_t * params )
 }
 
 /* --------------------------------------------------------------------------- */
-/* Funciones de inicializacion del modulo/plugin                               */
+/* Funciones de inicialización del módulo/plugin                               */
 
 void  __bgdexport( mod_sound, module_initialize )()
 {

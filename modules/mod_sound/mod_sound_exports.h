@@ -38,7 +38,7 @@
 #if defined(__BGDC__) || !defined(__STATIC__)
 
 /* ----------------------------------------------------------------- */
-/* Definicion de constantes (usada en tiempo de compilacion)                   */
+/* Definición de constantes (usada en tiempo de compilación)                   */
 
 DLCONSTANT  __bgdexport( mod_sound, constants_def )[] =
 {
@@ -49,7 +49,7 @@ DLCONSTANT  __bgdexport( mod_sound, constants_def )[] =
 } ;
 
 /* --------------------------------------------------------------------------- */
-/* Definicion de variables globales (usada en tiempo de compilacion)           */
+/* Definición de variables globales (usada en tiempo de compilación)           */
 
 char * __bgdexport( mod_sound, globals_def ) =
     "   sound_freq = 22050 ;\n"

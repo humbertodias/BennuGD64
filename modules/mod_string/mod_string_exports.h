@@ -34,7 +34,7 @@
 #include "bgddl.h"
 
 /* ----------------------------------------------------------------- */
-/* Declaracion de funciones                                          */
+/* Declaración de funciones                                          */
 
 DLSYSFUNCS  __bgdexport( mod_string, functions_exports )[] =
 {

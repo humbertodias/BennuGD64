@@ -38,7 +38,7 @@
 #include "bgddl.h"
 
 /* --------------------------------------------------------------------------- */
-/* Definicion de variables globales (usada en tiempo de compilacion) */
+/* Definición de variables globales (usada en tiempo de compilación) */
 
 char * __bgdexport( libtext, globals_def ) =
     "text_z = -256;\n"

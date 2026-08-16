@@ -633,7 +633,7 @@ int compile_varspace( VARSPACE * n, segment * data, int additive, int copies, in
                 {
                     token_next() ;
 
-                    /* Se salta todo hasta el puntos y coma o en el end o la coma si no hay asignacion */
+                    /* Se salta todo hasta el puntos y coma o en el end o la coma si no hay asignación */
 
                     if ( token.type == NOTOKEN ) break ;
 

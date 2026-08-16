@@ -148,7 +148,7 @@ enum {
 /* --------------------------------------------------------------------------- */
 /* Son las variables que se desea acceder.                           */
 /* El interprete completa esta estructura, si la variable existe.    */
-/* (usada en tiempo de ejecucion)                                    */
+/* (usada en tiempo de ejecución)                                    */
 DLVARFIXUP __bgdexport( mod_m7, globals_fixup )[] =
 {
     /* Nombre de variable global, puntero al dato, tamaño del elemento, cantidad de elementos */
@@ -159,7 +159,7 @@ DLVARFIXUP __bgdexport( mod_m7, globals_fixup )[] =
 /* --------------------------------------------------------------------------- */
 /* Son las variables que se desea acceder.                           */
 /* El interprete completa esta estructura, si la variable existe.    */
-/* (usada en tiempo de ejecucion)                                    */
+/* (usada en tiempo de ejecución)                                    */
 DLVARFIXUP __bgdexport( mod_m7, locals_fixup )[]  =
 {
     /* Nombre de variable local, offset al dato, tamaño del elemento, cantidad de elementos */

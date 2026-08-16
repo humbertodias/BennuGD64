@@ -66,7 +66,7 @@ DLCONSTANT __bgdexport( librender, constants_def )[] =
 } ;
 
 /* --------------------------------------------------------------------------- */
-/* Definicion de variables globales (usada en tiempo de compilacion) */
+/* Definición de variables globales (usada en tiempo de compilación) */
 
 char * __bgdexport( librender, globals_def ) =
 

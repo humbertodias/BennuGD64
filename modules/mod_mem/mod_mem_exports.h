@@ -37,7 +37,7 @@
 
 DLSYSFUNCS __bgdexport( mod_mem, functions_exports )[] =
 {
-    /* Manipulacion de Memoria */
+    /* Manipulación de Memoria */
     FUNC( "MEM_CALLOC"      , "II"    , TYPE_POINTER, modmem_calloc         ),
     FUNC( "MEM_ALLOC"       , "I"     , TYPE_POINTER, modmem_alloc          ),
     FUNC( "MEM_FREE"        , "P"     , TYPE_INT    , modmem_free           ),

@@ -386,7 +386,7 @@ static int string_getid()
         }
     }
 
-    /* Ya no tengo mas espacio, entonces busco alguno libre entre ~+32 desde el ultimo fijo y ~-32 del ultimo asignado */
+    /* Ya no tengo más espacio, entonces busco alguno libre entre ~+32 desde el último fijo y ~-32 del último asignado */
 
     ini = ( string_last_id < string_allocated ) ? ( string_last_id >> 5 ) : string_reserved ;
     lim = ( string_allocated >> 5 ) ;

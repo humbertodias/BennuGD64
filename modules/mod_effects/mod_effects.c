@@ -159,7 +159,7 @@ static int modeffects_filter( INSTANCE *my, intptr_t *params )
                     color = _get_pixel( map, ( x < 0 ) ? 0 : ( x > map->width - 1 ) ? map->width - 1 : x, ( y < 0 ) ? 0 : ( y > map->height - 1 ) ? map->height - 1 : y );
                     if ( !color )
                     {
-                        /* Si es transparente, repetimos el ultimo color */
+                        /* Si es transparente, repetimos el último color */
                         r1 += ( float )( r2 * tabla[c] );
                         g1 += ( float )( g2 * tabla[c] );
                         b1 += ( float )( b2 * tabla[c] );

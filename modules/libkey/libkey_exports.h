@@ -169,7 +169,7 @@ DLCONSTANT  __bgdexport( libkey, constants_def )[] =
 } ;
 
 /* ----------------------------------------------------------------- */
-/* Definicion de variables globales (usada en tiempo de compilacion) */
+/* Definición de variables globales (usada en tiempo de compilación) */
 
 char * __bgdexport( libkey, globals_def ) =
     "shift_status;\n"

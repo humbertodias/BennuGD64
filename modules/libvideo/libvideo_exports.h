@@ -95,7 +95,7 @@ DLCONSTANT  __bgdexport( libvideo, constants_def )[] =
 } ;
 
 /* --------------------------------------------------------------------------- */
-/* Definicion de variables globales (usada en tiempo de compilacion) */
+/* Definición de variables globales (usada en tiempo de compilación) */
 
 char * __bgdexport( libvideo, globals_def ) =
     "graph_mode = 0;\n"

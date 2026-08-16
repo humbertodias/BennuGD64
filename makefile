@@ -3,28 +3,39 @@ export
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
-PLATFORM ?= macos
+PREFIX_STATIC ?= dist/macos-arm64-static
+PREFIX_SHARED ?= dist/macos-arm64-shared
 else
-PLATFORM ?= linux
+PREFIX_STATIC ?= dist/linux-static
+PREFIX_SHARED ?= dist/linux-shared
 endif
-export PLATFORM
 
-.PHONY: all static shared wasm wasi docker-linux docker-windows \
+.PHONY: all static shared wasm wasi docker-linux docker-linux-shared \
+	docker-windows docker-windows-shared \
 	wasi/run wasm/server install/wasmtime clean format
 
 all: static
 
 static:
-	LINKAGE=static bash scripts/cmake-build.sh
+	cmake --preset static
+	cmake --build --preset static
+	cmake --install build-static --prefix $(PREFIX_STATIC)
+	ctest --preset static --output-on-failure
 
 shared:
-	LINKAGE=shared bash scripts/cmake-build.sh
+	cmake --preset shared
+	cmake --build --preset shared
+	cmake --install build-shared --prefix $(PREFIX_SHARED)
+	ctest --preset shared --output-on-failure
 
 wasm:
 	bash scripts/wasm-build.sh
 
 wasi:
-	PLATFORM=wasi bash scripts/cmake-build.sh
+	cmake --preset wasi
+	cmake --build --preset wasi
+	cmake --install build-wasi --prefix dist/wasi-wasm32-static
+	ctest --preset wasi --output-on-failure
 
 docker-linux:
 	bash scripts/docker-build.sh linux

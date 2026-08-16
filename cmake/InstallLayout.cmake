@@ -109,3 +109,30 @@ install (FILES
   ${CMAKE_BINARY_DIR}/BUILD_INFO.txt
   DESTINATION .
 )
+
+if (MINGW)
+  install (CODE [[
+    set (_dest "${CMAKE_INSTALL_PREFIX}")
+    execute_process (
+      COMMAND x86_64-w64-mingw32-gcc -print-file-name=libgcc_s_seh-1.dll
+      OUTPUT_VARIABLE _gcc_dll
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_QUIET
+    )
+    foreach (_dll libgcc_s_seh-1.dll libwinpthread-1.dll libstdc++-6.dll)
+      if (NOT EXISTS "${_dest}/${_dll}")
+        set (_src "")
+        if (_dll STREQUAL "libgcc_s_seh-1.dll" AND EXISTS "${_gcc_dll}" AND NOT _gcc_dll STREQUAL "libgcc_s_seh-1.dll")
+          set (_src "${_gcc_dll}")
+        elseif (EXISTS "/usr/x86_64-w64-mingw32/lib/${_dll}")
+          set (_src "/usr/x86_64-w64-mingw32/lib/${_dll}")
+        elseif (EXISTS "/usr/x86_64-w64-mingw32/bin/${_dll}")
+          set (_src "/usr/x86_64-w64-mingw32/bin/${_dll}")
+        endif ()
+        if (NOT _src STREQUAL "")
+          file (COPY "${_src}" DESTINATION "${_dest}")
+        endif ()
+      endif ()
+    endforeach ()
+  ]])
+endif ()

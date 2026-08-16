@@ -56,9 +56,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            build-${{ matrix.platform }}-static/_deps
-            build-${{ matrix.platform }}-shared/_deps
-          key: fetch-${{ matrix.platform }}-${{ hashFiles('versions.env', 'docker/Dockerfile.linux', 'docker/Dockerfile.windows') }}
+            build-static/_deps
+            build-shared/_deps
+            build-windows-static/_deps
+            build-windows-shared/_deps
+          key: fetch-${{ matrix.platform }}-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.linux', 'docker/Dockerfile.windows') }}
           restore-keys: |
             fetch-${{ matrix.platform }}-
 
@@ -127,28 +129,38 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            build-macos-static/_deps
-            build-macos-shared/_deps
-          key: fetch-macos-${{ hashFiles('versions.env') }}
+            build-static/_deps
+            build-shared/_deps
+          key: fetch-macos-${{ hashFiles('versions.env', 'CMakePresets.json') }}
           restore-keys: |
             fetch-macos-
 
       - name: Build static
-        env:
-          PLATFORM: macos
-          LINKAGE: static
-        run: bash scripts/cmake-build.sh
+        run: |
+          cmake --preset static \
+            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
+            -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
+            -DBENNUGD_SDL3_REF="${SDL3_REF}" \
+            -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+          cmake --build --preset static
+          cmake --install build-static --prefix dist/macos-arm64-static
+          ctest --preset static --output-on-failure
 
       - name: Build shared
-        env:
-          PLATFORM: macos
-          LINKAGE: shared
-        run: bash scripts/cmake-build.sh
+        run: |
+          cmake --preset shared \
+            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
+            -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
+            -DBENNUGD_SDL3_REF="${SDL3_REF}" \
+            -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+          cmake --build --preset shared
+          cmake --install build-shared --prefix dist/macos-arm64-shared
+          ctest --preset shared --output-on-failure
 
       - name: Resolve version
         id: meta
         run: |
-          VERSION="$(tr -d '[:space:]' < build-macos-static/generated/VERSION)"
+          VERSION="$(tr -d '[:space:]' < build-static/generated/VERSION)"
           [[ -n "$VERSION" ]] || VERSION="dev"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
@@ -189,7 +201,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build-host/_deps
-          key: fetch-wasm-${{ hashFiles('versions.env') }}
+          key: fetch-wasm-${{ hashFiles('versions.env', 'CMakePresets.json') }}
           restore-keys: |
             fetch-wasm-
 
@@ -241,8 +253,8 @@ jobs:
         with:
           path: |
             .deps/wasi-sdk-${{ env.WASI_SDK_VERSION_FULL }}-x86_64-linux
-            build-wasi-static/_deps
-          key: fetch-wasi-${{ env.WASI_SDK_VERSION_FULL }}-${{ hashFiles('versions.env') }}
+            build-wasi/_deps
+          key: fetch-wasi-${{ env.WASI_SDK_VERSION_FULL }}-${{ hashFiles('versions.env', 'CMakePresets.json') }}
           restore-keys: |
             fetch-wasi-${{ env.WASI_SDK_VERSION_FULL }}-
             fetch-wasi-
@@ -253,15 +265,19 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build
-        env:
-          PLATFORM: wasi
-          LINKAGE: static
-        run: bash scripts/cmake-build.sh
+        run: |
+          cmake --preset wasi \
+            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
+            -DBENNUGD_WASI_SDK_VERSION="${WASI_SDK_VERSION}" \
+            -DBENNUGD_WASI_SDK_VERSION_FULL="${WASI_SDK_VERSION_FULL}"
+          cmake --build --preset wasi
+          cmake --install build-wasi --prefix dist/wasi-wasm32-static
+          ctest --preset wasi --output-on-failure
 
       - name: Resolve version
         id: meta
         run: |
-          VERSION="$(tr -d '[:space:]' < build-wasi-static/generated/VERSION)"
+          VERSION="$(tr -d '[:space:]' < build-wasi/generated/VERSION)"
           [[ -n "$VERSION" ]] || VERSION="dev"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 

@@ -1,6 +1,6 @@
 # Native Linux toolchain. Build with:
 #   docker build -t bennugd64-linux -f docker/Dockerfile.linux docker/
-#   docker run --rm -v "$PWD":/src -w /src bennugd64-linux bash scripts/cmake-build.sh
+#   docker run --rm -v "$PWD":/src -w /src bennugd64-linux cmake --preset static
 
 FROM ubuntu:22.04
 

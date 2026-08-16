@@ -1,6 +1,6 @@
 # MinGW-w64 toolchain for Windows x86_64. No Windows host or MSYS2 required.
 #   docker build -t bennugd64-windows -f docker/Dockerfile.windows docker/
-#   docker run --rm -v "$PWD":/src -w /src bennugd64-windows bash scripts/cmake-build.sh
+#   docker run --rm -v "$PWD":/src -w /src bennugd64-windows cmake --preset windows-static
 
 FROM ubuntu:22.04
 

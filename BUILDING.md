@@ -16,7 +16,7 @@ bash scripts/docker-build.sh windows shared
 | `linux` / `linux shared` | `docker/Dockerfile.linux` | `dist/linux-{static,shared}/` |
 | `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
 
-The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `scripts/cmake-build.sh`. GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper).
+The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset`. GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper).
 
 ```shell
 bash scripts/docker-build.sh linux shell
@@ -26,16 +26,23 @@ macOS binaries cannot be produced from Linux containers (Apple SDK). Use a Mac o
 
 Pinned dependency versions live in `versions.env`. Native Linux packages are listed in `docker/apt-linux.txt`.
 
-With a local toolchain, `make static` / `make shared` / `make wasm` / `make wasi` call the same scripts (and pick `PLATFORM=macos` on Darwin).
+With a local toolchain, `cmake --preset static` (or `make static`) configures, builds, installs, and runs CTest. On Darwin, `make` installs to `dist/macos-arm64-*`.
 
 ## Native CMake
 
 A default CMake configure **downloads and compiles** zlib, libpng, SDL3 and SDL3_mixer
 (`BENNUGD_BUNDLE_DEPS=ON`). The first configure needs network access.
 
-You still need a C compiler, CMake, Ninja (or Make), and OS development packages
+You still need a C compiler, CMake 3.19+, Ninja, and OS development packages
 that SDL3 links against (X11/Wayland/ALSA/Pulse on Linux; Xcode CLT on macOS;
-MinGW-w64 on Windows).
+MinGW-w64 on Windows). Presets in `CMakePresets.json`:
+
+| Preset | Build dir | Notes |
+|--------|-----------|--------|
+| `static` / `shared` | `build-static` / `build-shared` | Host OS |
+| `windows-static` / `windows-shared` | `build-windows-*` | MinGW-w64 from Linux |
+| `wasi` | `build-wasi` | `bgdc.wasm` |
+| `wasm-host` | `build-host` | Native `bgdc` for wasm demos |
 
 Optional:
 
@@ -43,30 +50,29 @@ Optional:
 - System SDL3/zlib/libpng, if you pass `-DBENNUGD_BUNDLE_DEPS=OFF`
 
 ```shell
-cmake -S . -B build -DUSE_LIBDES=ON
-cmake --build build
+cmake --preset static
+cmake --build --preset static
+cmake --install build-static --prefix dist/bennugd64
+ctest --preset static --output-on-failure
 ```
 
-Shared modules:
-
-```shell
-cmake -S . -B build-shared -DUSE_LIBDES=ON -DSTATIC_MODULES=OFF
-cmake --build build-shared
-```
+Shared modules: `--preset shared` (install prefix `dist/linux-shared` or `dist/macos-arm64-shared`).
 
 Use system libraries instead of fetching them:
 
 ```shell
-cmake -S . -B build -DBENNUGD_BUNDLE_DEPS=OFF
-cmake --build build
+cmake --preset static -DBENNUGD_BUNDLE_DEPS=OFF
+cmake --build --preset static
 ```
 
-Binaries:
+Binaries (static preset):
 
 | Tool | Path |
 |------|------|
-| bgdc | `build/core/bgdc/src/bgdc` |
-| bgdi | `build/core/bgdi/src/bgdi` |
+| bgdc | `build-static/core/bgdc/src/bgdc` |
+| bgdi | `build-static/core/bgdi/src/bgdi` |
+
+CTest (`ctest --preset static`) checks the `bgdc`/`bgdi` banners and compiles `web/demo/hello.prg` to a `.dcb`. Shared presets skip the hello compile (modules live under `modules/` only after install). Windows cross-builds skip CTest (the `.exe` files cannot run on Linux).
 
 ## Version
 
@@ -80,8 +86,8 @@ That string is used in the `bgdc`/`bgdi` banners, the SDL window title, `BUILD_I
 Override it at configure time:
 
 ```shell
-cmake -S . -B build -DUSE_LIBDES=ON -DBENNUGD_VERSION=1.2.3
-cmake --build build
+cmake --preset static -DBENNUGD_VERSION=1.2.3
+cmake --build --preset static
 ```
 
 `scripts/docker-build.sh` passes `git describe` as `BENNUGD_VERSION` unless you set that variable yourself.
@@ -91,7 +97,7 @@ cmake --build build
 `cmake --install` writes a relocatable tree (`bgdc`, `bgdi`, `libbgdrtm` next to them, plugins in `modules/`):
 
 ```shell
-cmake --install build --prefix dist/bennugd64
+cmake --install build-static --prefix dist/bennugd64
 ```
 
 Docker builds already install into `dist/<target>/`.
@@ -126,12 +132,11 @@ There are two wasm targets. They use different toolchains and are not interchang
 CMake fetches [wasi-sdk](https://github.com/WebAssembly/wasi-sdk) into `.deps/` on the first configure (needs network). If `WASI_SDK_PATH` already points at an SDK with `bin/clang`, that install is used instead.
 
 ```shell
-cmake -B build-wasi -DBENNUGD_WASI=ON
-cmake --build build-wasi --target bgdc
-cmake --install build-wasi --prefix dist/wasi
+cmake --preset wasi
+cmake --build --preset wasi
+cmake --install build-wasi --prefix dist/wasi-wasm32-static
+ctest --preset wasi --output-on-failure
 ```
-
-Or `PLATFORM=wasi bash scripts/cmake-build.sh` (output `dist/wasi-wasm32-static/`).
 
 The binary is `bgdc.wasm`. This build is compiler-only: zlib + bundled DES, no SDL, no `bgdi`.
 
@@ -179,6 +184,6 @@ GitHub Actions (`.github/workflows/ci.yml`):
 - Linux x86_64 and Windows x86_64 — one toolchain image per OS, then static + shared (`scripts/docker-build.sh`)
 - macOS arm64 — native runner (static + shared in one job)
 - Web (Emscripten) — `scripts/wasm-build.sh` → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
-- WASI — `scripts/cmake-build.sh` with `PLATFORM=wasi` → `bennugd64-<tag>-wasi-wasm32-static.zip`
+- WASI — `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
 
 On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES). OS graphics/audio libraries may still be required at runtime on native builds.

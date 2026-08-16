@@ -1,0 +1,94 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "USE_LIBDES": "ON",
+        "BENNUGD_BUNDLE_DEPS": "ON",
+        "NO_SOUND": "OFF"
+      }
+    },
+    {
+      "name": "static",
+      "inherits": "base",
+      "displayName": "Host, modules linked into bgdi",
+      "binaryDir": "${sourceDir}/build-static",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON"
+      }
+    },
+    {
+      "name": "shared",
+      "inherits": "base",
+      "displayName": "Host, shared modules",
+      "binaryDir": "${sourceDir}/build-shared",
+      "cacheVariables": {
+        "STATIC_MODULES": "OFF"
+      }
+    },
+    {
+      "name": "windows-static",
+      "inherits": "static",
+      "displayName": "MinGW-w64 Windows x86_64, static modules",
+      "binaryDir": "${sourceDir}/build-windows-static",
+      "toolchainFile": "${sourceDir}/cmake/mingw-w64-x86_64.cmake"
+    },
+    {
+      "name": "windows-shared",
+      "inherits": "shared",
+      "displayName": "MinGW-w64 Windows x86_64, shared modules",
+      "binaryDir": "${sourceDir}/build-windows-shared",
+      "toolchainFile": "${sourceDir}/cmake/mingw-w64-x86_64.cmake"
+    },
+    {
+      "name": "wasi",
+      "inherits": "base",
+      "displayName": "WASI bgdc.wasm",
+      "binaryDir": "${sourceDir}/build-wasi",
+      "cacheVariables": {
+        "BENNUGD_WASI": "ON",
+        "STATIC_MODULES": "ON"
+      }
+    },
+    {
+      "name": "wasm-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile wasm demos",
+      "binaryDir": "${sourceDir}/build-host"
+    }
+  ],
+  "buildPresets": [
+    { "name": "static", "configurePreset": "static" },
+    { "name": "shared", "configurePreset": "shared" },
+    { "name": "windows-static", "configurePreset": "windows-static" },
+    { "name": "windows-shared", "configurePreset": "windows-shared" },
+    { "name": "wasi", "configurePreset": "wasi", "targets": ["bgdc"] },
+    { "name": "wasm-host", "configurePreset": "wasm-host", "targets": ["bgdc"] }
+  ],
+  "testPresets": [
+    {
+      "name": "static",
+      "configurePreset": "static",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "shared",
+      "configurePreset": "shared",
+      "output": { "outputOnFailure": true }
+    },
+    {
+      "name": "wasi",
+      "configurePreset": "wasi",
+      "output": { "outputOnFailure": true }
+    }
+  ]
+}

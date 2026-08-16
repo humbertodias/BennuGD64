@@ -1,11 +1,14 @@
 name: GitHub Pages
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI/CD"]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
 permissions:
+  actions: read
   contents: read
   pages: write
   id-token: write
@@ -14,97 +17,47 @@ concurrency:
   group: pages
   cancel-in-progress: true
 
-env:
-  ZLIB_VERSION: "1.3.1"
-  LIBPNG_VERSION: "1.6.47"
-  SDL3_REF: "release-3.4.14"
-  SDL3_MIXER_REF: "release-3.2.4"
-  BUILD_TYPE: Release
-  EMSCRIPTEN_VERSION: "6.0.6"
-
 jobs:
-  build:
-    name: Build wasm
-    runs-on: ubuntu-22.04
-    timeout-minutes: 90
+  deploy:
+    name: Deploy
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Install Linux build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential cmake ninja-build pkg-config python3 curl zip \
-            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \
-            libxfixes-dev libxss-dev libxtst-dev \
-            libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev \
-            libasound2-dev libpulse-dev libibus-1.0-dev libudev-dev libdbus-1-dev \
-            libwayland-dev libxkbcommon-dev libdrm-dev libgbm-dev \
-            libsamplerate0-dev
-
-      - name: Setup Emscripten
-        uses: emscripten-core/setup-emsdk@v16
-        with:
-          version: ${{ env.EMSCRIPTEN_VERSION }}
-          actions-cache-folder: emsdk-cache
-
-      - name: Build native bgdc
-        run: |
-          cmake -S . -B build-host -G Ninja \
-            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
-            -DUSE_LIBDES=ON \
-            -DBENNUGD_BUNDLE_DEPS=ON \
-            -DSTATIC_MODULES=ON \
-            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
-            -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
-            -DBENNUGD_SDL3_REF="${SDL3_REF}" \
-            -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
-          cmake --build build-host --target bgdc
-
-      - name: Compile demo DCBs
+      - name: Resolve CI run
+        id: ci
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          for prg in web/demo/*.prg; do
-            dcb="${prg%.prg}.dcb"
-            ./build-host/core/bgdc/src/bgdc -o "$dcb" "$prg"
-            test -s "$dcb"
-          done
-          ls -l web/demo/*.dcb
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          if [[ -z "$RUN_ID" ]]; then
+            RUN_ID="$(gh run list --repo "${{ github.repository }}" \
+              --workflow "CI/CD" --branch main --status success \
+              --limit 1 --json databaseId --jq '.[0].databaseId')"
+          fi
+          [[ -n "$RUN_ID" ]]
+          echo "run_id=${RUN_ID}" >> "$GITHUB_OUTPUT"
 
-      - name: Configure wasm
-        run: |
-          emcc -v
-          emcmake cmake -S . -B build-wasm -G Ninja \
-            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
-            -DUSE_LIBDES=ON \
-            -DSTATIC_MODULES=ON \
-            -DINTERPRETER_ONLY=ON \
-            -DBENNUGD_BUNDLE_DEPS=ON \
-            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
-            -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
-            -DBENNUGD_SDL3_REF="${SDL3_REF}" \
-            -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}" \
-            -DFETCHCONTENT_SOURCE_DIR_ZLIB="${GITHUB_WORKSPACE}/build-host/_deps/zlib-src" \
-            -DFETCHCONTENT_SOURCE_DIR_LIBPNG="${GITHUB_WORKSPACE}/build-host/_deps/libpng-src" \
-            -DFETCHCONTENT_SOURCE_DIR_SDL3="${GITHUB_WORKSPACE}/build-host/_deps/sdl3-src" \
-            -DFETCHCONTENT_SOURCE_DIR_SDL3_MIXER="${GITHUB_WORKSPACE}/build-host/_deps/sdl3_mixer-src"
-
-      - name: Build wasm
-        run: cmake --build build-wasm --target bgdi
+      - name: Download wasm artifact
+        uses: actions/download-artifact@v8
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ steps.ci.outputs.run_id }}
+          pattern: "*-web-wasm32-static"
+          merge-multiple: true
+          path: dist/web-wasm32-static
 
       - name: Stage Pages site
         run: |
           set -euo pipefail
-          SRC=build-wasm/core/bgdi/src
+          SRC=dist/web-wasm32-static
           DST=dist/pages
           mkdir -p "$DST"
-          cp "$SRC/bgdi.html" "$DST/index.html"
+          cp "$SRC/index.html" "$DST/"
           cp "$SRC/bgdi.js" "$SRC/bgdi.wasm" "$SRC/bgdi.data" "$DST/"
-          # Source maps are optional.
           cp "$SRC/bgdi.wasm.map" "$DST/" 2>/dev/null || true
           cp "$SRC/bgdi.js.map" "$DST/" 2>/dev/null || true
           touch "$DST/.nojekyll"
@@ -122,14 +75,6 @@ jobs:
         with:
           path: dist/pages
 
-  deploy:
-    name: Deploy
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

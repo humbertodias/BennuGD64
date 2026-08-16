@@ -1,0 +1,30 @@
+# MinGW-w64 toolchain for Windows x86_64. No Windows host or MSYS2 required.
+#   docker build -t bennugd64-windows -f docker/Dockerfile.windows docker/
+#   docker run --rm -v "$PWD":/src -w /src bennugd64-windows bash scripts/cmake-build.sh
+
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=windows \
+    CMAKE_TOOLCHAIN_FILE=/src/cmake/mingw-w64-x86_64.cmake
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        cmake \
+        curl \
+        git \
+        ninja-build \
+        pkg-config \
+        python3 \
+        zip \
+        gcc-mingw-w64-x86-64 \
+        g++-mingw-w64-x86-64 \
+        binutils-mingw-w64-x86-64 \
+        mingw-w64-tools \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*' \
+    && (update-alternatives --set x86_64-w64-mingw32-gcc /usr/bin/x86_64-w64-mingw32-gcc-posix || true) \
+    && (update-alternatives --set x86_64-w64-mingw32-g++ /usr/bin/x86_64-w64-mingw32-g++-posix || true)
+
+WORKDIR /src
+CMD ["bash"]

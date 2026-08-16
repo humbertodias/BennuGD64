@@ -1,6 +1,34 @@
 # Building BennuGD64
 
-## Dependencies
+## Docker (Linux and Windows)
+
+No local compiler, CMake, or MinGW. Only [Docker](https://docs.docker.com/get-docker/).
+
+```shell
+bash scripts/docker-build.sh linux
+bash scripts/docker-build.sh linux shared
+bash scripts/docker-build.sh windows
+bash scripts/docker-build.sh windows shared
+```
+
+| Command | Image | Output |
+|---------|-------|--------|
+| `linux` / `linux shared` | `docker/Dockerfile.linux` | `dist/linux-{static,shared}/` |
+| `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
+
+The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `scripts/cmake-build.sh`. GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper).
+
+```shell
+bash scripts/docker-build.sh linux shell
+```
+
+macOS binaries cannot be produced from Linux containers (Apple SDK). Use a Mac or the `macos-latest` GitHub Actions job.
+
+Pinned dependency versions live in `versions.env`. Native Linux packages are listed in `docker/apt-linux.txt`.
+
+With a local toolchain, `make static` / `make shared` / `make wasm` / `make wasi` call the same scripts (and pick `PLATFORM=macos` on Darwin).
+
+## Native CMake
 
 A default CMake configure **downloads and compiles** zlib, libpng, SDL3 and SDL3_mixer
 (`BENNUGD_BUNDLE_DEPS=ON`). The first configure needs network access.
@@ -13,8 +41,6 @@ Optional:
 
 - OpenSSL, unless you set `USE_LIBDES` to use the bundled DES library
 - System SDL3/zlib/libpng, if you pass `-DBENNUGD_BUNDLE_DEPS=OFF`
-
-## Build
 
 ```shell
 cmake -S . -B build -DUSE_LIBDES=ON
@@ -58,11 +84,7 @@ cmake -S . -B build -DUSE_LIBDES=ON -DBENNUGD_VERSION=1.2.3
 cmake --build build
 ```
 
-`make static` / `make shared` follow the same rule unless you pass the flag through `CMAKE_FLAGS`:
-
-```shell
-make static CMAKE_FLAGS="-DUSE_LIBDES=ON -DBENNUGD_VERSION=1.2.3"
-```
+`scripts/docker-build.sh` passes `git describe` as `BENNUGD_VERSION` unless you set that variable yourself.
 
 ## Install / package
 
@@ -71,6 +93,8 @@ make static CMAKE_FLAGS="-DUSE_LIBDES=ON -DBENNUGD_VERSION=1.2.3"
 ```shell
 cmake --install build --prefix dist/bennugd64
 ```
+
+Docker builds already install into `dist/<target>/`.
 
 ### CMake options
 
@@ -107,12 +131,14 @@ cmake --build build-wasi --target bgdc
 cmake --install build-wasi --prefix dist/wasi
 ```
 
-The binary is `build-wasi/core/bgdc/src/bgdc.wasm` (and `dist/wasi/bgdc.wasm` after install). This build is compiler-only: zlib + bundled DES, no SDL, no `bgdi`.
+Or `PLATFORM=wasi bash scripts/cmake-build.sh` (output `dist/wasi-wasm32-static/`).
 
-Run it with [Wasmtime](https://wasmtime.dev/) (`brew install wasmtime` on macOS). `--dir=.` preopens the current directory so the module can read `.prg` files and write the `.dcb`. Paths must stay under a preopened directory (a host `/tmp` is not visible unless you also pass `--dir=/tmp`):
+The binary is `bgdc.wasm`. This build is compiler-only: zlib + bundled DES, no SDL, no `bgdi`.
+
+Run it with [Wasmtime](https://wasmtime.dev/). `--dir=.` preopens the current directory so the module can read `.prg` files and write the `.dcb`. Paths must stay under a preopened directory (a host `/tmp` is not visible unless you also pass `--dir=/tmp`):
 
 ```shell
-wasmtime --dir=. ./dist/wasi/bgdc.wasm -- -o web/demo/hello.dcb web/demo/hello.prg
+wasmtime --dir=. ./dist/wasi-wasm32-static/bgdc.wasm -- -o web/demo/hello.dcb web/demo/hello.prg
 ```
 
 You can also pass an existing toolchain without `BENNUGD_WASI`:
@@ -125,17 +151,16 @@ cmake -B build-wasi \
 
 ### Emscripten interpreter (`bgdi`)
 
-Needs the [Emscripten SDK](https://emscripten.org/) (`emcmake` on `PATH`). Compile demo DCBs with native `bgdc`, then:
+Needs the [Emscripten SDK](https://emscripten.org/) (`emcmake` on `PATH`) and a native compiler for `bgdc`:
 
 ```shell
-make static
-make wasm CMAKE_FLAGS="-DUSE_LIBDES=ON"
-python3 -m http.server 8080 --directory build-wasm/core/bgdi/src
+bash scripts/wasm-build.sh
+python3 -m http.server 8080 --directory dist/web-wasm32-static
 ```
 
-Open `http://localhost:8080/bgdi.html`. Drop a `.dcb` plus assets (or a game folder) onto the page to run it. Every `web/demo/*.dcb` is preloaded and listed as a bundled demo. Asyncify lets `SDL_Delay` yield to the browser.
+Open `http://localhost:8080/`. Drop a `.dcb` plus assets (or a game folder) onto the page to run it. Every `web/demo/*.dcb` is preloaded and listed as a bundled demo. Asyncify lets `SDL_Delay` yield to the browser.
 
-Pushes to `main` run `.github/workflows/pages.yml`: it compiles `bgdc`, every `web/demo/*.prg`, then `bgdi` for wasm32 and publishes `bgdi.html` as `index.html`. In the repo set **Settings → Pages → Source** to **GitHub Actions**.
+Pushes to `main` run CI, then `.github/workflows/pages.yml` publishes the `web-wasm32-static` artifact as `index.html`. In the repo set **Settings → Pages → Source** to **GitHub Actions**.
 
 ## Installer options
 
@@ -149,15 +174,11 @@ The install scripts download the latest GitHub Release for your platform, unpack
 
 ## CI/CD
 
-GitHub Actions (`.github/workflows/ci.yml`) builds `bgdc` and `bgdi` for:
+GitHub Actions (`.github/workflows/ci.yml`):
 
-- Linux x86_64
-- Windows x86_64 (MinGW-w64 UCRT64 via MSYS2)
-- macOS arm64
-- Web (Emscripten): `bennugd64-<tag>-web-wasm32-static.zip` — browser interpreter (`index.html`, `bgdi.js`, `bgdi.wasm`, `bgdi.data`)
-- WASI: `bennugd64-<tag>-wasi-wasm32-static.zip` — `bgdc.wasm`, smoke-tested with Wasmtime
-
-The workflow is CMake-only: `cmake -S/-B`, `cmake --build`, `cmake --install`. The WASI job uses `-DBENNUGD_WASI=ON` (same path as a local `build-wasi`).
+- Linux x86_64 and Windows x86_64 — one toolchain image per OS, then static + shared (`scripts/docker-build.sh`)
+- macOS arm64 — native runner (static + shared in one job)
+- Web (Emscripten) — `scripts/wasm-build.sh` → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
+- WASI — `scripts/cmake-build.sh` with `PLATFORM=wasi` → `bennugd64-<tag>-wasi-wasm32-static.zip`
 
 On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES). OS graphics/audio libraries may still be required at runtime on native builds.
-

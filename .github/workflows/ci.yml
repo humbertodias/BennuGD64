@@ -12,53 +12,23 @@ concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  ZLIB_VERSION: "1.3.1"
-  LIBPNG_VERSION: "1.6.47"
-  SDL3_REF: "release-3.4.14"
-  SDL3_MIXER_REF: "release-3.2.4"
-  BUILD_TYPE: Release
-  EMSCRIPTEN_VERSION: "6.0.6"
-  WASI_SDK_VERSION: "33"
-  WASI_SDK_VERSION_FULL: "33.0"
-
 jobs:
   build:
-    name: ${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}
-    runs-on: ${{ matrix.runner }}
+    name: ${{ matrix.artifact }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
     strategy:
       fail-fast: false
       matrix:
         include:
-          - runner: ubuntu-22.04
-            platform: linux
-            arch: x86_64
-            linkage: static
-          - runner: ubuntu-22.04
-            platform: linux
-            arch: x86_64
-            linkage: shared
-          - runner: windows-latest
-            platform: windows
-            arch: x86_64
-            linkage: static
-          - runner: windows-latest
-            platform: windows
-            arch: x86_64
-            linkage: shared
-          - runner: macos-latest
-            platform: macos
-            arch: arm64
-            linkage: static
-          - runner: macos-latest
-            platform: macos
-            arch: arm64
-            linkage: shared
-
-    defaults:
-      run:
-        # Windows builds use MSYS2 MinGW (UCRT64); other OSes use bash.
-        shell: ${{ matrix.platform == 'windows' && 'msys2 {0}' || 'bash' }}
+          - platform: linux
+            artifact: linux-x86_64
+            dist_static: dist/linux-static
+            dist_shared: dist/linux-shared
+          - platform: windows
+            artifact: windows-x86_64
+            dist_static: dist/windows-x86_64-static
+            dist_shared: dist/windows-x86_64-shared
 
     steps:
       - name: Checkout
@@ -67,117 +37,134 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Setup MSYS2 (MinGW UCRT64)
-        if: matrix.platform == 'windows'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: UCRT64
-          update: true
-          install: >-
-            mingw-w64-ucrt-x86_64-gcc
-            mingw-w64-ucrt-x86_64-cmake
-            mingw-w64-ucrt-x86_64-ninja
-            mingw-w64-ucrt-x86_64-pkgconf
-            git
-            curl
-            zip
-            unzip
+      - name: Load versions
+        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
 
-      - name: Install Linux build dependencies
-        if: matrix.platform == 'linux'
+      - name: Resolve version
+        id: meta
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential cmake ninja-build pkg-config curl zip \
-            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \
-            libxfixes-dev libxss-dev libxtst-dev \
-            libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev \
-            libasound2-dev libpulse-dev libibus-1.0-dev libudev-dev libdbus-1-dev \
-            libwayland-dev libxkbcommon-dev libdrm-dev libgbm-dev \
-            libsamplerate0-dev
+          set -euo pipefail
+          if git describe --tags --exact-match HEAD >/dev/null 2>&1; then
+            VERSION="$(git describe --tags --exact-match HEAD)"
+          else
+            VERSION="$(git describe --tags --always --dirty)"
+          fi
+          [[ -n "$VERSION" ]] || VERSION="dev"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache FetchContent
+        uses: actions/cache@v4
+        with:
+          path: |
+            build-${{ matrix.platform }}-static/_deps
+            build-${{ matrix.platform }}-shared/_deps
+          key: fetch-${{ matrix.platform }}-${{ hashFiles('versions.env', 'docker/Dockerfile.linux', 'docker/Dockerfile.windows') }}
+          restore-keys: |
+            fetch-${{ matrix.platform }}-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build toolchain image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker
+          file: docker/Dockerfile.${{ matrix.platform }}
+          tags: bennugd64-${{ matrix.platform }}
+          load: true
+          provenance: false
+          cache-from: type=gha,scope=bennugd-${{ matrix.platform }}
+          cache-to: type=gha,mode=max,scope=bennugd-${{ matrix.platform }}
+
+      - name: Build static
+        env:
+          SKIP_DOCKER_BUILD: "1"
+          BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
+        run: bash scripts/docker-build.sh ${{ matrix.platform }} static
+
+      - name: Build shared
+        env:
+          SKIP_DOCKER_BUILD: "1"
+          BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
+        run: bash scripts/docker-build.sh ${{ matrix.platform }} shared
+
+      - name: Upload static
+        uses: actions/upload-artifact@v7
+        with:
+          name: bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.artifact }}-static
+          path: ${{ matrix.dist_static }}/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload shared
+        uses: actions/upload-artifact@v7
+        with:
+          name: bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.artifact }}-shared
+          path: ${{ matrix.dist_shared }}/
+          if-no-files-found: error
+          retention-days: 14
+
+  build-macos:
+    name: macos-arm64
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Load versions
+        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
 
       - name: Install macOS build dependencies
-        if: matrix.platform == 'macos'
         run: |
           brew update
           brew install cmake ninja pkg-config || true
 
-      - name: Configure
+      - name: Cache FetchContent
+        uses: actions/cache@v4
+        with:
+          path: |
+            build-macos-static/_deps
+            build-macos-shared/_deps
+          key: fetch-macos-${{ hashFiles('versions.env') }}
+          restore-keys: |
+            fetch-macos-
+
+      - name: Build static
         env:
-          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
-        run: |
-          echo "toolchain: $(${CC:-cc} --version | head -1)"
-          command -v cmake
-          command -v ninja
-          STATIC_MODULES=ON
-          if [[ "${{ matrix.linkage }}" != "static" ]]; then
-            STATIC_MODULES=OFF
-          fi
-          cmake -S . -B "$BUILD_DIR" -G Ninja \
-            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
-            -DUSE_LIBDES=ON \
-            -DBENNUGD_BUNDLE_DEPS=ON \
-            -DSTATIC_MODULES="${STATIC_MODULES}" \
-            -DNO_SOUND=OFF \
-            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
-            -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
-            -DBENNUGD_SDL3_REF="${SDL3_REF}" \
-            -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+          PLATFORM: macos
+          LINKAGE: static
+        run: bash scripts/cmake-build.sh
+
+      - name: Build shared
+        env:
+          PLATFORM: macos
+          LINKAGE: shared
+        run: bash scripts/cmake-build.sh
 
       - name: Resolve version
         id: meta
-        env:
-          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
         run: |
-          VERSION="$(tr -d '[:space:]' < "$BUILD_DIR/generated/VERSION")"
+          VERSION="$(tr -d '[:space:]' < build-macos-static/generated/VERSION)"
           [[ -n "$VERSION" ]] || VERSION="dev"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
 
-      - name: Build
-        env:
-          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
-        run: cmake --build "$BUILD_DIR" --config "${BUILD_TYPE}"
-
-      - name: Install
-        env:
-          BUILD_DIR: ${{ github.workspace }}/build-ci-${{ matrix.linkage }}
-          STAGE: ${{ github.workspace }}/dist/stage/bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}
-        run: cmake --install "$BUILD_DIR" --prefix "$STAGE" --config "${BUILD_TYPE}"
-
-      - name: Smoke test binaries
-        env:
-          STAGE: ${{ github.workspace }}/dist/stage/bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}
-        run: |
-          set -euo pipefail
-          BGDC="$STAGE/bgdc"
-          BGDI="$STAGE/bgdi"
-          [[ -f "${BGDC}.exe" ]] && BGDC="${BGDC}.exe"
-          [[ -f "${BGDI}.exe" ]] && BGDI="${BGDI}.exe"
-          echo "bgdc=$BGDC"
-          echo "bgdi=$BGDI"
-          ls -la "$STAGE"
-          "$BGDC" >/tmp/bgdc-help.txt 2>&1 || true
-          "$BGDI" >/tmp/bgdi-help.txt 2>&1 || true
-          echo "----- bgdc output -----"
-          cat /tmp/bgdc-help.txt || true
-          echo "----- bgdi output -----"
-          cat /tmp/bgdi-help.txt || true
-          grep -E 'BGDC|Compiler' /tmp/bgdc-help.txt
-          grep -E 'BGDI|Interpreter' /tmp/bgdi-help.txt
-          if [[ "${{ matrix.platform }}" == "windows" ]]; then
-            echo "DLL dependencies (informational):"
-            objdump -p "$BGDI" | grep -i 'DLL Name' | head -40 || true
-          else
-            echo "Dynamic libs (informational):"
-            (otool -L "$BGDI" || ldd "$BGDI" || true) | head -40
-          fi
-
-      - name: Upload artifacts
+      - name: Upload static
         uses: actions/upload-artifact@v7
         with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}
-          path: dist/stage/bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.linkage }}/
+          name: bennugd64-${{ steps.meta.outputs.version }}-macos-arm64-static
+          path: dist/macos-arm64-static/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload shared
+        uses: actions/upload-artifact@v7
+        with:
+          name: bennugd64-${{ steps.meta.outputs.version }}-macos-arm64-shared
+          path: dist/macos-arm64-shared/
           if-no-files-found: error
           retention-days: 14
 
@@ -192,17 +179,19 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Load versions
+        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
+
       - name: Install Linux build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential cmake ninja-build pkg-config python3 curl zip \
-            libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev \
-            libxfixes-dev libxss-dev libxtst-dev \
-            libgl1-mesa-dev libgles2-mesa-dev libegl1-mesa-dev \
-            libasound2-dev libpulse-dev libibus-1.0-dev libudev-dev libdbus-1-dev \
-            libwayland-dev libxkbcommon-dev libdrm-dev libgbm-dev \
-            libsamplerate0-dev
+        run: bash scripts/install-linux-deps.sh
+
+      - name: Cache FetchContent
+        uses: actions/cache@v4
+        with:
+          path: build-host/_deps
+          key: fetch-wasm-${{ hashFiles('versions.env') }}
+          restore-keys: |
+            fetch-wasm-
 
       - name: Setup Emscripten
         uses: emscripten-core/setup-emsdk@v16
@@ -210,46 +199,8 @@ jobs:
           version: ${{ env.EMSCRIPTEN_VERSION }}
           actions-cache-folder: emsdk-cache
 
-      - name: Build native bgdc
-        run: |
-          cmake -S . -B build-host -G Ninja \
-            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
-            -DUSE_LIBDES=ON \
-            -DBENNUGD_BUNDLE_DEPS=ON \
-            -DSTATIC_MODULES=ON \
-            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
-            -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
-            -DBENNUGD_SDL3_REF="${SDL3_REF}" \
-            -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
-          cmake --build build-host --target bgdc
-
-      - name: Compile demo DCBs
-        run: |
-          set -euo pipefail
-          for prg in web/demo/*.prg; do
-            dcb="${prg%.prg}.dcb"
-            ./build-host/core/bgdc/src/bgdc -o "$dcb" "$prg"
-            test -s "$dcb"
-          done
-          ls -l web/demo/*.dcb
-
-      - name: Configure wasm
-        run: |
-          emcc -v
-          emcmake cmake -S . -B build-wasm -G Ninja \
-            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
-            -DUSE_LIBDES=ON \
-            -DSTATIC_MODULES=ON \
-            -DINTERPRETER_ONLY=ON \
-            -DBENNUGD_BUNDLE_DEPS=ON \
-            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
-            -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
-            -DBENNUGD_SDL3_REF="${SDL3_REF}" \
-            -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}" \
-            -DFETCHCONTENT_SOURCE_DIR_ZLIB="${GITHUB_WORKSPACE}/build-host/_deps/zlib-src" \
-            -DFETCHCONTENT_SOURCE_DIR_LIBPNG="${GITHUB_WORKSPACE}/build-host/_deps/libpng-src" \
-            -DFETCHCONTENT_SOURCE_DIR_SDL3="${GITHUB_WORKSPACE}/build-host/_deps/sdl3-src" \
-            -DFETCHCONTENT_SOURCE_DIR_SDL3_MIXER="${GITHUB_WORKSPACE}/build-host/_deps/sdl3_mixer-src"
+      - name: Build
+        run: bash scripts/wasm-build.sh
 
       - name: Resolve version
         id: meta
@@ -257,34 +208,12 @@ jobs:
           VERSION="$(tr -d '[:space:]' < build-wasm/generated/VERSION)"
           [[ -n "$VERSION" ]] || VERSION="dev"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-
-      - name: Build wasm
-        run: cmake --build build-wasm --target bgdi
-
-      - name: Stage
-        env:
-          STAGE: ${{ github.workspace }}/dist/stage/bennugd64-${{ steps.meta.outputs.version }}-web-wasm32-static
-        run: |
-          set -euo pipefail
-          SRC=build-wasm/core/bgdi/src
-          mkdir -p "$STAGE"
-          cp "$SRC/bgdi.html" "$STAGE/index.html"
-          cp "$SRC/bgdi.html" "$SRC/bgdi.js" "$SRC/bgdi.wasm" "$SRC/bgdi.data" "$STAGE/"
-          cp README.md "$STAGE/"
-          cp build-wasm/BUILD_INFO.txt "$STAGE/"
-          ls -lah "$STAGE"
-          test -s "$STAGE/index.html"
-          test -s "$STAGE/bgdi.html"
-          test -s "$STAGE/bgdi.js"
-          test -s "$STAGE/bgdi.wasm"
-          test -s "$STAGE/bgdi.data"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
           name: bennugd64-${{ steps.meta.outputs.version }}-web-wasm32-static
-          path: dist/stage/bennugd64-${{ steps.meta.outputs.version }}-web-wasm32-static/
+          path: dist/web-wasm32-static/
           if-no-files-found: error
           retention-days: 14
 
@@ -299,82 +228,54 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Load versions
+        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
+
       - name: Install build dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake ninja-build curl zip
 
-      - name: Cache wasi-sdk
+      - name: Cache wasi-sdk and FetchContent
         uses: actions/cache@v4
         with:
-          path: .deps/wasi-sdk-${{ env.WASI_SDK_VERSION_FULL }}-x86_64-linux
-          key: wasi-sdk-${{ env.WASI_SDK_VERSION_FULL }}-x86_64-linux
-
-      - name: Configure
-        run: |
-          cmake -S . -B build-wasi -G Ninja \
-            -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
-            -DBENNUGD_WASI=ON \
-            -DBENNUGD_WASI_SDK_VERSION="${WASI_SDK_VERSION}" \
-            -DBENNUGD_WASI_SDK_VERSION_FULL="${WASI_SDK_VERSION_FULL}" \
-            -DUSE_LIBDES=ON \
-            -DCOMPILER_ONLY=ON \
-            -DSTATIC_MODULES=ON \
-            -DBENNUGD_BUNDLE_DEPS=ON \
-            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
-
-      - name: Resolve version
-        id: meta
-        run: |
-          VERSION="$(tr -d '[:space:]' < build-wasi/generated/VERSION)"
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
-
-      - name: Build
-        run: cmake --build build-wasi --target bgdc
-
-      - name: Install
-        env:
-          STAGE: ${{ github.workspace }}/dist/stage/bennugd64-${{ steps.meta.outputs.version }}-wasi-wasm32-static
-        run: cmake --install build-wasi --prefix "$STAGE"
+          path: |
+            .deps/wasi-sdk-${{ env.WASI_SDK_VERSION_FULL }}-x86_64-linux
+            build-wasi-static/_deps
+          key: fetch-wasi-${{ env.WASI_SDK_VERSION_FULL }}-${{ hashFiles('versions.env') }}
+          restore-keys: |
+            fetch-wasi-${{ env.WASI_SDK_VERSION_FULL }}-
+            fetch-wasi-
 
       - name: Setup Wasmtime
         uses: bytecodealliance/actions/wasmtime/setup@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Smoke test bgdc.wasm
+      - name: Build
         env:
-          STAGE: ${{ github.workspace }}/dist/stage/bennugd64-${{ steps.meta.outputs.version }}-wasi-wasm32-static
+          PLATFORM: wasi
+          LINKAGE: static
+        run: bash scripts/cmake-build.sh
+
+      - name: Resolve version
+        id: meta
         run: |
-          set -euo pipefail
-          ls -lah "$STAGE"
-          test -s "$STAGE/bgdc.wasm"
-          wasmtime --dir=. "$STAGE/bgdc.wasm" -- >/tmp/bgdc-wasi-help.txt 2>&1 || true
-          echo "----- bgdc.wasm output -----"
-          cat /tmp/bgdc-wasi-help.txt
-          grep -E 'BGDC|Compiler' /tmp/bgdc-wasi-help.txt
-          SMOKE="$(mktemp -d)"
-          cp "$STAGE/bgdc.wasm" web/demo/hello.prg "$SMOKE/"
-          (
-            cd "$SMOKE"
-            wasmtime --dir=. ./bgdc.wasm -- -o hello.dcb hello.prg
-            test -s hello.dcb
-            ls -l hello.dcb
-          )
+          VERSION="$(tr -d '[:space:]' < build-wasi-static/generated/VERSION)"
+          [[ -n "$VERSION" ]] || VERSION="dev"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
           name: bennugd64-${{ steps.meta.outputs.version }}-wasi-wasm32-static
-          path: dist/stage/bennugd64-${{ steps.meta.outputs.version }}-wasi-wasm32-static/
+          path: dist/wasi-wasm32-static/
           if-no-files-found: error
           retention-days: 14
 
   release:
     name: Publish GitHub Release
-    needs: [build, build-wasm, build-wasi]
+    needs: [build, build-macos, build-wasm, build-wasi]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -389,7 +290,6 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p release-assets
-          # download-artifact places each build under artifacts/<artifact-name>/.
           for art_dir in artifacts/*/; do
             [[ -d "$art_dir" ]] || continue
             base="$(basename "$art_dir")"
@@ -425,6 +325,7 @@ jobs:
             - **wasi-wasm32-static** — WASI compiler (`bgdc.wasm`); run with `wasmtime --dir=. ./bgdc.wasm -- -o out.dcb in.prg`
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-            Windows builds use MinGW-w64 (UCRT64). OS graphics/audio libraries may still be required at runtime.
+            Linux and Windows CI images come from `docker/Dockerfile.linux` and `docker/Dockerfile.windows` (MinGW-w64 cross-compile).
+            OS graphics/audio libraries may still be required at runtime.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

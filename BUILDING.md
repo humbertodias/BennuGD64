@@ -14,11 +14,11 @@ bash scripts/docker-build.sh windows shared
 
 | Command | Image | Output |
 |---------|-------|--------|
-| `linux` / `linux shared` | `docker/Dockerfile.linux` | `dist/linux-{static,shared}/` |
-| `wasm` | `docker/Dockerfile.wasm` (FROM Linux image) | `dist/web-wasm32-static/` |
+| `linux` / `linux shared` | `docker/Dockerfile.linux` (`--target linux`) | `dist/linux-{static,shared}/` |
+| `wasm` | `docker/Dockerfile.linux` (`--target wasm`) | `dist/web-wasm32-static/` |
 | `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
 
-The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). `Dockerfile.wasm` adds the Emscripten SDK on top of `Dockerfile.linux`.
+The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). The wasm stage is `FROM linux` in `Dockerfile.linux` (Emscripten SDK on the native toolchain).
 
 ```shell
 bash scripts/docker-build.sh linux shell
@@ -158,7 +158,7 @@ cmake -B build-wasi \
 
 ### Emscripten interpreter (`bgdi`)
 
-Needs Docker. `Dockerfile.wasm` installs the [Emscripten SDK](https://emscripten.org/) on top of the Linux toolchain (native `bgdc` + `emcmake` for `bgdi`):
+Needs Docker. `Dockerfile.linux` `--target wasm` installs the [Emscripten SDK](https://emscripten.org/) on the Linux stage (native `bgdc` + `emcmake` for `bgdi`):
 
 ```shell
 bash scripts/docker-build.sh wasm
@@ -185,7 +185,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 
 - Linux x86_64 and Windows x86_64 — one toolchain image per OS, then static + shared (`scripts/docker-build.sh`)
 - macOS arm64 — native runner (static + shared in one job)
-- Web (Emscripten) — `scripts/docker-build.sh wasm` (`Dockerfile.linux` + `Dockerfile.wasm`) → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
+- Web (Emscripten) — `scripts/docker-build.sh wasm` (`Dockerfile.linux --target wasm`) → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
 - WASI — `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
 
 On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES). OS graphics/audio libraries may still be required at runtime on native builds.

@@ -1,9 +1,9 @@
-# Native Linux toolchain. Build with:
-#   docker build -t bennugd64-linux -f docker/Dockerfile.linux docker/
-#   docker run --rm -v "$PWD":/src -w /src bennugd64-linux cmake --preset static
-# Web player: docker/Dockerfile.wasm FROM this image (scripts/docker-build.sh wasm).
+# Native Linux toolchain (--target linux) and Emscripten web player (--target wasm).
+#   docker build --target linux -t bennugd64-linux -f docker/Dockerfile.linux docker/
+#   docker build --target wasm --build-arg EMSCRIPTEN_VERSION=6.0.6 \
+#     -t bennugd64-wasm -f docker/Dockerfile.linux docker/
 
-FROM ubuntu:22.04
+FROM ubuntu:22.04 AS linux
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PLATFORM=linux
@@ -44,3 +44,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /src
 CMD ["bash"]
+
+FROM linux AS wasm
+
+ARG EMSCRIPTEN_VERSION=6.0.6
+ENV EMSDK=/opt/emsdk \
+    PLATFORM=wasm
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends xz-utils \
+    && rm -rf /var/lib/apt/lists/* \
+    && git clone --depth 1 https://github.com/emscripten-core/emsdk.git /opt/emsdk \
+    && /opt/emsdk/emsdk install "${EMSCRIPTEN_VERSION}" \
+    && /opt/emsdk/emsdk activate "${EMSCRIPTEN_VERSION}" \
+    && chmod -R a+rX /opt/emsdk

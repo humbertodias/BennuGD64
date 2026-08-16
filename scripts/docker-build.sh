@@ -42,19 +42,19 @@ case "${PLATFORM}" in
 esac
 
 IMAGE="bennugd64-${PLATFORM}"
-DOCKERFILE="docker/Dockerfile.${PLATFORM}"
 
 if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
   if [[ "${PLATFORM}" == "wasm" ]]; then
-    docker build -t bennugd64-linux -f docker/Dockerfile.linux docker/
-    DOCKER_BUILDKIT=1 docker build \
+    docker build \
+      --target wasm \
       --build-arg EMSCRIPTEN_VERSION="${EMSCRIPTEN_VERSION:-6.0.6}" \
-      --build-context bennugd64-linux=docker-image://bennugd64-linux \
       -t bennugd64-wasm \
-      -f docker/Dockerfile.wasm \
+      -f docker/Dockerfile.linux \
       docker/
+  elif [[ "${PLATFORM}" == "linux" ]]; then
+    docker build --target linux -t bennugd64-linux -f docker/Dockerfile.linux docker/
   else
-    docker build -t "${IMAGE}" -f "${DOCKERFILE}" docker/
+    docker build -t "${IMAGE}" -f "docker/Dockerfile.${PLATFORM}" docker/
   fi
 fi
 

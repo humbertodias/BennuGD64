@@ -194,9 +194,6 @@ jobs:
       - name: Load versions
         run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
 
-      - name: Install Linux build dependencies
-        run: bash scripts/install-linux-deps.sh
-
       - name: Cache FetchContent
         uses: actions/cache@v4
         with:
@@ -205,6 +202,20 @@ jobs:
           restore-keys: |
             fetch-wasm-
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build toolchain image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker
+          file: docker/Dockerfile.linux
+          tags: bennugd64-linux
+          load: true
+          provenance: false
+          cache-from: type=gha,scope=bennugd-linux
+          cache-to: type=gha,mode=max,scope=bennugd-linux
+
       - name: Setup Emscripten
         uses: emscripten-core/setup-emsdk@v16
         with:
@@ -212,7 +223,9 @@ jobs:
           actions-cache-folder: emsdk-cache
 
       - name: Build
-        run: bash scripts/wasm-build.sh
+        env:
+          SKIP_DOCKER_BUILD: "1"
+        run: bash scripts/docker-build.sh linux wasm
 
       - name: Resolve version
         id: meta

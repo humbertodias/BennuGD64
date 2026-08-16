@@ -7,6 +7,7 @@ No local compiler, CMake, or MinGW. Only [Docker](https://docs.docker.com/get-do
 ```shell
 bash scripts/docker-build.sh linux
 bash scripts/docker-build.sh linux shared
+bash scripts/docker-build.sh linux wasm
 bash scripts/docker-build.sh windows
 bash scripts/docker-build.sh windows shared
 ```
@@ -14,9 +15,10 @@ bash scripts/docker-build.sh windows shared
 | Command | Image | Output |
 |---------|-------|--------|
 | `linux` / `linux shared` | `docker/Dockerfile.linux` | `dist/linux-{static,shared}/` |
+| `linux wasm` | `docker/Dockerfile.linux` | `dist/web-wasm32-static/` (needs `EMSDK`) |
 | `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
 
-The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset`. GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper).
+The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (or `scripts/wasm-build.sh` for `linux wasm`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). The wasm job mounts the host Emscripten SDK into the Linux image; there is no separate wasm Dockerfile.
 
 ```shell
 bash scripts/docker-build.sh linux shell
@@ -24,7 +26,7 @@ bash scripts/docker-build.sh linux shell
 
 macOS binaries cannot be produced from Linux containers (Apple SDK). Use a Mac or the `macos-latest` GitHub Actions job.
 
-Pinned dependency versions live in `versions.env`. Native Linux packages are listed in `docker/apt-linux.txt`.
+Pinned dependency versions live in `versions.env`. Native Linux packages are listed in `docker/Dockerfile.linux`.
 
 With a local toolchain, `cmake --preset static` (or `make static`) configures, builds, installs, and runs CTest. On Darwin, `make` installs to `dist/macos-arm64-*`.
 
@@ -156,11 +158,17 @@ cmake -B build-wasi \
 
 ### Emscripten interpreter (`bgdi`)
 
-Needs the [Emscripten SDK](https://emscripten.org/) (`emcmake` on `PATH`) and a native compiler for `bgdc`:
+Needs the [Emscripten SDK](https://emscripten.org/) (`EMSDK` / `emcmake` on `PATH`) and a native compiler for `bgdc`. With Docker, the native toolchain comes from `Dockerfile.linux`:
+
+```shell
+bash scripts/docker-build.sh linux wasm
+python3 -m http.server 8080 --directory dist/web-wasm32-static
+```
+
+Or, with a local compiler and `emcmake` already on `PATH`:
 
 ```shell
 bash scripts/wasm-build.sh
-python3 -m http.server 8080 --directory dist/web-wasm32-static
 ```
 
 Open `http://localhost:8080/`. Drop a `.dcb` plus assets (or a game folder) onto the page to run it. Every `web/demo/*.dcb` is preloaded and listed as a bundled demo. Asyncify lets `SDL_Delay` yield to the browser.
@@ -183,7 +191,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 
 - Linux x86_64 and Windows x86_64 — one toolchain image per OS, then static + shared (`scripts/docker-build.sh`)
 - macOS arm64 — native runner (static + shared in one job)
-- Web (Emscripten) — `scripts/wasm-build.sh` → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
+- Web (Emscripten) — Linux image + host emsdk (`scripts/docker-build.sh linux wasm`) → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
 - WASI — `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
 
 On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES). OS graphics/audio libraries may still be required at runtime on native builds.

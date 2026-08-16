@@ -1,16 +1,44 @@
 # Native Linux toolchain. Build with:
 #   docker build -t bennugd64-linux -f docker/Dockerfile.linux docker/
 #   docker run --rm -v "$PWD":/src -w /src bennugd64-linux cmake --preset static
+# Web (Emscripten) uses this image too: bash scripts/docker-build.sh linux wasm
 
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PLATFORM=linux
 
-COPY apt-linux.txt /tmp/apt-linux.txt
-RUN apt-get update \
-    && grep -vE '^\s*(#|$)' /tmp/apt-linux.txt \
-        | xargs apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        cmake \
+        curl \
+        git \
+        ninja-build \
+        pkg-config \
+        python3 \
+        zip \
+        libx11-dev \
+        libxext-dev \
+        libxrandr-dev \
+        libxcursor-dev \
+        libxi-dev \
+        libxfixes-dev \
+        libxss-dev \
+        libxtst-dev \
+        libgl1-mesa-dev \
+        libgles2-mesa-dev \
+        libegl1-mesa-dev \
+        libasound2-dev \
+        libpulse-dev \
+        libibus-1.0-dev \
+        libudev-dev \
+        libdbus-1-dev \
+        libwayland-dev \
+        libxkbcommon-dev \
+        libdrm-dev \
+        libgbm-dev \
+        libsamplerate0-dev \
     && rm -rf /var/lib/apt/lists/* \
     && git config --system --add safe.directory '*'
 

@@ -13,8 +13,8 @@ all: static
 
 # Modules linked into bgdi
 static:
-	cmake -S . -B build -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) $(CMAKE_FLAGS) -DSTATIC_MODULES=ON
-	cmake --build build
+	cmake -S . -B build-static -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) $(CMAKE_FLAGS) -DSTATIC_MODULES=ON
+	cmake --build build-static
 
 # Modules as .so/.dll/.dylib under modules/
 shared:
@@ -22,14 +22,14 @@ shared:
 	cmake --build build-shared
 
 install/static: static
-	cmake --install build --prefix $(PREFIX_STATIC)
+	cmake --install build-static --prefix $(PREFIX_STATIC)
 
 install/shared: shared
 	cmake --install build-shared --prefix $(PREFIX_SHARED)
 
 # Browser interpreter (needs emsdk: source emsdk_env.sh, then this target)
 wasm/build:
-	@bgdc=build/core/bgdc/src/bgdc; \
+	@bgdc=build-static/core/bgdc/src/bgdc; \
 	if [ ! -x "$$bgdc" ]; then echo "Build native bgdc first (make static)"; exit 1; fi; \
 	for prg in web/demo/*.prg; do \
 		dcb="$${prg%.prg}.dcb"; \
@@ -62,7 +62,7 @@ wasm/server:
 	python3 -m http.server 8080 --directory build-wasm/core/bgdi/src
 
 clean:
-	rm -rf build build-shared build-wasm
+	rm -rf build-static build-shared build-wasm build-wasi
 
 format:
 	find core modules -type f \( -name '*.c' -o -name '*.h' -o -name '*.cpp' -o -name '*.hpp' \) \

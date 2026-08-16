@@ -24,6 +24,8 @@ The images are toolchains only. `scripts/docker-build.sh` builds the image, then
 bash scripts/docker-build.sh linux shell
 ```
 
+Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)** or **Windows (MinGW)** in the config picker. The repo is mounted at `/src`, same as `docker-build.sh`.
+
 macOS binaries cannot be produced from Linux containers (Apple SDK). Use a Mac or the `macos-latest` GitHub Actions job.
 
 Pinned dependency versions live in `versions.env`. Native Linux packages are listed in `docker/Dockerfile.linux`.

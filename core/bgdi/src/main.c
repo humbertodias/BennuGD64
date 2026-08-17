@@ -63,6 +63,9 @@
 #ifdef __SWITCH__
 #include <switch.h>
 #include <unistd.h>
+#define SDL_MAIN_HANDLED
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
 #endif
 
 /* ---------------------------------------------------------------------- */
@@ -158,18 +161,31 @@ int main( int argc, char *argv[] )
 
 #ifdef __SWITCH__
     {
+        static const char * bundled[] = {
+            "romfs:/main.dcb", "romfs:/hello.dcb", "main.dcb", "hello.dcb", NULL
+        };
+        int k;
+        FILE * test;
+
+        SDL_SetMainReady();
         romfsInit();
+        socketInitializeDefault();
+        nxlinkStdio();
         file_addp( "romfs:/" );
         file_addp( "sdmc:/switch/bennugd64" );
         chdir( "romfs:/" );
         standalone = 1;
         if ( argc < 2 )
         {
-            if ( access( "main.dcb", R_OK ) == 0 ) filename = "main.dcb";
-            else if ( access( "hello.dcb", R_OK ) == 0 ) filename = "hello.dcb";
-            else
+            for ( k = 0 ; bundled[k] ; k++ )
             {
-                fprintf( stderr, "Switch: no main.dcb or hello.dcb in romfs:/\n" );
+                test = fopen( bundled[k], "rb" );
+                if ( test )
+                {
+                    fclose( test );
+                    filename = ( char * ) bundled[k];
+                    break;
+                }
             }
         }
     }
@@ -190,7 +206,10 @@ int main( int argc, char *argv[] )
     else
     {
 #endif
-        arg0 = strdup( argv[0] );
+        if ( argc < 1 || !argv || !argv[0] )
+            arg0 = strdup( "bgdi" );
+        else
+            arg0 = strdup( argv[0] );
 #ifdef _WIN32
     }
 #endif

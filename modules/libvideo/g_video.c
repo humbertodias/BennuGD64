@@ -269,6 +269,11 @@ void gr_video_present( SDL_Surface * src )
 
     if ( !window || !src ) return ;
 
+#ifdef __SWITCH__
+    gr_video_present_renderer( src );
+    return;
+#endif
+
     winsurf = SDL_GetWindowSurface( window );
     if ( !winsurf )
     {
@@ -292,6 +297,11 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
     int i ;
 
     if ( !window || !src || count <= 0 ) return ;
+
+#ifdef __SWITCH__
+    gr_video_present( src );
+    return;
+#endif
 
     winsurf = SDL_GetWindowSurface( window );
     if ( !winsurf )
@@ -350,6 +360,25 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
     int cur_w = 0, cur_h = 0;
     int recreate = 0;
     char caption_buf[512];
+
+#ifdef __SWITCH__
+    /* GLES only; mesa fatalThrows if the NWindow is not 720p/1080p. Keep the
+     * game framebuffer at the requested size and present it scaled. */
+    {
+        const SDL_DisplayMode * mode = SDL_GetCurrentDisplayMode( SDL_GetPrimaryDisplay() );
+        if ( mode && mode->w > 0 && mode->h > 0 )
+        {
+            width = mode->w;
+            height = mode->h;
+        }
+        else
+        {
+            width = 1280;
+            height = 720;
+        }
+        window_flags |= SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL;
+    }
+#endif
 
     if ( !window )
     {
@@ -465,6 +494,9 @@ int gr_set_mode( int width, int height, int depth )
     waitvsync = ( GLODWORD( libvideo, GRAPH_MODE ) & MODE_WAITVSYNC ) ? 1 : 0 ;
     scale_mode = GLODWORD( libvideo, SCALE_MODE );
     full_screen |= GLODWORD( libvideo, FULL_SCREEN );
+#ifdef __SWITCH__
+    full_screen = 1;
+#endif
 
     scale_resolution = GLODWORD( libvideo, SCALE_RESOLUTION );
 
@@ -811,6 +843,12 @@ void __bgdexport( libvideo, module_initialize )()
     /* Listen on the window, not the canvas: after Enter, page chrome can
      * steal canvas focus and in-game keys would stop. */
     SDL_SetHint( "SDL_EMSCRIPTEN_KEYBOARD_ELEMENT", "#window" );
+#endif
+#ifdef __SWITCH__
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES );
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
+    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
+    SDL_SetHint( SDL_HINT_RENDER_DRIVER, "opengles2" );
 #endif
 
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );

@@ -552,7 +552,7 @@ jobs:
             - **dreamcast-sh4-static** — homebrew CDI (`bennugd64.cdi`); burn or emulate, or send `bgdi.elf` with `dc-tool`
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-            Linux, Windows, wasm, Android, Switch, and Dreamcast CI images come from `docker/Dockerfile.linux` (`--target linux` / `--target wasm`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), and `docker/Dockerfile.dreamcast` (KallistiOS / nold360 IP.BIN templates).
+            Linux, Windows, wasm, Android, Switch, and Dreamcast CI images come from `docker/Dockerfile.linux` (`--target linux` / `--target wasm`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), and `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`).
             OS graphics/audio libraries may still be required at runtime.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

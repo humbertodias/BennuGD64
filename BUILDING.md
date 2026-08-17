@@ -216,7 +216,7 @@ SDL3 comes from the [devkitPro SDL `switch-sdl-3.4`](https://github.com/devkitPr
 
 Needs Docker. `docker/Dockerfile.dreamcast` is a toolchain image built for **linux/amd64** (SH4 host tools are x86_64; on Apple Silicon Docker uses qemu). It does not clone this repo or bake Bennu into the image.
 
-The requested SDK image is [`nold360/kallistios-sdk`](https://hub.docker.com/r/nold360/kallistios-sdk). That Hub tag is Debian Stretch + `sh-elf` GCC 4.7.3 (2021) and cannot compile SDL3/C17, so the Dockerfile takes IP.BIN templates from it and the SH4 compiler, KallistiOS, CMake, and Ninja from [`kallistios/dc-kos-toolchain`](https://hub.docker.com/r/kallistios/dc-kos-toolchain) (GCC 14).
+The toolchain image is [`kallistios/dc-kos-toolchain`](https://hub.docker.com/r/kallistios/dc-kos-toolchain) (KallistiOS, `sh-elf` GCC 14, CMake, Ninja, `mkdcdisc`). `mkdcdisc` writes IP.BIN; the old `nold360/kallistios-sdk` Hub image is not used (Buildx cannot COPY layers from that 2021 image).
 
 ```shell
 bash scripts/docker-build.sh dreamcast

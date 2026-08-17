@@ -5,25 +5,17 @@
 #     bennugd64-dreamcast cmake --preset dreamcast-sh4
 #
 # Toolchain only: does not clone this repo or bake Bennu into the image.
-#
-# nold360/kallistios-sdk is the SDK image this port is built around. The Hub
-# :latest tag is Debian Stretch + sh-elf GCC 4.7.3 (2021) and cannot compile
-# SDL3/C17, so IP.BIN templates come from that image and the SH4 compiler,
-# KallistiOS, CMake, and Ninja come from kallistios/dc-kos-toolchain (GCC 14).
-
-FROM nold360/kallistios-sdk:latest AS nold
+# SH4 compiler, KallistiOS, CMake, Ninja, and mkdcdisc come from
+# kallistios/dc-kos-toolchain (GCC 14). mkdcdisc writes IP.BIN itself.
 
 FROM kallistios/dc-kos-toolchain:latest
 
 ENV PLATFORM=dreamcast \
     PATH="/opt/toolchains/dc/bin:/opt/toolchains/dc/sh-elf/bin:/opt/toolchains/dc/kos/utils/build_wrappers:${PATH}"
 
-COPY --from=nold /opt/mksdiso/src/makeip/ip.txt /opt/dc-ip/ip.txt
-COPY --from=nold /opt/mksdiso/src/makeip/IP.TMPL /opt/dc-ip/IP.TMPL
-
 RUN apk add --no-cache zip \
     && git config --system --add safe.directory '*' \
-    && chmod -R a+rX /opt/toolchains /opt/dc-ip
+    && chmod -R a+rX /opt/toolchains
 
 WORKDIR /src
 CMD ["bash"]

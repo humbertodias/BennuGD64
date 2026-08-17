@@ -47,6 +47,11 @@
 #include <ddraw.h>
 #endif
 
+#ifdef _arch_dreamcast
+void SDL_DC_ShowAskHz( bool value );
+void SDL_DC_Default60Hz( bool value );
+#endif
+
 /* --------------------------------------------------------------------------- */
 
 GRAPH * icon = NULL ;
@@ -277,7 +282,9 @@ void gr_video_present( SDL_Surface * src )
     winsurf = SDL_GetWindowSurface( window );
     if ( !winsurf )
     {
+#ifndef _arch_dreamcast
         gr_video_present_renderer( src );
+#endif
         return;
     }
 
@@ -380,10 +387,8 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
     }
 #endif
 #ifdef _arch_dreamcast
-    /* GPF SDL Dreamcast video is 640x480 (DIRECT_VIDEO / DMA). Keep the game
-     * framebuffer at the requested size and present it scaled. */
-    width = 640;
-    height = 480;
+    /* DIRECT_VIDEO supports 320x240 and 640x480 natively. Keep the window at
+     * the game size so present is a 1:1 blit, not a software scale on SH4. */
     window_flags |= SDL_WINDOW_FULLSCREEN;
 #endif
 
@@ -861,8 +866,15 @@ void __bgdexport( libvideo, module_initialize )()
     SDL_SetHint( SDL_HINT_RENDER_DRIVER, "opengles2" );
 #endif
 #ifdef _arch_dreamcast
-    /* GPF SDL defaults to OpenGL video; Bennu presents a software framebuffer. */
-    SDL_SetHint( "SDL_DC_VIDEO_MODE", "SDL_DC_DIRECT_VIDEO" );
+    /* GPF defaults to OpenGL. Bennu presents a software framebuffer. */
+    SDL_SetHint( SDL_HINT_DC_VIDEO_MODE, "SDL_DC_DIRECT_VIDEO" );
+    /* CreateWindowFramebuffer only allocates a backbuffer when this hint is
+     * set; UpdateWindowFramebuffer still defaults it to true. Unset, the first
+     * blit hits VRAM and the next present copies from a NULL buffer (flash
+     * then black). GPF samples always set both hints together. */
+    SDL_SetHint( SDL_HINT_VIDEO_DOUBLE_BUFFER, "1" );
+    SDL_DC_ShowAskHz( false );
+    SDL_DC_Default60Hz( true );
 #endif
 
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );

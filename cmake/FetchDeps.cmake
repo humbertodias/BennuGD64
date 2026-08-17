@@ -173,6 +173,20 @@ if (PLATFORM_DREAMCAST OR DREAMCAST)
       file (WRITE "${_kbd}" "${_kbd_txt}")
     endif ()
   endif ()
+  # CreateWindowFramebuffer only allocates sdl_dc_buf[] when DOUBLE_BUFFER is
+  # set; UpdateWindowFramebuffer still defaults that hint to true and sq_cpy
+  # from a NULL backbuffer (first frame visible, then VRAM wiped).
+  set (_fb "${sdl3_SOURCE_DIR}/src/video/dreamcast/SDL_dreamcastframebuffer.c")
+  if (EXISTS "${_fb}")
+    file (READ "${_fb}" _fb_txt)
+    if (_fb_txt MATCHES "if \\(double_buffer\\) \\{\n            sq_cpy\\(vram_l, sdl_dc_buf")
+      string (REPLACE
+        "if (double_buffer) {\n            sq_cpy(vram_l, sdl_dc_buf[sdl_dc_buf_index], h * pitch);"
+        "if (double_buffer && sdl_dc_buf[sdl_dc_buf_index]) {\n            sq_cpy(vram_l, sdl_dc_buf[sdl_dc_buf_index], h * pitch);"
+        _fb_txt "${_fb_txt}")
+      file (WRITE "${_fb}" "${_fb_txt}")
+    endif ()
+  endif ()
 endif ()
 
 if (EXISTS "${sdl3_BINARY_DIR}/SDL3Config.cmake")

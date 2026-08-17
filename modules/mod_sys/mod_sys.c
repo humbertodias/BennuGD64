@@ -139,6 +139,61 @@ static int modsys_getenv( INSTANCE * my, intptr_t * params )
     return str ;
 }
 
+/* ---------------------------------------------------------------------- */
+
+static const char * modsys_running_os_name( void )
+{
+#if defined(TARGET_EMSCRIPTEN)
+    return "Web";
+#elif defined(TARGET_DC)
+    return "Dreamcast";
+#elif defined(TARGET_SWITCH)
+    return "Switch";
+#elif defined(TARGET_ANDROID)
+    return "Android";
+#elif defined(TARGET_WASI)
+    return "WASI";
+#elif defined(TARGET_IOS)
+    return "iOS";
+#elif defined(TARGET_WII)
+    return "Wii";
+#elif defined(TARGET_MAC)
+    return "macOS";
+#elif defined(TARGET_LINUX)
+    return "Linux";
+#elif defined(TARGET_BSD)
+    return "BSD";
+#elif defined(TARGET_BEOS)
+    return "BeOS";
+#elif defined(TARGET_WIN32) || defined(_WIN32)
+    return "Windows";
+#elif defined(TARGET_GP32)
+    return "GP32";
+#elif defined(TARGET_GP2X_WIZ)
+    return "GP2X Wiz";
+#elif defined(TARGET_GP2X)
+    return "GP2X";
+#elif defined(TARGET_CAANOO)
+    return "Caanoo";
+#elif defined(TARGET_DINGUX_A320)
+    return "Dingux";
+#else
+    return "Unknown";
+#endif
+}
+
+static int modsys_os_name( INSTANCE * my, intptr_t * params )
+{
+    int str;
+
+    ( void ) my;
+    ( void ) params;
+
+    str = string_new( modsys_running_os_name() );
+    string_use( str );
+    return str;
+}
+
 /* ----------------------------------------------------------------- */
 /* exports                                                           */
 /* ----------------------------------------------------------------- */

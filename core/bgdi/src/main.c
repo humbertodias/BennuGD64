@@ -55,6 +55,11 @@
 #include "xstrings.h"
 #include "dirs.h"
 
+#ifdef __ANDROID__
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+#endif
+
 /* ---------------------------------------------------------------------- */
 
 static char * dcb_exts[] = { ".dcb", ".dat", ".bin", NULL };
@@ -77,6 +82,41 @@ static int embedded    = 0;  /* 1 only if this is a stub with an embedded DCB */
  *
  */
 
+#ifdef __ANDROID__
+static int android_write_file ( const char * path, const void * data, size_t size )
+{
+    FILE * fp = fopen( path, "wb" );
+    if ( !fp ) return 0;
+    if ( size && fwrite( data, 1, size, fp ) != size )
+    {
+        fclose( fp );
+        return 0;
+    }
+    fclose( fp );
+    return 1;
+}
+
+static void android_extract_assets ( const char * dest_dir )
+{
+    const char * bundled[] = { "main.dcb", "hello.dcb", NULL };
+    int i;
+    for ( i = 0 ; bundled[i] ; i++ )
+    {
+        char dest[ __MAX_PATH ];
+        size_t sz = 0;
+        void * data;
+        snprintf( dest, sizeof( dest ), "%s/%s", dest_dir, bundled[i] );
+        if ( access( dest, R_OK ) == 0 ) continue;
+        data = SDL_LoadFile( bundled[i], &sz );
+        if ( data )
+        {
+            android_write_file( dest, data, sz );
+            SDL_free( data );
+        }
+    }
+}
+#endif
+
 int main( int argc, char *argv[] )
 {
     char * filename = NULL, dcbname[ __MAX_PATH ], *ptr, *arg0, *ext ;
@@ -87,6 +127,29 @@ int main( int argc, char *argv[] )
 
     /* disable stdout buffering */
     setvbuf( stdout, NULL, _IONBF, BUFSIZ );
+
+#ifdef __ANDROID__
+    {
+        const char * storage = SDL_GetAndroidInternalStoragePath();
+        if ( storage )
+        {
+            android_extract_assets( storage );
+            chdir( storage );
+            file_addp( storage );
+        }
+        standalone = 1;
+        if ( argc < 2 )
+        {
+            if ( access( "main.dcb", R_OK ) == 0 ) filename = "main.dcb";
+            else if ( access( "hello.dcb", R_OK ) == 0 ) filename = "hello.dcb";
+            else
+            {
+                fprintf( stderr, "Android: no main.dcb or hello.dcb in %s\n",
+                         storage ? storage : "(no storage)" );
+            }
+        }
+    }
+#endif
 
     /* get my executable name */
 
@@ -134,12 +197,16 @@ int main( int argc, char *argv[] )
     }
 
     /* get pathname of executable */
-    ptr = strstr( appexefullpath, appexename );
-    appexepath = calloc( 1, ptr - appexefullpath + 1 );
+    if ( !appexefullpath ) appexefullpath = strdup( "" );
+    ptr = ( appexename && appexefullpath ) ? strstr( appexefullpath, appexename ) : NULL;
+    if ( !ptr ) ptr = appexefullpath + strlen( appexefullpath );
+    appexepath = calloc( 1, (size_t)( ptr - appexefullpath ) + 1 );
     strncpy( appexepath, appexefullpath, ptr - appexefullpath );
 
 #ifdef __EMSCRIPTEN__
     /* argv[0] is typically "this.program" in the browser. */
+    standalone = 1 ;
+#elif defined(__ANDROID__)
     standalone = 1 ;
 #else
     standalone = ( strncmpi( appexename, "bgdi", 4 ) == 0 ) ;

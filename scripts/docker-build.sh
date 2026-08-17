@@ -5,6 +5,7 @@
 #   bash scripts/docker-build.sh linux shared
 #   bash scripts/docker-build.sh windows
 #   bash scripts/docker-build.sh wasm
+#   bash scripts/docker-build.sh android
 #   bash scripts/docker-build.sh linux shell
 set -euo pipefail
 
@@ -12,7 +13,8 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
 USAGE="usage: $0 linux|windows [static|shared|shell]
-       $0 wasm [shell]"
+       $0 wasm [shell]
+       $0 android [shell]"
 
 if [[ -f "${ROOT}/versions.env" ]]; then
   set -a
@@ -34,7 +36,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm) ;;
+  linux|windows|wasm|android) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -53,12 +55,30 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
       docker/
   elif [[ "${PLATFORM}" == "linux" ]]; then
     docker build --target linux -t bennugd64-linux -f docker/Dockerfile.linux docker/
+  elif [[ "${PLATFORM}" == "android" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      --build-arg ANDROID_NDK_VERSION="${ANDROID_NDK_VERSION:-27.0.12077973}" \
+      --build-arg ANDROID_CMDLINE_TOOLS="${ANDROID_CMDLINE_TOOLS:-11076708}" \
+      --build-arg ANDROID_COMPILE_SDK="${ANDROID_COMPILE_SDK:-34}" \
+      --build-arg ANDROID_BUILD_TOOLS="${ANDROID_BUILD_TOOLS:-34.0.0}" \
+      --build-arg GRADLE_VERSION="${GRADLE_VERSION:-8.12}" \
+      -t bennugd64-android \
+      -f docker/Dockerfile.android \
+      docker/
   else
     docker build -t "${IMAGE}" -f "docker/Dockerfile.${PLATFORM}" docker/
   fi
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
+  if [[ "${PLATFORM}" == "android" ]]; then
+    exec docker run --platform linux/amd64 --rm -it \
+      -v "${ROOT}:/src" \
+      -w /src \
+      -e HOME=/tmp \
+      "${IMAGE}" bash
+  fi
   exec docker run --rm -it \
     -v "${ROOT}:/src" \
     -w /src \
@@ -154,6 +174,124 @@ if [[ "${PLATFORM}" == "wasm" ]]; then
       test -s "${STAGE}/bgdi.js"
       test -s "${STAGE}/bgdi.wasm"
       test -s "${STAGE}/bgdi.data"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "android" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: android-host + android-arm64"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-android-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-android-arm64/_deps"
+  docker run --platform linux/amd64 --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e GRADLE_USER_HOME=/src/build-android-gradle \
+    -e ANDROID_USER_HOME=/tmp/android \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    -e ANDROID_API="${ANDROID_API:-28}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      HOST_BUILD=/src/build-android-host
+      NDK_BUILD=/src/build-android-arm64
+      APK_WORK=/src/build-android-apk
+      STAGE=/src/dist/android-arm64-static
+      FETCH_DIR="${HOST_BUILD}/_deps"
+      JNI="${APK_WORK}/app/src/main/jniLibs/arm64-v8a"
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset android-host "${COMMON[@]}"
+      cmake --build --preset android-host
+      for prg in /src/web/demo/*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      test -n "${ANDROID_NDK:-}"
+      test -f "${ANDROID_NDK}/build/cmake/android.toolchain.cmake"
+      cmake --preset android-arm64 \
+        "${COMMON[@]}" \
+        -DANDROID_ABI=arm64-v8a \
+        -DANDROID_PLATFORM="android-${ANDROID_API}" \
+        -DANDROID_STL=c++_shared \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
+      cmake --build --preset android-arm64
+      rm -rf "${APK_WORK}"
+      mkdir -p "${APK_WORK}" "${JNI}" "${APK_WORK}/app/src/main/assets" "${STAGE}"
+      cp -a /src/android/. "${APK_WORK}/"
+      rm -rf "${APK_WORK}/.gradle" "${APK_WORK}/app/build" "${APK_WORK}/build"
+      JAVA_SRC="${NDK_BUILD}/_deps/sdl3-src/android-project/app/src/main/java"
+      test -d "${JAVA_SRC}"
+      mkdir -p "${APK_WORK}/app/src/main"
+      cp -a "${JAVA_SRC}" "${APK_WORK}/app/src/main/"
+      mkdir -p "${JNI}"
+      copy_jni() {
+        local name="$1" required="${2:-1}" search="${3:-${NDK_BUILD}}" f=""
+        f="$(find "${search}" \( -type f -o -type l \) -name "${name}" ! -path '*/CMakeFiles/*' | head -n 1 || true)"
+        if [[ -z "${f}" ]]; then
+          if [[ "${required}" == "1" ]]; then
+            echo "missing ${name} under ${search}" >&2
+            exit 1
+          fi
+          return 0
+        fi
+        cp -L "${f}" "${JNI}/"
+      }
+      copy_jni libmain.so 1 "${NDK_BUILD}/core/bgdi"
+      copy_jni libSDL3.so 1 "${NDK_BUILD}/_deps/sdl3-build"
+      copy_jni libhidapi.so 0 "${NDK_BUILD}/_deps/sdl3-build"
+      CXX_SO=""
+      PREBUILT=""
+      for host in linux-x86_64 linux-aarch64; do
+        if [[ -d "${ANDROID_NDK}/toolchains/llvm/prebuilt/${host}" ]]; then
+          PREBUILT="${ANDROID_NDK}/toolchains/llvm/prebuilt/${host}"
+          break
+        fi
+      done
+      if [[ -z "${PREBUILT}" ]]; then
+        echo "missing NDK llvm prebuilt under ${ANDROID_NDK}/toolchains/llvm/prebuilt" >&2
+        exit 1
+      fi
+      for cand in \
+        "${PREBUILT}/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so" \
+        "${PREBUILT}/sysroot/usr/lib/aarch64-linux-android/${ANDROID_API}/libc++_shared.so"
+      do
+        if [[ -f "${cand}" ]]; then
+          CXX_SO="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${CXX_SO}" ]]; then
+        echo "missing libc++_shared.so in ${PREBUILT}" >&2
+        exit 1
+      fi
+      cp -L "${CXX_SO}" "${JNI}/"
+      mkdir -p "${APK_WORK}/app/src/main/assets"
+      cp /src/web/demo/*.dcb "${APK_WORK}/app/src/main/assets/"
+      cp /src/web/demo/hello.dcb "${APK_WORK}/app/src/main/assets/main.dcb"
+      printf "sdk.dir=%s\n" "${ANDROID_HOME}" > "${APK_WORK}/local.properties"
+      mkdir -p "${GRADLE_USER_HOME}" "${HOME}" "${ANDROID_USER_HOME:-/tmp/android}"
+      ( cd "${APK_WORK}" && gradle --no-daemon assembleDebug )
+      APK="$(echo "${APK_WORK}"/app/build/outputs/apk/debug/*.apk)"
+      test -s "${APK}"
+      cmake --install "${NDK_BUILD}" --prefix "${STAGE}"
+      cp "${APK}" "${STAGE}/bennugd64.apk"
+      cp "${JNI}/"* "${STAGE}/" 2>/dev/null || true
+      test -s "${STAGE}/bennugd64.apk"
+      test -s "${STAGE}/libmain.so"
     '
   exit 0
 fi

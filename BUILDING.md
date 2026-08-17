@@ -1,13 +1,14 @@
 # Building BennuGD64
 
-## Docker (Linux, Windows, and web)
+## Docker (Linux, Windows, web, and Android)
 
-No local compiler, CMake, MinGW, or Emscripten. Only [Docker](https://docs.docker.com/get-docker/).
+No local compiler, CMake, MinGW, Emscripten, or Android SDK. Only [Docker](https://docs.docker.com/get-docker/).
 
 ```shell
 bash scripts/docker-build.sh linux
 bash scripts/docker-build.sh linux shared
 bash scripts/docker-build.sh wasm
+bash scripts/docker-build.sh android
 bash scripts/docker-build.sh windows
 bash scripts/docker-build.sh windows shared
 ```
@@ -16,15 +17,17 @@ bash scripts/docker-build.sh windows shared
 |---------|-------|--------|
 | `linux` / `linux shared` | `docker/Dockerfile.linux` (`--target linux`) | `dist/linux-{static,shared}/` |
 | `wasm` | `docker/Dockerfile.linux` (`--target wasm`) | `dist/web-wasm32-static/` |
+| `android` | `docker/Dockerfile.android` | `dist/android-arm64-static/` (`bennugd64.apk`) |
 | `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
 
-The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). The wasm stage is `FROM linux` in `Dockerfile.linux` (Emscripten SDK on the native toolchain).
+The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). The wasm stage is `FROM linux` in `Dockerfile.linux` (Emscripten SDK on the native toolchain).
 
 ```shell
 bash scripts/docker-build.sh linux shell
+bash scripts/docker-build.sh android shell
 ```
 
-Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)** or **Windows (MinGW)** in the config picker. The repo is mounted at `/src`, same as `docker-build.sh`.
+Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, or **Android (NDK)** in the config picker. The repo is mounted at `/src`, same as `docker-build.sh`.
 
 macOS binaries cannot be produced from Linux containers (Apple SDK). Use a Mac or the `macos-latest` GitHub Actions job.
 
@@ -47,6 +50,8 @@ MinGW-w64 on Windows). Presets in `CMakePresets.json`:
 | `windows-static` / `windows-shared` | `build-windows-*` | MinGW-w64 from Linux |
 | `wasi` | `build-wasi` | `bgdc.wasm` |
 | `wasm-host` | `build-host` | Native `bgdc` for wasm demos |
+| `android-host` | `build-android-host` | Native `bgdc` for Android demo DCBs |
+| `android-arm64` | `build-android-arm64` | NDK `libmain.so` (needs `ANDROID_NDK`) |
 
 Optional:
 
@@ -117,7 +122,7 @@ Docker builds already install into `dist/<target>/`.
 | `STATIC_MODULES` | ON | Link modules into `bgdi` (`OFF` builds shared `.so`/`.dll`) |
 | `NO_SOUND` | OFF | Build without SDL3_mixer |
 | `COMPILER_ONLY` | OFF | Build only `bgdc` (no `bgdi` / modules). Forced ON for WASI |
-| `INTERPRETER_ONLY` | OFF | Build only `bgdi` (no `bgdc`). Used by the Emscripten player build |
+| `INTERPRETER_ONLY` | OFF | Build only `bgdi` (no `bgdc`). Used by the Emscripten and Android player builds |
 | `BENNUGD_WASI` | OFF | Cross-compile `bgdc` to wasm32-wasip1 (downloads wasi-sdk if needed) |
 | `BENNUGD_WASI_SDK_VERSION` | `33` | wasi-sdk major version to fetch when `BENNUGD_WASI=ON` |
 | `BENNUGD_WASI_SDK_VERSION_FULL` | `33.0` | wasi-sdk full version (tarball name) |
@@ -171,6 +176,20 @@ Open `http://localhost:8080/`. Drop a `.dcb` plus assets (or a game folder) onto
 
 Pushes to `main` run CI, then `.github/workflows/pages.yml` publishes the `web-wasm32-static` artifact as `index.html`. In the repo set **Settings → Pages → Source** to **GitHub Actions**.
 
+## Android
+
+Needs Docker. `docker/Dockerfile.android` is a toolchain image (JDK 17, Android SDK/NDK, CMake, Ninja, Gradle) built for **linux/amd64** (the NDK host tools are x86_64; on Apple Silicon Docker uses qemu). It does not clone this repo or bake Bennu into the image.
+
+```shell
+bash scripts/docker-build.sh android
+```
+
+That configures native `bgdc` (`android-host`), compiles `web/demo/*.prg`, cross-compiles `libmain.so` with the NDK (`android-arm64`, API 28, arm64-v8a), copies SDL3 Java from FetchContent, and runs Gradle to produce `dist/android-arm64-static/bennugd64.apk`.
+
+Install the debug APK on an arm64 device or emulator (Android 9+). The APK ships `hello.dcb` as `assets/main.dcb`. To ship your own game, replace `assets/main.dcb` (and any extra files) in a copy of `android/` or add them under the app files directory.
+
+SDL3 is a shared `libSDL3.so` because `SDLActivity` loads it next to `libmain.so`. Modules are linked into `libmain.so`.
+
 ## Installer options
 
 The install scripts download the latest GitHub Release for your platform, unpack it to `$HOME/bennugd`, set `BENNUGD_HOME`, and prepend it to `PATH`.
@@ -188,6 +207,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 - Linux x86_64 and Windows x86_64 — one toolchain image per OS, then static + shared (`scripts/docker-build.sh`)
 - macOS arm64 — native runner (static + shared in one job)
 - Web (Emscripten) — `scripts/docker-build.sh wasm` (`Dockerfile.linux --target wasm`) → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
+- Android arm64 — `scripts/docker-build.sh android` (`Dockerfile.android`) → `bennugd64-<tag>-android-arm64-static.zip` (`bennugd64.apk`)
 - WASI — `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
 
-On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES). OS graphics/audio libraries may still be required at runtime on native builds.
+On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`). OS graphics/audio libraries may still be required at runtime on native builds.

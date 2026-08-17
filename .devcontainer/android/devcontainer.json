@@ -1,0 +1,31 @@
+{
+  "name": "BennuGD64 Android (NDK)",
+  "build": {
+    "dockerfile": "../../docker/Dockerfile.android",
+    "context": "../../docker",
+    "options": ["--platform=linux/amd64"],
+    "args": {
+      "ANDROID_NDK_VERSION": "27.0.12077973",
+      "ANDROID_CMDLINE_TOOLS": "11076708",
+      "ANDROID_COMPILE_SDK": "34",
+      "ANDROID_BUILD_TOOLS": "34.0.0",
+      "GRADLE_VERSION": "8.12"
+    }
+  },
+  "runArgs": ["--platform=linux/amd64"],
+  "workspaceFolder": "/src",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+      ]
+    },
+    "zed": {
+      "extensions": ["dockerfile", "make"]
+    }
+  }
+}

@@ -52,3 +52,11 @@ bgdc
 
 # Generated demo bytecode for the wasm spike
 /web/demo/*.dcb
+
+# Android / Gradle
+.gradle/
+local.properties
+*.apk
+*.ap_
+*.aab
+*.dex

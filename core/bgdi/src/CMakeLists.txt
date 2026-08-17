@@ -7,10 +7,15 @@ include_directories (
   ../../bgdrtm/include
 )
 
-add_executable (
-  bgdi
-  main.c
-)
+if (ANDROID)
+  add_library ( bgdi SHARED main.c )
+  set_target_properties ( bgdi PROPERTIES OUTPUT_NAME "main" )
+else ()
+  add_executable (
+    bgdi
+    main.c
+  )
+endif ()
 
 add_dependencies ( bgdi bennugd_git_header )
 
@@ -28,6 +33,16 @@ else ()
     ZLIB::ZLIB
     OpenSSL::Crypto
   )
+endif ()
+
+if (ANDROID)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    android
+    log
+  )
+  target_link_options ( bgdi PRIVATE "-Wl,--undefined=SDL_main" )
 endif ()
 
 if (EMSCRIPTEN)

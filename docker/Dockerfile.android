@@ -1,0 +1,65 @@
+# Android NDK + SDK toolchain (linux/amd64: NDK host tools are x86_64).
+#   docker build --platform linux/amd64 -t bennugd64-android \
+#     --build-arg ANDROID_NDK_VERSION=27.0.12077973 \
+#     -f docker/Dockerfile.android docker/
+#   docker run --platform linux/amd64 --rm -v "$PWD":/src -w /src \
+#     bennugd64-android cmake --preset android-arm64
+
+FROM ubuntu:22.04
+
+ARG ANDROID_NDK_VERSION=27.0.12077973
+ARG ANDROID_CMDLINE_TOOLS=11076708
+ARG ANDROID_COMPILE_SDK=34
+ARG ANDROID_BUILD_TOOLS=34.0.0
+ARG GRADLE_VERSION=8.12
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=android \
+    ANDROID_HOME=/opt/android-sdk \
+    ANDROID_SDK_ROOT=/opt/android-sdk
+
+ENV ANDROID_NDK=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION} \
+    ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/${ANDROID_NDK_VERSION}
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        cmake \
+        curl \
+        git \
+        ninja-build \
+        openjdk-17-jdk-headless \
+        python3 \
+        unzip \
+        wget \
+        zip \
+        build-essential \
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*' \
+    && ln -sfn "$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")" /usr/lib/jvm/java-17 \
+    && test -x /usr/lib/jvm/java-17/bin/java
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17
+ENV PATH="${JAVA_HOME}/bin:${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:/opt/gradle/bin:${PATH}"
+
+RUN mkdir -p ${ANDROID_HOME}/cmdline-tools \
+    && cd ${ANDROID_HOME}/cmdline-tools \
+    && wget -q "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS}_latest.zip" -O cmdline-tools.zip \
+    && unzip -q cmdline-tools.zip \
+    && mv cmdline-tools latest \
+    && rm cmdline-tools.zip \
+    && (yes | sdkmanager --sdk_root=${ANDROID_HOME} --licenses >/dev/null || true) \
+    && sdkmanager --sdk_root=${ANDROID_HOME} \
+        "platform-tools" \
+        "build-tools;${ANDROID_BUILD_TOOLS}" \
+        "platforms;android-${ANDROID_COMPILE_SDK}" \
+        "ndk;${ANDROID_NDK_VERSION}" \
+    && chmod -R a+rX ${ANDROID_HOME} \
+    && wget -q "https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-bin.zip" -O /tmp/gradle.zip \
+    && unzip -q /tmp/gradle.zip -d /opt \
+    && mv /opt/gradle-${GRADLE_VERSION} /opt/gradle \
+    && rm /tmp/gradle.zip \
+    && chmod -R a+rX /opt/gradle
+
+WORKDIR /src
+CMD ["bash"]

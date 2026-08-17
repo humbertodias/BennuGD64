@@ -105,8 +105,14 @@ if (NOT TARGET PNG::PNG)
 endif ()
 
 # --- SDL3 ---
-set (SDL_SHARED OFF CACHE BOOL "" FORCE)
-set (SDL_STATIC ON CACHE BOOL "" FORCE)
+# SDLActivity loads libSDL3.so + libmain.so. Other targets link SDL statically.
+if (ANDROID)
+  set (SDL_SHARED ON CACHE BOOL "" FORCE)
+  set (SDL_STATIC OFF CACHE BOOL "" FORCE)
+else ()
+  set (SDL_SHARED OFF CACHE BOOL "" FORCE)
+  set (SDL_STATIC ON CACHE BOOL "" FORCE)
+endif ()
 set (SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
 set (SDL_TESTS OFF CACHE BOOL "" FORCE)
 set (SDL_INSTALL_DOCS OFF CACHE BOOL "" FORCE)

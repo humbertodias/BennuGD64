@@ -10,10 +10,18 @@ endif ()
 set (BENNUGD_ZLIB_VERSION "1.3.1" CACHE STRING "zlib version to fetch")
 set (BENNUGD_LIBPNG_VERSION "1.6.47" CACHE STRING "libpng version to fetch")
 set (BENNUGD_SDL3_REF "release-3.4.14" CACHE STRING "SDL3 git tag/branch to fetch")
+set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git" CACHE STRING "SDL3 git repository")
+set (BENNUGD_SDL3_SWITCH_REF "switch-sdl-3.4" CACHE STRING "devkitPro SDL3 Switch branch")
 set (BENNUGD_SDL3_MIXER_REF "release-3.2.4" CACHE STRING "SDL3_mixer git tag/branch to fetch")
 
+if (NINTENDO_SWITCH)
+  set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/devkitPro/SDL.git")
+  set (BENNUGD_SDL3_REF "${BENNUGD_SDL3_SWITCH_REF}")
+endif ()
+
 # Static archives must be PIC so they can later link into .so/.dylib modules.
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI")
+# Switch homebrew uses -fPIE from the toolchain instead.
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH)
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -123,9 +131,13 @@ if (EMSCRIPTEN)
   # at init and makes games assign P1 to a stick that is not a real device.
   set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
 endif ()
+if (NINTENDO_SWITCH)
+  # newlib has no iconv; static try_compile must not claim GNU libc extras.
+  set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+endif ()
 FetchContent_Declare (
   sdl3
-  GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git"
+  GIT_REPOSITORY "${BENNUGD_SDL3_GIT_REPOSITORY}"
   GIT_TAG "${BENNUGD_SDL3_REF}"
   GIT_SHALLOW TRUE
 )

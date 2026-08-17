@@ -1,0 +1,32 @@
+# Nintendo Switch homebrew toolchain (linux/amd64: devkitA64 host tools are x86_64).
+#   docker build --platform linux/amd64 -t bennugd64-switch \
+#     -f docker/Dockerfile.switch docker/
+#   docker run --platform linux/amd64 --rm -v "$PWD":/src -w /src \
+#     bennugd64-switch cmake --preset switch-aarch64
+#
+# Toolchain only: does not clone this repo or bake Bennu into the image.
+
+FROM devkitpro/devkita64:latest
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=switch \
+    DEVKITPRO=/opt/devkitpro \
+    DEVKITARM=/opt/devkitpro/devkitARM
+
+ENV PATH="${DEVKITPRO}/tools/bin:${DEVKITPRO}/devkitA64/bin:${PATH}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        cmake \
+        git \
+        ninja-build \
+        pkg-config \
+        python3 \
+        zip \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*' \
+    && chmod -R a+rX ${DEVKITPRO}
+
+WORKDIR /src
+CMD ["bash"]

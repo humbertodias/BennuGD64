@@ -27,7 +27,7 @@ add_library (
   fcrypt_b.c
 )
 
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI")
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH)
   target_sources (des PRIVATE
     read_pwd.c
     read2pwd.c

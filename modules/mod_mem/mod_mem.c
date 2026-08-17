@@ -145,7 +145,7 @@ static int modmem_memory_free( INSTANCE * my, intptr_t * params )
     if ( sysinfo( &meminf ) == -1 ) return -1;
     return ( int )( meminf.freeram * meminf.mem_unit );
 
-#elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN)
+#elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN) && !defined(TARGET_SWITCH)
     /* Linux and other Unix (?) */
     struct sysinfo meminf;
     int fv;
@@ -188,7 +188,7 @@ static int modmem_memory_total( INSTANCE * my, intptr_t * params )
     if ( sysinfo( &meminf ) == -1 ) return -1;
     return ( int )( meminf.totalram * meminf.mem_unit );
 
-#elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN)
+#elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN) && !defined(TARGET_SWITCH)
     /* Linux and other Unix (?) */
     struct sysinfo meminf;
     int fv;

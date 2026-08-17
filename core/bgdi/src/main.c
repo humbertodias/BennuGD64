@@ -60,6 +60,11 @@
 #include <SDL3/SDL_main.h>
 #endif
 
+#ifdef __SWITCH__
+#include <switch.h>
+#include <unistd.h>
+#endif
+
 /* ---------------------------------------------------------------------- */
 
 static char * dcb_exts[] = { ".dcb", ".dat", ".bin", NULL };
@@ -151,6 +156,25 @@ int main( int argc, char *argv[] )
     }
 #endif
 
+#ifdef __SWITCH__
+    {
+        romfsInit();
+        file_addp( "romfs:/" );
+        file_addp( "sdmc:/switch/bennugd64" );
+        chdir( "romfs:/" );
+        standalone = 1;
+        if ( argc < 2 )
+        {
+            if ( access( "main.dcb", R_OK ) == 0 ) filename = "main.dcb";
+            else if ( access( "hello.dcb", R_OK ) == 0 ) filename = "hello.dcb";
+            else
+            {
+                fprintf( stderr, "Switch: no main.dcb or hello.dcb in romfs:/\n" );
+            }
+        }
+    }
+#endif
+
     /* get my executable name */
 
 #ifdef _WIN32
@@ -207,6 +231,8 @@ int main( int argc, char *argv[] )
     /* argv[0] is typically "this.program" in the browser. */
     standalone = 1 ;
 #elif defined(__ANDROID__)
+    standalone = 1 ;
+#elif defined(__SWITCH__)
     standalone = 1 ;
 #else
     standalone = ( strncmpi( appexename, "bgdi", 4 ) == 0 ) ;

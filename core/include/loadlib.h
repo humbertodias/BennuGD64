@@ -32,7 +32,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <winbase.h>
-#elif defined(__wasi__)
+#elif defined(__wasi__) || defined(__SWITCH__)
 #include <unistd.h>
 #define __stdcall
 #define __dllexport

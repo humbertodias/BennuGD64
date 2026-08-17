@@ -45,6 +45,21 @@ if (ANDROID)
   target_link_options ( bgdi PRIVATE "-Wl,--undefined=SDL_main" )
 endif ()
 
+if (NINTENDO_SWITCH)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    "-Wl,--start-group"
+    EGL
+    glapi
+    drm_nouveau
+    nx
+    m
+    stdc++
+    "-Wl,--end-group"
+  )
+endif ()
+
 if (EMSCRIPTEN)
   bennugd_emscripten_link (bgdi)
 endif ()

@@ -87,6 +87,26 @@
         "ANDROID_PLATFORM": "android-28",
         "ANDROID_STL": "c++_shared"
       }
+    },
+    {
+      "name": "switch-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile Switch demo DCBs",
+      "binaryDir": "${sourceDir}/build-switch-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "switch-aarch64",
+      "inherits": "base",
+      "displayName": "Nintendo Switch interpreter (bgdi.elf)",
+      "binaryDir": "${sourceDir}/build-switch-aarch64",
+      "toolchainFile": "${sourceDir}/cmake/devkita64-libnx.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -97,7 +117,9 @@
     { "name": "wasi", "configurePreset": "wasi", "targets": ["bgdc"] },
     { "name": "wasm-host", "configurePreset": "wasm-host", "targets": ["bgdc"] },
     { "name": "android-host", "configurePreset": "android-host", "targets": ["bgdc"] },
-    { "name": "android-arm64", "configurePreset": "android-arm64", "targets": ["bgdi"] }
+    { "name": "android-arm64", "configurePreset": "android-arm64", "targets": ["bgdi"] },
+    { "name": "switch-host", "configurePreset": "switch-host", "targets": ["bgdc"] },
+    { "name": "switch-aarch64", "configurePreset": "switch-aarch64", "targets": ["bgdi"] }
   ],
   "testPresets": [
     {

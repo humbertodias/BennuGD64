@@ -60,3 +60,7 @@ local.properties
 *.ap_
 *.aab
 *.dex
+
+# Nintendo Switch homebrew
+*.nro
+*.nacp

@@ -41,7 +41,9 @@
 #include <windef.h>
 #else
 #include <unistd.h>
+#ifndef TARGET_SWITCH
 #include <sys/utsname.h>
+#endif
 /* BeOS INCLUDES */
 #ifdef TARGET_BEOS
 #include <sys/types.h>

@@ -33,6 +33,10 @@ add_library (
   ../../common/xctype.c
 )
 
+if (NINTENDO_SWITCH)
+  target_sources (bgdrtm PRIVATE nx_glob.c)
+endif ()
+
 if (USE_LIBDES)
   target_link_libraries (
     bgdrtm
@@ -47,7 +51,7 @@ else ()
   )
 endif ()
 
-if (UNIX)
+if (UNIX OR NINTENDO_SWITCH)
   target_link_libraries ( bgdrtm m )
 endif ()
 if (NOT STATIC_MODULES)

@@ -35,7 +35,7 @@
 
 #ifndef WIN32
 #include <unistd.h>
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) && !defined(__SWITCH__)
 #include <sys/wait.h>
 #endif
 #else
@@ -55,7 +55,7 @@ static int modsys_exec( INSTANCE * my, intptr_t * params )
     int argc = params[2];
     char ** argv;
     int n = 0;
-#if !defined(WIN32) && !defined(__EMSCRIPTEN__)
+#if !defined(WIN32) && !defined(__EMSCRIPTEN__) && !defined(__SWITCH__)
     pid_t child;
 #endif
     int status = -1;
@@ -68,6 +68,10 @@ static int modsys_exec( INSTANCE * my, intptr_t * params )
 
     // Execute program
 #ifdef __EMSCRIPTEN__
+    ( void ) mode;
+    ( void ) argc;
+    status = -1;
+#elif defined(__SWITCH__)
     ( void ) mode;
     ( void ) argc;
     status = -1;

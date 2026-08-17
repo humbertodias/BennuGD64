@@ -1,14 +1,15 @@
 # Building BennuGD64
 
-## Docker (Linux, Windows, web, and Android)
+## Docker (Linux, Windows, web, Android, and Switch)
 
-No local compiler, CMake, MinGW, Emscripten, or Android SDK. Only [Docker](https://docs.docker.com/get-docker/).
+No local compiler, CMake, MinGW, Emscripten, Android SDK, or devkitPro. Only [Docker](https://docs.docker.com/get-docker/).
 
 ```shell
 bash scripts/docker-build.sh linux
 bash scripts/docker-build.sh linux shared
 bash scripts/docker-build.sh wasm
 bash scripts/docker-build.sh android
+bash scripts/docker-build.sh switch
 bash scripts/docker-build.sh windows
 bash scripts/docker-build.sh windows shared
 ```
@@ -18,16 +19,18 @@ bash scripts/docker-build.sh windows shared
 | `linux` / `linux shared` | `docker/Dockerfile.linux` (`--target linux`) | `dist/linux-{static,shared}/` |
 | `wasm` | `docker/Dockerfile.linux` (`--target wasm`) | `dist/web-wasm32-static/` |
 | `android` | `docker/Dockerfile.android` | `dist/android-arm64-static/` (`bennugd64.apk`) |
+| `switch` | `docker/Dockerfile.switch` | `dist/switch-aarch64-static/` (`bennugd64.nro`) |
 | `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
 
-The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). The wasm stage is `FROM linux` in `Dockerfile.linux` (Emscripten SDK on the native toolchain).
+The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). The wasm stage is `FROM linux` in `Dockerfile.linux` (Emscripten SDK on the native toolchain).
 
 ```shell
 bash scripts/docker-build.sh linux shell
 bash scripts/docker-build.sh android shell
+bash scripts/docker-build.sh switch shell
 ```
 
-Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, or **Android (NDK)** in the config picker. The repo is mounted at `/src`, same as `docker-build.sh`.
+Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, **Android (NDK)**, or **Switch (devkitA64)** in the config picker. The repo is mounted at `/src`, same as `docker-build.sh`.
 
 macOS binaries cannot be produced from Linux containers (Apple SDK). Use a Mac or the `macos-latest` GitHub Actions job.
 
@@ -52,6 +55,8 @@ MinGW-w64 on Windows). Presets in `CMakePresets.json`:
 | `wasm-host` | `build-host` | Native `bgdc` for wasm demos |
 | `android-host` | `build-android-host` | Native `bgdc` for Android demo DCBs |
 | `android-arm64` | `build-android-arm64` | NDK `libmain.so` (needs `ANDROID_NDK`) |
+| `switch-host` | `build-switch-host` | Native `bgdc` for Switch demo DCBs |
+| `switch-aarch64` | `build-switch-aarch64` | libnx `bgdi.elf` (needs `DEVKITPRO`) |
 
 Optional:
 
@@ -190,6 +195,18 @@ Install the debug APK on an arm64 device or emulator (Android 9+). The APK ships
 
 SDL3 is a shared `libSDL3.so` because `SDLActivity` loads it next to `libmain.so`. Modules are linked into `libmain.so`.
 
+## Nintendo Switch
+
+Needs Docker. `docker/Dockerfile.switch` is a toolchain image (`devkitpro/devkita64` plus host gcc, CMake, Ninja) built for **linux/amd64** (devkitA64 host tools are x86_64; on Apple Silicon Docker uses qemu). It does not clone this repo or bake Bennu into the image.
+
+```shell
+bash scripts/docker-build.sh switch
+```
+
+That configures native `bgdc` (`switch-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi.elf` with libnx (`switch-aarch64`), and runs `nacptool` / `elf2nro` to produce `dist/switch-aarch64-static/bennugd64.nro`. The NRO RomFS ships `hello.dcb` as `main.dcb`. Copy the `.nro` to `sdmc:/switch/` on a homebrew Switch, or send it with `nxlink`. Extra files can go next to the NRO or under `sdmc:/switch/bennugd64`.
+
+SDL3 comes from the [devkitPro SDL `switch-sdl-3.4`](https://github.com/devkitPro/SDL/tree/switch-sdl-3.4) branch (homebrew video/audio). Modules are linked into `bgdi.elf`.
+
 ## Installer options
 
 The install scripts download the latest GitHub Release for your platform, unpack it to `$HOME/bennugd`, set `BENNUGD_HOME`, and prepend it to `PATH`.
@@ -208,6 +225,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 - macOS arm64 — native runner (static + shared in one job)
 - Web (Emscripten) — `scripts/docker-build.sh wasm` (`Dockerfile.linux --target wasm`) → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
 - Android arm64 — `scripts/docker-build.sh android` (`Dockerfile.android`) → `bennugd64-<tag>-android-arm64-static.zip` (`bennugd64.apk`)
+- Nintendo Switch — `scripts/docker-build.sh switch` (`Dockerfile.switch`) → `bennugd64-<tag>-switch-aarch64-static.zip` (`bennugd64.nro`)
 - WASI — `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
 
-On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`). OS graphics/audio libraries may still be required at runtime on native builds.
+On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`; Switch zip for `switch-aarch64-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`; the Switch NRO links SDL3 statically from the devkitPro fork). OS graphics/audio libraries may still be required at runtime on native builds.

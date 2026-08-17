@@ -6,6 +6,7 @@
 #   bash scripts/docker-build.sh windows
 #   bash scripts/docker-build.sh wasm
 #   bash scripts/docker-build.sh android
+#   bash scripts/docker-build.sh switch
 #   bash scripts/docker-build.sh linux shell
 set -euo pipefail
 
@@ -14,7 +15,8 @@ cd "${ROOT}"
 
 USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 wasm [shell]
-       $0 android [shell]"
+       $0 android [shell]
+       $0 switch [shell]"
 
 if [[ -f "${ROOT}/versions.env" ]]; then
   set -a
@@ -36,7 +38,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android) ;;
+  linux|windows|wasm|android|switch) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -66,13 +68,19 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
       -t bennugd64-android \
       -f docker/Dockerfile.android \
       docker/
+  elif [[ "${PLATFORM}" == "switch" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      -t bennugd64-switch \
+      -f docker/Dockerfile.switch \
+      docker/
   else
     docker build -t "${IMAGE}" -f "docker/Dockerfile.${PLATFORM}" docker/
   fi
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
-  if [[ "${PLATFORM}" == "android" ]]; then
+  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
       -w /src \
@@ -304,6 +312,88 @@ if [[ "${PLATFORM}" == "android" ]]; then
       cp "${JNI}/"* "${STAGE}/" 2>/dev/null || true
       test -s "${STAGE}/bennugd64.apk"
       test -s "${STAGE}/libmain.so"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "switch" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: switch-host + switch-aarch64"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-switch-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-switch-aarch64/_deps"
+  docker run --platform linux/amd64 --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_SWITCH_REF="${SDL3_SWITCH_REF:-switch-sdl-3.4}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -n "${DEVKITPRO:-}"
+      test -f "${DEVKITPRO}/libnx/switch.specs"
+      HOST_BUILD=/src/build-switch-host
+      NX_BUILD=/src/build-switch-aarch64
+      ROMFS=/src/build-switch-romfs
+      STAGE=/src/dist/switch-aarch64-static
+      FETCH_DIR="${HOST_BUILD}/_deps"
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_SWITCH_REF="${SDL3_SWITCH_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset switch-host "${COMMON[@]}"
+      cmake --build --preset switch-host
+      for prg in /src/web/demo/*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      cmake --preset switch-aarch64 \
+        "${COMMON[@]}" \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
+      cmake --build --preset switch-aarch64
+      ELF=""
+      for cand in \
+        "${NX_BUILD}/core/bgdi/src/bgdi.elf" \
+        "${NX_BUILD}/core/bgdi/src/bgdi"
+      do
+        if [[ -f "${cand}" ]]; then
+          ELF="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${ELF}" ]]; then
+        ELF="$(find "${NX_BUILD}/core/bgdi" \( -type f -o -type l \) \( -name bgdi.elf -o -name bgdi \) | grep -v /CMakeFiles/ | head -n 1 || true)"
+      fi
+      test -n "${ELF}"
+      test -s "${ELF}"
+      rm -rf "${ROMFS}"
+      mkdir -p "${ROMFS}" "${STAGE}"
+      cp /src/web/demo/*.dcb "${ROMFS}/"
+      cp /src/web/demo/hello.dcb "${ROMFS}/main.dcb"
+      NACP="${NX_BUILD}/bennugd64.nacp"
+      NRO="${STAGE}/bennugd64.nro"
+      nacptool --create "BennuGD64" "BennuGD64" "${BENNUGD_VERSION}" "${NACP}"
+      ELF2NRO=(elf2nro "${ELF}" "${NRO}" --nacp="${NACP}" --romfsdir="${ROMFS}")
+      if [[ -f "${DEVKITPRO}/libnx/default_icon.jpg" ]]; then
+        ELF2NRO+=(--icon="${DEVKITPRO}/libnx/default_icon.jpg")
+      fi
+      "${ELF2NRO[@]}"
+      cmake --install "${NX_BUILD}" --prefix "${STAGE}"
+      cp "${ELF}" "${STAGE}/bgdi.elf"
+      test -s "${STAGE}/bennugd64.nro"
+      test -s "${STAGE}/bgdi.elf"
     '
   exit 0
 fi

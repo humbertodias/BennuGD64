@@ -379,9 +379,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Download all artifacts
+      - name: Download release artifacts
         uses: actions/download-artifact@v8
         with:
+          pattern: bennugd64-*
           path: artifacts
 
       - name: Build release archives from staged folders
@@ -391,6 +392,13 @@ jobs:
           for art_dir in artifacts/*/; do
             [[ -d "$art_dir" ]] || continue
             base="$(basename "$art_dir")"
+            case "$base" in
+              bennugd64-*) ;;
+              *)
+                echo "Skipping $base"
+                continue
+                ;;
+            esac
             echo "Packaging $base"
             case "$base" in
               *windows*|*wasm32*|*android*)

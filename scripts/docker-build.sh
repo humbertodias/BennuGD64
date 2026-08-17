@@ -8,6 +8,7 @@
 #   bash scripts/docker-build.sh android
 #   bash scripts/docker-build.sh switch
 #   bash scripts/docker-build.sh dreamcast
+#   bash scripts/docker-build.sh pandora
 #   bash scripts/docker-build.sh linux shell
 set -euo pipefail
 
@@ -18,7 +19,8 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 wasm [shell]
        $0 android [shell]
        $0 switch [shell]
-       $0 dreamcast [shell]"
+       $0 dreamcast [shell]
+       $0 pandora [shell]"
 
 if [[ -f "${ROOT}/versions.env" ]]; then
   set -a
@@ -40,7 +42,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast) ;;
+  linux|windows|wasm|android|switch|dreamcast|pandora) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -82,13 +84,19 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
       -t bennugd64-dreamcast \
       -f docker/Dockerfile.dreamcast \
       docker/
+  elif [[ "${PLATFORM}" == "pandora" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      -t bennugd64-pandora \
+      -f docker/Dockerfile.pandora \
+      docker/
   else
     docker build -t "${IMAGE}" -f "docker/Dockerfile.${PLATFORM}" docker/
   fi
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
-  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" ]]; then
+  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "pandora" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
       -w /src \
@@ -116,6 +124,47 @@ scrub_fetchcontent() {
   find "${d}" -mindepth 1 -maxdepth 1 -type d \
     \( -name '*-subbuild' -o -name '*-build' -o -name '*-tmp' \) \
     -exec rm -rf {} +
+}
+
+# GitHub archive tarball with retries (FetchContent's one-shot curl hits 429).
+# Prefer a copy already fetched by another local/CI build of the same versions.
+reuse_fetchcontent_src() {
+  local dest="$1" name cand
+  if [[ -f "${dest}/CMakeLists.txt" ]]; then
+    return 0
+  fi
+  name="$(basename "${dest}")"
+  for cand in \
+    "${ROOT}/build-linux-static/_deps/${name}" \
+    "${ROOT}/build-linux-shared/_deps/${name}" \
+    "${ROOT}/build-windows-static/_deps/${name}" \
+    "${ROOT}/build-windows-shared/_deps/${name}" \
+    "${ROOT}/build-android-arm64/_deps/${name}" \
+    "${ROOT}/build-host/_deps/${name}"
+  do
+    if [[ -f "${cand}/CMakeLists.txt" ]]; then
+      echo "reuse: ${cand} -> ${dest}"
+      rm -rf "${dest}"
+      cp -a "${cand}" "${dest}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+prefetch_github_archive() {
+  local dest="$1" url="$2" tmp tarball top
+  reuse_fetchcontent_src "${dest}" && return 0
+  mkdir -p "$(dirname "${dest}")"
+  tmp="$(mktemp -d "${TMPDIR:-/tmp}/bennugd-fetch.XXXXXX")"
+  tarball="${tmp}/src.tgz"
+  echo "prefetch: ${url}"
+  curl -fsSL --retry 12 --retry-all-errors --retry-delay 5 -o "${tarball}" "${url}"
+  tar -xzf "${tarball}" -C "${tmp}"
+  top="$(find "${tmp}" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+  rm -rf "${dest}"
+  mv "${top}" "${dest}"
+  rm -rf "${tmp}"
 }
 
 if [[ "${PLATFORM}" == "wasm" ]]; then
@@ -490,6 +539,80 @@ if [[ "${PLATFORM}" == "dreamcast" ]]; then
       cp "${ISODIR}/"* "${STAGE}/" 2>/dev/null || true
       test -s "${STAGE}/bennugd64.cdi"
       test -s "${STAGE}/bgdi.elf"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "pandora" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: pandora-host + pandora-arm"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-pandora-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-pandora-arm/_deps"
+  mkdir -p "${ROOT}/build-pandora-arm/_deps"
+  prefetch_github_archive "${ROOT}/build-pandora-arm/_deps/libpng-src" \
+    "https://github.com/pnggroup/libpng/archive/refs/tags/v${LIBPNG_VERSION:-1.6.47}.tar.gz"
+  prefetch_github_archive "${ROOT}/build-pandora-arm/_deps/sdl3-src" \
+    "https://github.com/libsdl-org/SDL/archive/refs/tags/${SDL3_REF:-release-3.4.14}.tar.gz"
+  prefetch_github_archive "${ROOT}/build-pandora-arm/_deps/sdl3_mixer-src" \
+    "https://github.com/libsdl-org/SDL_mixer/archive/refs/tags/${SDL3_MIXER_REF:-release-3.2.4}.tar.gz"
+  docker run --platform linux/amd64 --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -x /opt/openpandora/bin/arm-angstrom-linux-gnueabi-gcc
+      HOST_BUILD=/src/build-pandora-host
+      PND_BUILD=/src/build-pandora-arm
+      PNDDIR=/src/build-pandora-pnd
+      STAGE=/src/dist/pandora-arm-static
+      FETCH_DIR="${HOST_BUILD}/_deps"
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset pandora-host "${COMMON[@]}"
+      cmake --build --preset pandora-host
+      for prg in /src/web/demo/*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      cmake --preset pandora-arm \
+        "${COMMON[@]}" \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src" \
+        -DFETCHCONTENT_SOURCE_DIR_LIBPNG="${PND_BUILD}/_deps/libpng-src" \
+        -DFETCHCONTENT_SOURCE_DIR_SDL3="${PND_BUILD}/_deps/sdl3-src" \
+        -DFETCHCONTENT_SOURCE_DIR_SDL3_MIXER="${PND_BUILD}/_deps/sdl3_mixer-src"
+      cmake --build --preset pandora-arm
+      BGDI="${PND_BUILD}/core/bgdi/src/bgdi"
+      test -s "${BGDI}"
+      rm -rf "${PNDDIR}"
+      mkdir -p "${PNDDIR}" "${STAGE}"
+      cp "${BGDI}" "${PNDDIR}/bgdi"
+      chmod +x "${PNDDIR}/bgdi"
+      cp /src/web/demo/*.dcb "${PNDDIR}/"
+      cp /src/web/demo/hello.dcb "${PNDDIR}/main.dcb"
+      cp /src/pandora/PXML.xml "${PNDDIR}/PXML.xml"
+      PND="${STAGE}/bennugd64.pnd"
+      mksquashfs "${PNDDIR}" "${PND}" -all-root -noappend -no-xattrs
+      cmake --install "${PND_BUILD}" --prefix "${STAGE}"
+      cp "${BGDI}" "${STAGE}/bgdi"
+      cp "${PNDDIR}/"* "${STAGE}/" 2>/dev/null || true
+      test -s "${STAGE}/bennugd64.pnd"
+      test -s "${STAGE}/bgdi"
     '
   exit 0
 fi

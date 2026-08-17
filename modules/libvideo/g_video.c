@@ -391,6 +391,12 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
      * the game size so present is a 1:1 blit, not a software scale on SH4. */
     window_flags |= SDL_WINDOW_FULLSCREEN;
 #endif
+#ifdef TARGET_PANDORA
+    /* 800x480 LCD. Keep the game framebuffer and present it scaled. */
+    width = 800;
+    height = 480;
+    window_flags |= SDL_WINDOW_FULLSCREEN;
+#endif
 
     if ( !window )
     {
@@ -510,6 +516,9 @@ int gr_set_mode( int width, int height, int depth )
     full_screen = 1;
 #endif
 #ifdef _arch_dreamcast
+    full_screen = 1;
+#endif
+#ifdef TARGET_PANDORA
     full_screen = 1;
 #endif
 
@@ -866,7 +875,6 @@ void __bgdexport( libvideo, module_initialize )()
     SDL_SetHint( SDL_HINT_RENDER_DRIVER, "opengles2" );
 #endif
 #ifdef _arch_dreamcast
-    /* GPF defaults to OpenGL. Bennu presents a software framebuffer. */
     SDL_SetHint( SDL_HINT_DC_VIDEO_MODE, "SDL_DC_DIRECT_VIDEO" );
     /* CreateWindowFramebuffer only allocates a backbuffer when this hint is
      * set; UpdateWindowFramebuffer still defaults it to true. Unset, the first
@@ -875,6 +883,10 @@ void __bgdexport( libvideo, module_initialize )()
     SDL_SetHint( SDL_HINT_VIDEO_DOUBLE_BUFFER, "1" );
     SDL_DC_ShowAskHz( false );
     SDL_DC_Default60Hz( true );
+#endif
+#ifdef TARGET_PANDORA
+    SDL_SetHint( SDL_HINT_RENDER_DRIVER, "software" );
+    SDL_SetHint( SDL_HINT_VIDEO_DRIVER, "x11" );
 #endif
 
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );

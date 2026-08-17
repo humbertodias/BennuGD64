@@ -67,3 +67,6 @@ local.properties
 
 # Sega Dreamcast homebrew
 *.cdi
+
+# OpenPandora homebrew
+*.pnd

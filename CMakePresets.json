@@ -127,6 +127,26 @@
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
       }
+    },
+    {
+      "name": "pandora-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile Pandora demo DCBs",
+      "binaryDir": "${sourceDir}/build-pandora-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "pandora-arm",
+      "inherits": "base",
+      "displayName": "OpenPandora interpreter (bgdi)",
+      "binaryDir": "${sourceDir}/build-pandora-arm",
+      "toolchainFile": "${sourceDir}/cmake/openpandora.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -141,7 +161,9 @@
     { "name": "switch-host", "configurePreset": "switch-host", "targets": ["bgdc"] },
     { "name": "switch-aarch64", "configurePreset": "switch-aarch64", "targets": ["bgdi"] },
     { "name": "dreamcast-host", "configurePreset": "dreamcast-host", "targets": ["bgdc"] },
-    { "name": "dreamcast-sh4", "configurePreset": "dreamcast-sh4", "targets": ["bgdi"] }
+    { "name": "dreamcast-sh4", "configurePreset": "dreamcast-sh4", "targets": ["bgdi"] },
+    { "name": "pandora-host", "configurePreset": "pandora-host", "targets": ["bgdc"] },
+    { "name": "pandora-arm", "configurePreset": "pandora-arm", "targets": ["bgdi"] }
   ],
   "testPresets": [
     {

@@ -23,6 +23,18 @@ if (CMAKE_C_COMPILER_ID STREQUAL "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
     -Wno-error=incompatible-pointer-types
     -Wno-error=int-conversion
   )
+endif ()
+if (CMAKE_C_COMPILER_ID STREQUAL "GNU")
+  add_compile_options(
+    -Wno-error=pointer-to-int-cast
+    -Wno-error=int-to-pointer-cast
+  )
+elseif (CMAKE_C_COMPILER_ID MATCHES "Clang")
+  add_compile_options(
+    -Wno-error=void-pointer-to-int-cast
+    -Wno-error=int-to-void-pointer-cast
+    -Wno-error=pointer-to-int-cast
+  )
 elseif (MSVC)
   add_compile_options(/utf-8)
 endif()

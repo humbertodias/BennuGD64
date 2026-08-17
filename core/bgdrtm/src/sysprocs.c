@@ -455,7 +455,7 @@ void sysproc_init()
 
         if ( !library )
         {
-            printf( dliberror() ) ;
+            printf( "%s", dliberror() ) ;
             exit( 0 );
         }
 

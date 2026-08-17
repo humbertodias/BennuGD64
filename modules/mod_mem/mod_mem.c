@@ -59,6 +59,12 @@
 #define KERNELC_V_3 16
 #endif
 
+/* ANDROID INCLUDES */
+#ifdef TARGET_ANDROID
+#include <linux/sysinfo.h>
+#include <sys/sysinfo.h>
+#endif
+
 /* Mac OS X INCLUDES */
 #ifdef TARGET_MAC
 #include <unistd.h>
@@ -134,6 +140,11 @@ static int modmem_memory_free( INSTANCE * my, intptr_t * params )
     get_system_info( &info );
     return B_PAGE_SIZE * ( info.max_pages - info.used_pages );
 
+#elif defined(TARGET_ANDROID)
+    struct sysinfo meminf;
+    if ( sysinfo( &meminf ) == -1 ) return -1;
+    return ( int )( meminf.freeram * meminf.mem_unit );
+
 #elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN)
     /* Linux and other Unix (?) */
     struct sysinfo meminf;
@@ -171,6 +182,11 @@ static int modmem_memory_total( INSTANCE * my, intptr_t * params )
     system_info info;
     get_system_info( &info );
     return  B_PAGE_SIZE * ( info.max_pages );
+
+#elif defined(TARGET_ANDROID)
+    struct sysinfo meminf;
+    if ( sysinfo( &meminf ) == -1 ) return -1;
+    return ( int )( meminf.totalram * meminf.mem_unit );
 
 #elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN)
     /* Linux and other Unix (?) */

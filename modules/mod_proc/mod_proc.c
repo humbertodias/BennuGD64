@@ -110,8 +110,7 @@ static int modproc_exit_0( INSTANCE * my, intptr_t * params )
 
 static int modproc_exit_1( INSTANCE * my, intptr_t * params )
 {
-    printf( string_get( params[0] ) );
-    printf( "\n" );
+    printf( "%s\n", string_get( params[0] ) );
     fflush( stdout );
     string_discard( params[0] );
 
@@ -127,8 +126,7 @@ static int modproc_exit( INSTANCE * my, intptr_t * params )
 {
     _modproc_kill_all();
 
-    printf( string_get( params[0] ) );
-    printf( "\n" );
+    printf( "%s\n", string_get( params[0] ) );
     fflush( stdout );
     string_discard( params[0] );
 

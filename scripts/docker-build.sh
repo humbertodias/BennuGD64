@@ -61,7 +61,7 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
       --build-arg ANDROID_NDK_VERSION="${ANDROID_NDK_VERSION:-27.0.12077973}" \
       --build-arg ANDROID_CMDLINE_TOOLS="${ANDROID_CMDLINE_TOOLS:-11076708}" \
       --build-arg ANDROID_COMPILE_SDK="${ANDROID_COMPILE_SDK:-34}" \
-      --build-arg ANDROID_BUILD_TOOLS="${ANDROID_BUILD_TOOLS:-34.0.0}" \
+      --build-arg ANDROID_BUILD_TOOLS="${ANDROID_BUILD_TOOLS:-35.0.0}" \
       --build-arg GRADLE_VERSION="${GRADLE_VERSION:-8.12}" \
       -t bennugd64-android \
       -f docker/Dockerfile.android \
@@ -239,8 +239,20 @@ if [[ "${PLATFORM}" == "android" ]]; then
       cp -a "${JAVA_SRC}" "${APK_WORK}/app/src/main/"
       mkdir -p "${JNI}"
       copy_jni() {
-        local name="$1" required="${2:-1}" search="${3:-${NDK_BUILD}}" f=""
-        f="$(find "${search}" \( -type f -o -type l \) -name "${name}" ! -path '*/CMakeFiles/*' | head -n 1 || true)"
+        local name="$1" required="${2:-1}" search="${3:-${NDK_BUILD}}" f="" cand
+        for cand in \
+          "${search}/${name}" \
+          "${search}/src/${name}" \
+          "${search}/lib/${name}"
+        do
+          if [[ -e "${cand}" ]]; then
+            f="${cand}"
+            break
+          fi
+        done
+        if [[ -z "${f}" ]]; then
+          f="$(find "${search}" \( -type f -o -type l \) -name "${name}" | grep -v /CMakeFiles/ | head -n 1 || true)"
+        fi
         if [[ -z "${f}" ]]; then
           if [[ "${required}" == "1" ]]; then
             echo "missing ${name} under ${search}" >&2
@@ -284,7 +296,7 @@ if [[ "${PLATFORM}" == "android" ]]; then
       cp /src/web/demo/hello.dcb "${APK_WORK}/app/src/main/assets/main.dcb"
       printf "sdk.dir=%s\n" "${ANDROID_HOME}" > "${APK_WORK}/local.properties"
       mkdir -p "${GRADLE_USER_HOME}" "${HOME}" "${ANDROID_USER_HOME:-/tmp/android}"
-      ( cd "${APK_WORK}" && gradle --no-daemon assembleDebug )
+      ( cd "${APK_WORK}" && gradle --no-daemon --no-watch-fs assembleDebug )
       APK="$(echo "${APK_WORK}"/app/build/outputs/apk/debug/*.apk)"
       test -s "${APK}"
       cmake --install "${NDK_BUILD}" --prefix "${STAGE}"

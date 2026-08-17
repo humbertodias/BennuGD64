@@ -172,15 +172,16 @@ EOF
 )
   fi
 
-  if grep -q "$marker_begin" "$profile" 2>/dev/null; then
-    # Replace existing managed block in-place.
+  if grep -qF "$marker_begin" "$profile" 2>/dev/null; then
+    # macOS awk rejects newlines in -v; strip the old block, then append.
     local tmp_profile
     tmp_profile="$(mktemp)"
-    awk -v begin="$marker_begin" -v end="$marker_end" -v block="$block" '
-      $0 == begin { skip=1; print block; next }
+    awk -v begin="$marker_begin" -v end="$marker_end" '
+      $0 == begin { skip=1; next }
       $0 == end { skip=0; next }
       !skip { print }
     ' "$profile" > "$tmp_profile"
+    printf '\n%s\n' "$block" >> "$tmp_profile"
     mv "$tmp_profile" "$profile"
   else
     printf '\n%s\n' "$block" >> "$profile"

@@ -12,16 +12,21 @@ set (BENNUGD_LIBPNG_VERSION "1.6.47" CACHE STRING "libpng version to fetch")
 set (BENNUGD_SDL3_REF "release-3.4.14" CACHE STRING "SDL3 git tag/branch to fetch")
 set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git" CACHE STRING "SDL3 git repository")
 set (BENNUGD_SDL3_SWITCH_REF "switch-sdl-3.4" CACHE STRING "devkitPro SDL3 Switch branch")
+set (BENNUGD_SDL3_DREAMCAST_REF "dreamcastSDL3" CACHE STRING "GPF SDL3 Dreamcast branch")
 set (BENNUGD_SDL3_MIXER_REF "release-3.2.4" CACHE STRING "SDL3_mixer git tag/branch to fetch")
 
 if (NINTENDO_SWITCH)
   set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/devkitPro/SDL.git")
   set (BENNUGD_SDL3_REF "${BENNUGD_SDL3_SWITCH_REF}")
 endif ()
+if (PLATFORM_DREAMCAST OR DREAMCAST)
+  set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/GPF/SDL.git")
+  set (BENNUGD_SDL3_REF "${BENNUGD_SDL3_DREAMCAST_REF}")
+endif ()
 
 # Static archives must be PIC so they can later link into .so/.dylib modules.
-# Switch homebrew uses -fPIE from the toolchain instead.
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH)
+# Switch/Dreamcast homebrew uses the toolchain PIE/KOS flags instead.
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST)
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -135,6 +140,14 @@ if (NINTENDO_SWITCH)
   # newlib has no iconv; static try_compile must not claim GNU libc extras.
   set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
 endif ()
+if (PLATFORM_DREAMCAST OR DREAMCAST)
+  set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+  set (SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
+endif ()
 FetchContent_Declare (
   sdl3
   GIT_REPOSITORY "${BENNUGD_SDL3_GIT_REPOSITORY}"
@@ -145,6 +158,21 @@ FetchContent_GetProperties (sdl3)
 if (NOT sdl3_POPULATED)
   FetchContent_Populate (sdl3)
   add_subdirectory (${sdl3_SOURCE_DIR} ${sdl3_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif ()
+
+if (PLATFORM_DREAMCAST OR DREAMCAST)
+  # GPF SDL tracks keys via key_states[]; KallistiOS 2.x uses matrix[].
+  set (_kbd "${sdl3_SOURCE_DIR}/src/video/dreamcast/SDL_dreamcastkeyboard.c")
+  if (EXISTS "${_kbd}")
+    file (READ "${_kbd}" _kbd_txt)
+    if (_kbd_txt MATCHES "key_states\\[i\\]\\.was_down")
+      string (REPLACE
+        "bool was_down = state->key_states[i].was_down;\n        bool is_down = state->key_states[i].is_down;"
+        "bool is_down = (state->matrix[i] == KEY_STATE_PRESSED);"
+        _kbd_txt "${_kbd_txt}")
+      file (WRITE "${_kbd}" "${_kbd_txt}")
+    endif ()
+  endif ()
 endif ()
 
 if (EXISTS "${sdl3_BINARY_DIR}/SDL3Config.cmake")
@@ -189,6 +217,17 @@ if (NOT NO_SOUND)
         string (REPLACE
           "#define STB_FORCEINLINE SDL_FORCE_INLINE"
           "#define STB_FORCEINLINE static SDL_FORCE_INLINE"
+          _stb_txt "${_stb_txt}")
+        file (WRITE "${_stb}" "${_stb_txt}")
+      endif ()
+    endif ()
+    if (PLATFORM_DREAMCAST OR DREAMCAST)
+      set (_stb "${sdl3_mixer_SOURCE_DIR}/src/decoder_stb_vorbis.c")
+      if (EXISTS "${_stb}")
+        file (READ "${_stb}" _stb_txt)
+        string (REPLACE
+          "typedef Uint8 uint8;\ntypedef Sint8 int8;\ntypedef Uint16 uint16;\ntypedef Sint16 int16;\ntypedef Uint32 uint32;\ntypedef Sint32 int32;\n"
+          "/* KallistiOS already typedefs int8/uint8/... in arch/types.h */\n"
           _stb_txt "${_stb_txt}")
         file (WRITE "${_stb}" "${_stb_txt}")
       endif ()

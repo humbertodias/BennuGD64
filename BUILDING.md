@@ -1,8 +1,8 @@
 # Building BennuGD64
 
-## Docker (Linux, Windows, web, Android, and Switch)
+## Docker (Linux, Windows, web, Android, Switch, and Dreamcast)
 
-No local compiler, CMake, MinGW, Emscripten, Android SDK, or devkitPro. Only [Docker](https://docs.docker.com/get-docker/).
+No local compiler, CMake, MinGW, Emscripten, Android SDK, devkitPro, or KallistiOS. Only [Docker](https://www.docker.com/get-started/).
 
 ```shell
 bash scripts/docker-build.sh linux
@@ -10,6 +10,7 @@ bash scripts/docker-build.sh linux shared
 bash scripts/docker-build.sh wasm
 bash scripts/docker-build.sh android
 bash scripts/docker-build.sh switch
+bash scripts/docker-build.sh dreamcast
 bash scripts/docker-build.sh windows
 bash scripts/docker-build.sh windows shared
 ```
@@ -20,17 +21,19 @@ bash scripts/docker-build.sh windows shared
 | `wasm` | `docker/Dockerfile.linux` (`--target wasm`) | `dist/web-wasm32-static/` |
 | `android` | `docker/Dockerfile.android` | `dist/android-arm64-static/` (`bennugd64.apk`) |
 | `switch` | `docker/Dockerfile.switch` | `dist/switch-aarch64-static/` (`bennugd64.nro`) |
+| `dreamcast` | `docker/Dockerfile.dreamcast` | `dist/dreamcast-sh4-static/` (`bennugd64.cdi`) |
 | `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
 
-The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). The wasm stage is `FROM linux` in `Dockerfile.linux` (Emscripten SDK on the native toolchain).
+The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). The wasm stage is `FROM linux` in `Dockerfile.linux` (Emscripten SDK on the native toolchain).
 
 ```shell
 bash scripts/docker-build.sh linux shell
 bash scripts/docker-build.sh android shell
 bash scripts/docker-build.sh switch shell
+bash scripts/docker-build.sh dreamcast shell
 ```
 
-Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, **Android (NDK)**, or **Switch (devkitA64)** in the config picker. The repo is mounted at `/src`, same as `docker-build.sh`.
+Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, **Android (NDK)**, **Switch (devkitA64)**, or **Dreamcast (KallistiOS)** in the config picker. The repo is mounted at `/src`, same as `docker-build.sh`.
 
 macOS binaries cannot be produced from Linux containers (Apple SDK). Use a Mac or the `macos-latest` GitHub Actions job.
 
@@ -57,6 +60,8 @@ MinGW-w64 on Windows). Presets in `CMakePresets.json`:
 | `android-arm64` | `build-android-arm64` | NDK `libmain.so` (needs `ANDROID_NDK`) |
 | `switch-host` | `build-switch-host` | Native `bgdc` for Switch demo DCBs |
 | `switch-aarch64` | `build-switch-aarch64` | libnx `bgdi.elf` (needs `DEVKITPRO`) |
+| `dreamcast-host` | `build-dreamcast-host` | Native `bgdc` for Dreamcast demo DCBs |
+| `dreamcast-sh4` | `build-dreamcast-sh4` | KallistiOS `bgdi.elf` (needs `KOS_BASE`) |
 
 Optional:
 
@@ -207,6 +212,20 @@ That configures native `bgdc` (`switch-host`), compiles `web/demo/*.prg`, cross-
 
 SDL3 comes from the [devkitPro SDL `switch-sdl-3.4`](https://github.com/devkitPro/SDL/tree/switch-sdl-3.4) branch (homebrew video/audio). Modules are linked into `bgdi.elf`.
 
+## Sega Dreamcast
+
+Needs Docker. `docker/Dockerfile.dreamcast` is a toolchain image built for **linux/amd64** (SH4 host tools are x86_64; on Apple Silicon Docker uses qemu). It does not clone this repo or bake Bennu into the image.
+
+The requested SDK image is [`nold360/kallistios-sdk`](https://hub.docker.com/r/nold360/kallistios-sdk). That Hub tag is Debian Stretch + `sh-elf` GCC 4.7.3 (2021) and cannot compile SDL3/C17, so the Dockerfile takes IP.BIN templates from it and the SH4 compiler, KallistiOS, CMake, and Ninja from [`kallistios/dc-kos-toolchain`](https://hub.docker.com/r/kallistios/dc-kos-toolchain) (GCC 14).
+
+```shell
+bash scripts/docker-build.sh dreamcast
+```
+
+That configures native `bgdc` (`dreamcast-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi.elf` with KallistiOS (`dreamcast-sh4`), and runs `mkdcdisc` to produce `dist/dreamcast-sh4-static/bennugd64.cdi`. The ISO ships `hello.dcb` as `main.dcb` (loaded from `/cd/`). Burn or emulate the `.cdi`, or send `bgdi.elf` with `dc-tool`. Extra files can go on the ISO next to `main.dcb`.
+
+SDL3 comes from the [GPF SDL `dreamcastSDL3`](https://github.com/GPF/SDL/tree/dreamcastSDL3) branch (KallistiOS video/audio). Modules are linked into `bgdi.elf`.
+
 ## Installer options
 
 The install scripts download the latest GitHub Release for your platform, unpack it to `$HOME/bennugd`, set `BENNUGD_HOME`, and prepend it to `PATH`.
@@ -226,6 +245,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 - Web (Emscripten) — `scripts/docker-build.sh wasm` (`Dockerfile.linux --target wasm`) → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
 - Android arm64 — `scripts/docker-build.sh android` (`Dockerfile.android`) → `bennugd64-<tag>-android-arm64-static.zip` (`bennugd64.apk`)
 - Nintendo Switch — `scripts/docker-build.sh switch` (`Dockerfile.switch`) → `bennugd64-<tag>-switch-aarch64-static.zip` (`bennugd64.nro`)
+- Sega Dreamcast — `scripts/docker-build.sh dreamcast` (`Dockerfile.dreamcast`) → `bennugd64-<tag>-dreamcast-sh4-static.zip` (`bennugd64.cdi`)
 - WASI — `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
 
-On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`; Switch zip for `switch-aarch64-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`; the Switch NRO links SDL3 statically from the devkitPro fork). OS graphics/audio libraries may still be required at runtime on native builds.
+On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`; Switch zip for `switch-aarch64-static`; Dreamcast zip for `dreamcast-sh4-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`; the Switch NRO links SDL3 statically from the devkitPro fork; the Dreamcast CDI links SDL3 statically from the GPF Dreamcast fork). OS graphics/audio libraries may still be required at runtime on native builds.

@@ -379,6 +379,13 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
         window_flags |= SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL;
     }
 #endif
+#ifdef _arch_dreamcast
+    /* GPF SDL Dreamcast video is 640x480 (DIRECT_VIDEO / DMA). Keep the game
+     * framebuffer at the requested size and present it scaled. */
+    width = 640;
+    height = 480;
+    window_flags |= SDL_WINDOW_FULLSCREEN;
+#endif
 
     if ( !window )
     {
@@ -495,6 +502,9 @@ int gr_set_mode( int width, int height, int depth )
     scale_mode = GLODWORD( libvideo, SCALE_MODE );
     full_screen |= GLODWORD( libvideo, FULL_SCREEN );
 #ifdef __SWITCH__
+    full_screen = 1;
+#endif
+#ifdef _arch_dreamcast
     full_screen = 1;
 #endif
 
@@ -849,6 +859,10 @@ void __bgdexport( libvideo, module_initialize )()
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
     SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
     SDL_SetHint( SDL_HINT_RENDER_DRIVER, "opengles2" );
+#endif
+#ifdef _arch_dreamcast
+    /* GPF SDL defaults to OpenGL video; Bennu presents a software framebuffer. */
+    SDL_SetHint( "SDL_DC_VIDEO_MODE", "SDL_DC_DIRECT_VIDEO" );
 #endif
 
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );

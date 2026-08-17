@@ -64,3 +64,6 @@ local.properties
 # Nintendo Switch homebrew
 *.nro
 *.nacp
+
+# Sega Dreamcast homebrew
+*.cdi

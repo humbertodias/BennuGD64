@@ -107,6 +107,26 @@
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
       }
+    },
+    {
+      "name": "dreamcast-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile Dreamcast demo DCBs",
+      "binaryDir": "${sourceDir}/build-dreamcast-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "dreamcast-sh4",
+      "inherits": "base",
+      "displayName": "Sega Dreamcast interpreter (bgdi.elf)",
+      "binaryDir": "${sourceDir}/build-dreamcast-sh4",
+      "toolchainFile": "${sourceDir}/cmake/dreamcast-kos.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -119,7 +139,9 @@
     { "name": "android-host", "configurePreset": "android-host", "targets": ["bgdc"] },
     { "name": "android-arm64", "configurePreset": "android-arm64", "targets": ["bgdi"] },
     { "name": "switch-host", "configurePreset": "switch-host", "targets": ["bgdc"] },
-    { "name": "switch-aarch64", "configurePreset": "switch-aarch64", "targets": ["bgdi"] }
+    { "name": "switch-aarch64", "configurePreset": "switch-aarch64", "targets": ["bgdi"] },
+    { "name": "dreamcast-host", "configurePreset": "dreamcast-host", "targets": ["bgdc"] },
+    { "name": "dreamcast-sh4", "configurePreset": "dreamcast-sh4", "targets": ["bgdi"] }
   ],
   "testPresets": [
     {

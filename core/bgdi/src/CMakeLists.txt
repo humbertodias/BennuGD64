@@ -60,6 +60,16 @@ if (NINTENDO_SWITCH)
   )
 endif ()
 
+if (PLATFORM_DREAMCAST OR DREAMCAST)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    m
+    pthread
+    GL
+  )
+endif ()
+
 if (EMSCRIPTEN)
   bennugd_emscripten_link (bgdi)
 endif ()

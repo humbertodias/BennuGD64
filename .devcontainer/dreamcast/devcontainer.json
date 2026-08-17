@@ -1,0 +1,27 @@
+{
+  "name": "BennuGD64 Dreamcast (KallistiOS)",
+  "build": {
+    "dockerfile": "../../docker/Dockerfile.dreamcast",
+    "context": "../../docker",
+    "options": ["--platform=linux/amd64"]
+  },
+  "runArgs": ["--platform=linux/amd64"],
+  "workspaceFolder": "/src",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
+  "remoteUser": "root",
+  "containerEnv": {
+    "KOS_BASE": "/opt/toolchains/dc/kos"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+      ]
+    },
+    "zed": {
+      "extensions": ["dockerfile", "make"]
+    }
+  }
+}

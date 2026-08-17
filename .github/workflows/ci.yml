@@ -370,6 +370,65 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  build-dreamcast:
+    name: dreamcast-sh4-static
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Load versions
+        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
+
+      - name: Cache FetchContent
+        uses: actions/cache@v4
+        with:
+          path: |
+            build-dreamcast-host/_deps/*-src
+            build-dreamcast-sh4/_deps/*-src
+          key: fetch-dreamcast-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.dreamcast') }}
+          restore-keys: |
+            fetch-dreamcast-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Dreamcast toolchain image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker
+          file: docker/Dockerfile.dreamcast
+          tags: bennugd64-dreamcast
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          cache-from: type=gha,scope=bennugd-dreamcast
+          cache-to: type=gha,mode=max,scope=bennugd-dreamcast
+
+      - name: Build
+        env:
+          SKIP_DOCKER_BUILD: "1"
+        run: bash scripts/docker-build.sh dreamcast
+
+      - name: Resolve version
+        id: meta
+        run: |
+          VERSION="$(tr -d '[:space:]' < build-dreamcast-sh4/generated/VERSION)"
+          [[ -n "$VERSION" ]] || VERSION="dev"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: bennugd64-${{ steps.meta.outputs.version }}-dreamcast-sh4-static
+          path: dist/dreamcast-sh4-static/
+          if-no-files-found: error
+          retention-days: 14
+
   build-wasi:
     name: wasi-wasm32-static
     runs-on: ubuntu-22.04
@@ -432,7 +491,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [build, build-macos, build-wasm, build-wasi, build-android, build-switch]
+    needs: [build, build-macos, build-wasm, build-wasi, build-android, build-switch, build-dreamcast]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -460,7 +519,7 @@ jobs:
             esac
             echo "Packaging $base"
             case "$base" in
-              *windows*|*wasm32*|*android*|*switch*)
+              *windows*|*wasm32*|*android*|*switch*|*dreamcast*)
                 (cd artifacts && zip -r "$GITHUB_WORKSPACE/release-assets/${base}.zip" "$base")
                 ;;
               *)
@@ -481,18 +540,19 @@ jobs:
           generate_release_notes: true
           files: release-assets/*
           body: |
-            Builds of `bgdc` and `bgdi` for Linux, Windows, macOS, WebAssembly, Android, and Nintendo Switch.
+            Builds of `bgdc` and `bgdi` for Linux, Windows, macOS, WebAssembly, Android, Nintendo Switch, and Sega Dreamcast.
 
-            Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared>.tar.gz` (`.zip` on Windows, wasm, Android, and Switch):
+            Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared>.tar.gz` (`.zip` on Windows, wasm, Android, Switch, and Dreamcast):
             - **static** — modules linked into `bgdi`
             - **shared** — modules as `.so`/`.dll`/`.dylib` under `modules/`
             - **web-wasm32-static** — browser interpreter (`index.html`, `bgdi.js`, `bgdi.wasm`, `bgdi.data`); serve the folder over HTTP
             - **wasi-wasm32-static** — WASI compiler (`bgdc.wasm`); run with `wasmtime --dir=. ./bgdc.wasm -- -o out.dcb in.prg`
             - **android-arm64-static** — debug APK (`bennugd64.apk`) plus `libmain.so` / `libSDL3.so`; install the APK (arm64-v8a, API 28+)
             - **switch-aarch64-static** — homebrew NRO (`bennugd64.nro`); copy to `sdmc:/switch/` or send with `nxlink`
+            - **dreamcast-sh4-static** — homebrew CDI (`bennugd64.cdi`); burn or emulate, or send `bgdi.elf` with `dc-tool`
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-            Linux, Windows, wasm, Android, and Switch CI images come from `docker/Dockerfile.linux` (`--target linux` / `--target wasm`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), and `docker/Dockerfile.switch` (devkitA64 / libnx).
+            Linux, Windows, wasm, Android, Switch, and Dreamcast CI images come from `docker/Dockerfile.linux` (`--target linux` / `--target wasm`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), and `docker/Dockerfile.dreamcast` (KallistiOS / nold360 IP.BIN templates).
             OS graphics/audio libraries may still be required at runtime.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

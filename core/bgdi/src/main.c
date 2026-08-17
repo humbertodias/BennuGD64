@@ -68,6 +68,14 @@
 #include <SDL3/SDL_main.h>
 #endif
 
+#ifdef _arch_dreamcast
+#include <kos.h>
+#define SDL_MAIN_HANDLED
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
+KOS_INIT_FLAGS(INIT_DEFAULT);
+#endif
+
 /* ---------------------------------------------------------------------- */
 
 static char * dcb_exts[] = { ".dcb", ".dat", ".bin", NULL };
@@ -191,6 +199,35 @@ int main( int argc, char *argv[] )
     }
 #endif
 
+#ifdef _arch_dreamcast
+    {
+        static const char * bundled[] = {
+            "/cd/main.dcb", "/cd/hello.dcb", "main.dcb", "hello.dcb", NULL
+        };
+        int k;
+        FILE * test;
+
+        SDL_SetMainReady();
+        chdir( "/cd" );
+        file_addp( "/cd/" );
+        file_addp( "/pc/" );
+        standalone = 1;
+        if ( argc < 2 )
+        {
+            for ( k = 0 ; bundled[k] ; k++ )
+            {
+                test = fopen( bundled[k], "rb" );
+                if ( test )
+                {
+                    fclose( test );
+                    filename = ( char * ) bundled[k];
+                    break;
+                }
+            }
+        }
+    }
+#endif
+
     /* get my executable name */
 
 #ifdef _WIN32
@@ -252,6 +289,8 @@ int main( int argc, char *argv[] )
 #elif defined(__ANDROID__)
     standalone = 1 ;
 #elif defined(__SWITCH__)
+    standalone = 1 ;
+#elif defined(_arch_dreamcast)
     standalone = 1 ;
 #else
     standalone = ( strncmpi( appexename, "bgdi", 4 ) == 0 ) ;

@@ -7,6 +7,7 @@
 #   bash scripts/docker-build.sh wasm
 #   bash scripts/docker-build.sh android
 #   bash scripts/docker-build.sh switch
+#   bash scripts/docker-build.sh dreamcast
 #   bash scripts/docker-build.sh linux shell
 set -euo pipefail
 
@@ -16,7 +17,8 @@ cd "${ROOT}"
 USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 wasm [shell]
        $0 android [shell]
-       $0 switch [shell]"
+       $0 switch [shell]
+       $0 dreamcast [shell]"
 
 if [[ -f "${ROOT}/versions.env" ]]; then
   set -a
@@ -38,7 +40,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch) ;;
+  linux|windows|wasm|android|switch|dreamcast) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -74,13 +76,19 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
       -t bennugd64-switch \
       -f docker/Dockerfile.switch \
       docker/
+  elif [[ "${PLATFORM}" == "dreamcast" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      -t bennugd64-dreamcast \
+      -f docker/Dockerfile.dreamcast \
+      docker/
   else
     docker build -t "${IMAGE}" -f "docker/Dockerfile.${PLATFORM}" docker/
   fi
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
-  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" ]]; then
+  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
       -w /src \
@@ -393,6 +401,94 @@ if [[ "${PLATFORM}" == "switch" ]]; then
       cmake --install "${NX_BUILD}" --prefix "${STAGE}"
       cp "${ELF}" "${STAGE}/bgdi.elf"
       test -s "${STAGE}/bennugd64.nro"
+      test -s "${STAGE}/bgdi.elf"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "dreamcast" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: dreamcast-host + dreamcast-sh4"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-dreamcast-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-dreamcast-sh4/_deps"
+  docker run --platform linux/amd64 --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_DREAMCAST_REF="${SDL3_DREAMCAST_REF:-dreamcastSDL3}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -n "${KOS_BASE:-}"
+      test -x "${KOS_BASE}/utils/build_wrappers/kos-cc" \
+        -o -x "${KOS_BASE}/utils/gnu_wrappers/kos-cc"
+      HOST_BUILD=/src/build-dreamcast-host
+      DC_BUILD=/src/build-dreamcast-sh4
+      ISODIR=/src/build-dreamcast-iso
+      STAGE=/src/dist/dreamcast-sh4-static
+      FETCH_DIR="${HOST_BUILD}/_deps"
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_DREAMCAST_REF="${SDL3_DREAMCAST_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset dreamcast-host "${COMMON[@]}"
+      cmake --build --preset dreamcast-host
+      for prg in /src/web/demo/*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      cmake --preset dreamcast-sh4 \
+        "${COMMON[@]}" \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
+      cmake --build --preset dreamcast-sh4
+      ELF=""
+      for cand in \
+        "${DC_BUILD}/core/bgdi/src/bgdi.elf" \
+        "${DC_BUILD}/core/bgdi/src/bgdi"
+      do
+        if [[ -f "${cand}" ]]; then
+          ELF="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${ELF}" ]]; then
+        ELF="$(find "${DC_BUILD}/core/bgdi" \( -type f -o -type l \) \( -name bgdi.elf -o -name bgdi \) | grep -v /CMakeFiles/ | head -n 1 || true)"
+      fi
+      test -n "${ELF}"
+      test -s "${ELF}"
+      rm -rf "${ISODIR}"
+      mkdir -p "${ISODIR}" "${STAGE}"
+      cp /src/web/demo/*.dcb "${ISODIR}/"
+      cp /src/web/demo/hello.dcb "${ISODIR}/main.dcb"
+      CDI="${STAGE}/bennugd64.cdi"
+      MKDCDISC="$(command -v mkdcdisc || true)"
+      if [[ -z "${MKDCDISC}" ]]; then
+        for cand in /opt/toolchains/dc/bin/mkdcdisc /usr/bin/mkdcdisc; do
+          if [[ -x "${cand}" ]]; then
+            MKDCDISC="${cand}"
+            break
+          fi
+        done
+      fi
+      test -n "${MKDCDISC}"
+      "${MKDCDISC}" -n "BennuGD64" -a "BennuGD64" -N -e "${ELF}" -D "${ISODIR}" -o "${CDI}"
+      cmake --install "${DC_BUILD}" --prefix "${STAGE}"
+      cp "${ELF}" "${STAGE}/bgdi.elf"
+      cp "${ISODIR}/"* "${STAGE}/" 2>/dev/null || true
+      test -s "${STAGE}/bennugd64.cdi"
       test -s "${STAGE}/bgdi.elf"
     '
   exit 0

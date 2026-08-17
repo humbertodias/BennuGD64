@@ -12,6 +12,7 @@ endif
 
 .PHONY: all static shared wasm wasi docker-linux docker-linux-shared \
 	docker-windows docker-windows-shared docker-android docker-switch \
+	docker-dreamcast \
 	wasi/run wasm/server install/wasmtime clean format
 
 all: static
@@ -54,6 +55,9 @@ docker-android:
 
 docker-switch:
 	bash scripts/docker-build.sh switch
+
+docker-dreamcast:
+	bash scripts/docker-build.sh dreamcast
 
 wasi/run:
 	wasmtime --dir=. dist/wasi-wasm32-static/bgdc.wasm -- -o web/demo/hello.dcb web/demo/hello.prg

@@ -42,7 +42,9 @@
 #else
 #include <unistd.h>
 #ifndef TARGET_SWITCH
+#ifndef TARGET_DC
 #include <sys/utsname.h>
+#endif
 #endif
 /* BeOS INCLUDES */
 #ifdef TARGET_BEOS

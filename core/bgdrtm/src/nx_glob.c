@@ -1,15 +1,46 @@
 /*
- * Minimal glob(3) for libnx/newlib (headers exist, libc does not).
- * Enough for dirs.c: GLOB_ERR | GLOB_NOSORT, fnmatch on the last path component.
+ * Minimal glob(3) for newlib (Switch libnx / Dreamcast KallistiOS): headers
+ * exist, libc does not. Enough for dirs.c: GLOB_ERR | GLOB_NOSORT, fnmatch
+ * on the last path component.
  */
 
 #include <dirent.h>
 #include <errno.h>
-#include <fnmatch.h>
 #include <glob.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#ifndef GLOB_ABEND
+#ifdef GLOB_ABORTED
+#define GLOB_ABEND GLOB_ABORTED
+#else
+#define GLOB_ABEND 2
+#endif
+#endif
+
+/* newlib on some KOS/libnx trees has fnmatch.h but no fnmatch(). */
+static int nx_fnmatch( const char * pat, const char * str )
+{
+    for ( ; ; pat++, str++ )
+    {
+        if ( *pat == '*' )
+        {
+            while ( *pat == '*' ) pat++;
+            if ( !*pat ) return 0;
+            for ( ; *str ; str++ )
+                if ( nx_fnmatch( pat, str ) == 0 ) return 0;
+            return 1;
+        }
+        if ( *pat == '?' )
+        {
+            if ( !*str ) return 1;
+            continue;
+        }
+        if ( *pat != *str ) return 1;
+        if ( !*pat ) return 0;
+    }
+}
 
 int glob( const char * pattern, int flags, int ( * errfunc )( const char * epath, int eerrno ), glob_t * pglob )
 {
@@ -74,7 +105,7 @@ int glob( const char * pattern, int flags, int ( * errfunc )( const char * epath
         size_t n;
         if ( ent->d_name[0] == '.' && ( ent->d_name[1] == '\0' || ( ent->d_name[1] == '.' && ent->d_name[2] == '\0' ) ) )
             continue;
-        if ( fnmatch( pat, ent->d_name, 0 ) != 0 ) continue;
+        if ( nx_fnmatch( pat, ent->d_name ) != 0 ) continue;
         n = strlen( dir ) + strlen( ent->d_name ) + 1;
         full = malloc( n );
         if ( !full )

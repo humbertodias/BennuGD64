@@ -35,7 +35,7 @@
 
 #ifndef WIN32
 #include <unistd.h>
-#if !defined(__EMSCRIPTEN__) && !defined(__SWITCH__)
+#if !defined(__EMSCRIPTEN__) && !defined(__SWITCH__) && !defined(_arch_dreamcast)
 #include <sys/wait.h>
 #endif
 #else
@@ -55,7 +55,7 @@ static int modsys_exec( INSTANCE * my, intptr_t * params )
     int argc = params[2];
     char ** argv;
     int n = 0;
-#if !defined(WIN32) && !defined(__EMSCRIPTEN__) && !defined(__SWITCH__)
+#if !defined(WIN32) && !defined(__EMSCRIPTEN__) && !defined(__SWITCH__) && !defined(_arch_dreamcast)
     pid_t child;
 #endif
     int status = -1;
@@ -72,6 +72,10 @@ static int modsys_exec( INSTANCE * my, intptr_t * params )
     ( void ) argc;
     status = -1;
 #elif defined(__SWITCH__)
+    ( void ) mode;
+    ( void ) argc;
+    status = -1;
+#elif defined(_arch_dreamcast)
     ( void ) mode;
     ( void ) argc;
     status = -1;

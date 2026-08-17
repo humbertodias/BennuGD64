@@ -65,6 +65,11 @@
 #include <sys/sysinfo.h>
 #endif
 
+/* PANDORA INCLUDES */
+#ifdef TARGET_PANDORA
+#include <sys/sysinfo.h>
+#endif
+
 /* Mac OS X INCLUDES */
 #ifdef TARGET_MAC
 #include <unistd.h>
@@ -140,12 +145,12 @@ static int modmem_memory_free( INSTANCE * my, intptr_t * params )
     get_system_info( &info );
     return B_PAGE_SIZE * ( info.max_pages - info.used_pages );
 
-#elif defined(TARGET_ANDROID)
+#elif defined(TARGET_ANDROID) || defined(TARGET_PANDORA)
     struct sysinfo meminf;
     if ( sysinfo( &meminf ) == -1 ) return -1;
     return ( int )( meminf.freeram * meminf.mem_unit );
 
-#elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN) && !defined(TARGET_SWITCH) && !defined(TARGET_DC)
+#elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN) && !defined(TARGET_SWITCH) && !defined(TARGET_DC) && !defined(TARGET_PANDORA)
     /* Linux and other Unix (?) */
     struct sysinfo meminf;
     int fv;
@@ -183,12 +188,12 @@ static int modmem_memory_total( INSTANCE * my, intptr_t * params )
     get_system_info( &info );
     return  B_PAGE_SIZE * ( info.max_pages );
 
-#elif defined(TARGET_ANDROID)
+#elif defined(TARGET_ANDROID) || defined(TARGET_PANDORA)
     struct sysinfo meminf;
     if ( sysinfo( &meminf ) == -1 ) return -1;
     return ( int )( meminf.totalram * meminf.mem_unit );
 
-#elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN) && !defined(TARGET_SWITCH) && !defined(TARGET_DC)
+#elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN) && !defined(TARGET_SWITCH) && !defined(TARGET_DC) && !defined(TARGET_PANDORA)
     /* Linux and other Unix (?) */
     struct sysinfo meminf;
     int fv;

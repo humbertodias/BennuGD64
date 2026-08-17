@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PXML xmlns="http://openpandora.org/namespaces/PXML">
+  <package id="bennugd64">
+    <version major="1" minor="0" release="0" build="0"/>
+    <author name="BennuGD64" website="https://github.com/humbertodias/BennuGD64"/>
+    <title lang="en_US">BennuGD64</title>
+  </package>
+  <application id="bennugd64" appdata="bennugd64">
+    <exec command="./bgdi"/>
+    <title lang="en_US">BennuGD64</title>
+    <description lang="en_US">BennuGD64 interpreter. Put a game DCB next to bgdi as main.dcb.</description>
+    <clockspeed frequency="600"/>
+  </application>
+</PXML>

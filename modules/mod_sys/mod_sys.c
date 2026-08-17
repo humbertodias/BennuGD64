@@ -147,6 +147,8 @@ static const char * modsys_running_os_name( void )
     return "Web";
 #elif defined(TARGET_DC)
     return "Dreamcast";
+#elif defined(TARGET_PANDORA)
+    return "Pandora";
 #elif defined(TARGET_SWITCH)
     return "Switch";
 #elif defined(TARGET_ANDROID)

@@ -1,0 +1,28 @@
+{
+  "name": "BennuGD64 OpenPandora (Ångström)",
+  "build": {
+    "dockerfile": "../../docker/Dockerfile.pandora",
+    "context": "../../docker",
+    "options": ["--platform=linux/amd64"]
+  },
+  "runArgs": ["--platform=linux/amd64"],
+  "workspaceFolder": "/src",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
+  "remoteUser": "root",
+  "containerEnv": {
+    "TOOLCHAIN": "/opt/openpandora",
+    "HOST": "arm-angstrom-linux-gnueabi"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+      ]
+    },
+    "zed": {
+      "extensions": ["dockerfile", "make"]
+    }
+  }
+}

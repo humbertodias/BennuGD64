@@ -31,6 +31,7 @@
 #include <time.h>
 
 #include "librender.h"
+#include "bgd_platform.h"
 
 #ifdef TARGET_PSP
 #include "g_frame_psp.h"
@@ -108,7 +109,7 @@ static int bennu_get_ticks_ms( void )
 #endif
 }
 
-#ifndef __EMSCRIPTEN__
+#ifndef BGD_NO_SDL_DELAY
 static void bennu_delay_ms( int delay )
 {
     if ( delay > 0 )
@@ -187,7 +188,7 @@ void gr_wait_frame()
                     if ( ta > te ) while ( bgdrtm_ptimer_get_ticks_us() > te );
                     while ( bgdrtm_ptimer_get_ticks_us() < te );
                 }
-#elif !defined(__EMSCRIPTEN__)
+#elif !defined(BGD_NO_SDL_DELAY)
                 bennu_delay_ms( delay ) ;
                 /* Reajust after delay */
                 frame_ticks = bennu_get_ticks_ms();

@@ -44,7 +44,7 @@
 #include "fmath.h"
 
 #ifdef TARGET_EMSCRIPTEN
-extern int libjoy_num( void );
+#include "misc_emscripten.h"
 #endif
 #ifdef TARGET_PSP
 #include "misc_psp.h"
@@ -276,8 +276,7 @@ void bgdrtm_entry( int argc, char * argv[] )
         GLODWORD( OS_ID ) = _OS_ID ;
 
 #ifdef TARGET_EMSCRIPTEN
-    /* SoRR: os_id 0 (Windows) → P1 keyboard; otherwise P1 is joy 0. */
-    GLODWORD( OS_ID ) = libjoy_num() > 0 ? OS_LINUX : OS_WIN32;
+    bgdrtm_emscripten_entry();
 #endif
 
 #ifdef TARGET_PSP

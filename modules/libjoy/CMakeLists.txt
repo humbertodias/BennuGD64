@@ -7,7 +7,11 @@ add_library (
   joy
   ${MODULES}
   libjoy.c
-) 
+)
+
+if (EMSCRIPTEN)
+  target_sources (joy PRIVATE libjoy_emscripten.c)
+endif () 
 
 target_link_libraries (
   joy

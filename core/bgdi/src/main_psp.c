@@ -76,9 +76,6 @@ static void psp_bootstrap_paths ( int argc, char * argv[] )
 
 char * bgdi_psp_startup( int argc, char * argv[], int * standalone )
 {
-    static const char * bundled[] = { "main.dcb", "hello.dcb", NULL };
-    int k;
-
     scePowerSetClockFrequency( 333, 333, 166 );
     psp_setup_callbacks();
     SDL_SetMainReady();
@@ -92,11 +89,8 @@ char * bgdi_psp_startup( int argc, char * argv[], int * standalone )
     if ( argc >= 2 )
         return NULL;
 
-    for ( k = 0 ; bundled[k] ; k++ )
-    {
-        if ( access( bundled[k], R_OK ) == 0 )
-            return ( char * ) bundled[k];
-    }
+    if ( access( "main.dcb", R_OK ) == 0 )
+        return "main.dcb";
 
     return NULL;
 }

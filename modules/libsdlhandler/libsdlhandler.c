@@ -29,16 +29,17 @@
 #include <SDL3/SDL.h>
 #include "sdl3_compat.h"
 
+#ifdef TARGET_EMSCRIPTEN
+#include "libsdlhandler_emscripten.h"
+#endif
+
 /* ----------------------------------------------------------------- */
 /* Public functions                                                  */
 
 static void  dump_new_events( void )
 {
-#ifdef __EMSCRIPTEN__
-    /* Do not drain the queue first. Emscripten pushes KEYUP into SDL from
-     * the browser callback; discarding it left keys stuck down so games
-     * that wait for Enter to be released (character select) froze. */
-    SDL_PumpEvents();
+#ifdef TARGET_EMSCRIPTEN
+    libsdlhandler_emscripten_pump();
 #else
     SDL_Event event;
     /* Remove all pendings events */

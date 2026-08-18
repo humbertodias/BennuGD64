@@ -23,6 +23,8 @@ sections:
     description: Doxygen API reference (generated from C sources on deploy)
     source: doxygen
     generator: doc/generate.sh
+    docker_image: bennugd64-doxygen
+    dockerfile: docker/Dockerfile.doxygen
     doxyfile: doc/Doxyfile
     output_dir: doc/html
     dest: /docs/

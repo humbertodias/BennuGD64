@@ -1,26 +1,32 @@
 #!/usr/bin/env bash
 # Generate Doxygen HTML under doc/html/ (see doc/pages.yml).
+# Prefers the bennugd64-doxygen Docker image; falls back to a local doxygen binary.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-DOC="$ROOT/doc"
-cd "$DOC"
+IMAGE="${BENNUGD_DOXYGEN_IMAGE:-bennugd64-doxygen}"
 
-if ! command -v doxygen >/dev/null 2>&1; then
-  echo "doxygen: not found (install doxygen and optionally graphviz)" >&2
+run_inner() {
+  bash "$ROOT/doc/generate-inner.sh"
+}
+
+if [[ "${USE_DOCKER:-}" != "1" ]] && command -v doxygen >/dev/null 2>&1; then
+  run_inner
+  exit 0
+fi
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Docker is required when doxygen is not installed (https://docs.docker.com/get-docker/)." >&2
+  echo "Or install doxygen locally, or set USE_DOCKER=0 to skip the container." >&2
   exit 1
 fi
 
-VERSION="dev"
-if command -v git >/dev/null 2>&1 && git -C "$ROOT" rev-parse --git-dir >/dev/null 2>&1; then
-  VERSION="$(git -C "$ROOT" describe --tags --always --dirty 2>/dev/null || echo dev)"
+if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
+  docker build -t "$IMAGE" -f "$ROOT/docker/Dockerfile.doxygen" "$ROOT/docker"
 fi
 
-cat > .doxygen-extra <<EOF
-PROJECT_NUMBER = ${VERSION}
-EOF
-
-doxygen Doxyfile
-
-test -f html/index.html
-echo "Doxygen output: doc/html/ (${VERSION})"
+docker run --rm \
+  -v "$ROOT:/src" \
+  -w /src/doc \
+  "$IMAGE" \
+  bash /src/doc/generate-inner.sh

@@ -196,11 +196,17 @@ Open `http://localhost:8080/`. Drop a `.dcb` plus assets (or a game folder) onto
 
 Pushes to `main` run CI, then `.github/workflows/pages.yml` publishes the `web-wasm32-static` artifact as the site root and Doxygen API docs under `/docs/` (see `doc/pages.yml`). In the repo set **Settings → Pages → Source** to **GitHub Actions**.
 
-Generate API docs locally:
+Generate API docs locally (Docker image `bennugd64-doxygen`, or local `doxygen` if installed):
 
 ```shell
 bash doc/generate.sh
 # open doc/html/index.html
+```
+
+Force the container (same image as GitHub Pages):
+
+```shell
+USE_DOCKER=1 bash doc/generate.sh
 ```
 
 ## Android

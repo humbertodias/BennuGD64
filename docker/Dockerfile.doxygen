@@ -1,0 +1,16 @@
+# Doxygen + Graphviz for API docs (doc/generate.sh, GitHub Pages).
+#   docker build -t bennugd64-doxygen -f docker/Dockerfile.doxygen docker/
+
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        doxygen \
+        git \
+        graphviz \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*'
+
+WORKDIR /src

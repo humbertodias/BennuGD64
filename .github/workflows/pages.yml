@@ -31,10 +31,19 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Doxygen
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y doxygen graphviz
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Doxygen image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker
+          file: docker/Dockerfile.doxygen
+          tags: bennugd64-doxygen
+          load: true
+          provenance: false
+          cache-from: type=gha,scope=bennugd-doxygen
+          cache-to: type=gha,mode=max,scope=bennugd-doxygen
 
       - name: Resolve CI run
         id: ci
@@ -61,6 +70,9 @@ jobs:
           path: dist/web-wasm32-static
 
       - name: Stage Pages site
+        env:
+          USE_DOCKER: "1"
+          SKIP_DOCKER_BUILD: "1"
         run: |
           set -euo pipefail
           bash doc/stage-site.sh dist/web-wasm32-static dist/pages

@@ -178,7 +178,7 @@ int dcb_load( const char * filename )
     file * fp ;
 
     /* check for existence of the DCB FILE */
-    if ( !file_exists( filename ) ) return 0 ;
+    if ( !filename || !file_exists( filename ) ) return 0 ;
 
     fp = file_open( filename, "rb0" ) ;
     if ( !fp )

@@ -22,7 +22,11 @@ add_library (
   scaler_normal.c
   scaler_scale2x.c
   scaler_scanline.c
-) 
+)
+
+if (PLATFORM_PSP OR PSP)
+  target_sources (render PRIVATE g_frame_psp.c)
+endif ()
 
 target_link_libraries (
   render

@@ -17,6 +17,10 @@ else ()
   )
 endif ()
 
+if (PLATFORM_PSP OR PSP)
+  target_sources (bgdi PRIVATE main_psp.c)
+endif ()
+
 add_dependencies ( bgdi bennugd_git_header )
 
 if (USE_LIBDES)

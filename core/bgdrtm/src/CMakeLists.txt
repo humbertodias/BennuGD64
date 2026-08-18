@@ -37,6 +37,10 @@ if (NINTENDO_SWITCH OR PLATFORM_DREAMCAST OR DREAMCAST)
   target_sources (bgdrtm PRIVATE nx_glob.c)
 endif ()
 
+if (PLATFORM_PSP OR PSP)
+  target_sources (bgdrtm PRIVATE misc_psp.c)
+endif ()
+
 if (USE_LIBDES)
   target_link_libraries (
     bgdrtm

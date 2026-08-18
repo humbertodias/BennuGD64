@@ -39,6 +39,10 @@
 #define __LIBKEY
 #include "libkey.h"
 
+#ifdef TARGET_PSP
+#include "libkey_psp.h"
+#endif
+
 /* ---------------------------------------------------------------------- */
 
 #include "libkey_exports.h"
@@ -461,11 +465,12 @@ void __bgdexport( libkey, module_initialize )()
 
     if ( !keystate ) keystate = SDL_GetKeyboardState( NULL );
 
-#if !defined(__EMSCRIPTEN__) && !defined(__PSP__)
+#ifdef TARGET_PSP
+    libkey_psp_after_init( window );
+#elif !defined(__EMSCRIPTEN__)
     /* A hidden text field on the web steals focus after Enter (menus) and
      * the next screen (character select) gets no keys. ascii comes from
-     * KEYDOWN, so text input is not needed.
-     * On PSP, StartTextInput opens the system OSK briefly at startup. */
+     * KEYDOWN, so text input is not needed. */
     if ( window ) SDL_StartTextInput( window );
 #endif
 }

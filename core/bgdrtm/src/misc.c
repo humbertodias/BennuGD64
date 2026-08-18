@@ -46,6 +46,9 @@
 #ifdef TARGET_EMSCRIPTEN
 extern int libjoy_num( void );
 #endif
+#ifdef TARGET_PSP
+#include "misc_psp.h"
+#endif
 
 #if defined(TARGET_GP2X_WIZ) || defined(TARGET_CAANOO)
     #include <sys/types.h>
@@ -277,9 +280,8 @@ void bgdrtm_entry( int argc, char * argv[] )
     GLODWORD( OS_ID ) = libjoy_num() > 0 ? OS_LINUX : OS_WIN32;
 #endif
 
-#if defined(TARGET_PSP)
-    /* SoRR: os_id 0 (Windows) → P1 keyboard; otherwise P1 is joy 0. */
-    GLODWORD( OS_ID ) = OS_LINUX;
+#ifdef TARGET_PSP
+    bgdrtm_psp_entry();
 #endif
 
 #if defined(TARGET_GP2X_WIZ) || defined(TARGET_CAANOO)

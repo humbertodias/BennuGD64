@@ -32,10 +32,11 @@
 #include "bgddl.h"
 #include "files.h"
 #include "xstrings.h"
+#include "bgd_platform.h"
 
 #ifndef WIN32
 #include <unistd.h>
-#if !defined(__EMSCRIPTEN__) && !defined(__SWITCH__) && !defined(_arch_dreamcast) && !defined(__PSP__)
+#ifndef BGD_NO_PROCESS_SPAWN
 #include <sys/wait.h>
 #endif
 #else
@@ -55,8 +56,10 @@ static int modsys_exec( INSTANCE * my, intptr_t * params )
     int argc = params[2];
     char ** argv;
     int n = 0;
-#if !defined(WIN32) && !defined(__EMSCRIPTEN__) && !defined(__SWITCH__) && !defined(_arch_dreamcast) && !defined(__PSP__)
+#ifndef WIN32
+#ifndef BGD_NO_PROCESS_SPAWN
     pid_t child;
+#endif
 #endif
     int status = -1;
 
@@ -67,19 +70,7 @@ static int modsys_exec( INSTANCE * my, intptr_t * params )
         argv[n + 1] = ( char * ) string_get((( int * )( params[3] ) )[n] );
 
     // Execute program
-#ifdef __EMSCRIPTEN__
-    ( void ) mode;
-    ( void ) argc;
-    status = -1;
-#elif defined(__SWITCH__)
-    ( void ) mode;
-    ( void ) argc;
-    status = -1;
-#elif defined(_arch_dreamcast)
-    ( void ) mode;
-    ( void ) argc;
-    status = -1;
-#elif defined(__PSP__)
+#ifdef BGD_NO_PROCESS_SPAWN
     ( void ) mode;
     ( void ) argc;
     status = -1;

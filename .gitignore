@@ -55,6 +55,15 @@ Makefile
 # Generated demo bytecode for the wasm spike
 /web/demo/*.dcb
 
+# Doxygen (doc/generate.sh)
+/doc/.doxygen-extra
+/doc/html/
+/doc/doc/
+/doc/latex/
+/doc/xml/
+/doc/man/
+/doc/rtf/
+
 # Android / Gradle
 .gradle/
 local.properties

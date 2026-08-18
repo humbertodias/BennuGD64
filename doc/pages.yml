@@ -1,0 +1,28 @@
+# GitHub Pages site layout for BennuGD64.
+# Consumed by doc/stage-site.sh and .github/workflows/pages.yml.
+
+site:
+  nojekyll: true
+
+sections:
+  demo:
+    description: WebAssembly browser interpreter (CI artifact)
+    source: ci-artifact
+    artifact_pattern: "*-web-wasm32-static"
+    dest: /
+    files:
+      - index.html
+      - bgdi.js
+      - bgdi.wasm
+      - bgdi.data
+    optional_files:
+      - bgdi.wasm.map
+      - bgdi.js.map
+
+  api:
+    description: Doxygen API reference (generated from C sources on deploy)
+    source: doxygen
+    generator: doc/generate.sh
+    doxyfile: doc/Doxyfile
+    output_dir: doc/html
+    dest: /docs/

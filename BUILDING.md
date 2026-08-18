@@ -194,7 +194,14 @@ python3 -m http.server 8080 --directory dist/web-wasm32-static
 
 Open `http://localhost:8080/`. Drop a `.dcb` plus assets (or a game folder) onto the page to run it. Every `web/demo/*.dcb` is preloaded and listed as a bundled demo. Asyncify lets `SDL_Delay` yield to the browser.
 
-Pushes to `main` run CI, then `.github/workflows/pages.yml` publishes the `web-wasm32-static` artifact as `index.html`. In the repo set **Settings → Pages → Source** to **GitHub Actions**.
+Pushes to `main` run CI, then `.github/workflows/pages.yml` publishes the `web-wasm32-static` artifact as the site root and Doxygen API docs under `/docs/` (see `doc/pages.yml`). In the repo set **Settings → Pages → Source** to **GitHub Actions**.
+
+Generate API docs locally:
+
+```shell
+bash doc/generate.sh
+# open doc/html/index.html
+```
 
 ## Android
 

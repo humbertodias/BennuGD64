@@ -26,6 +26,16 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen graphviz
+
       - name: Resolve CI run
         id: ci
         env:
@@ -53,19 +63,7 @@ jobs:
       - name: Stage Pages site
         run: |
           set -euo pipefail
-          SRC=dist/web-wasm32-static
-          DST=dist/pages
-          mkdir -p "$DST"
-          cp "$SRC/index.html" "$DST/"
-          cp "$SRC/bgdi.js" "$SRC/bgdi.wasm" "$SRC/bgdi.data" "$DST/"
-          cp "$SRC/bgdi.wasm.map" "$DST/" 2>/dev/null || true
-          cp "$SRC/bgdi.js.map" "$DST/" 2>/dev/null || true
-          touch "$DST/.nojekyll"
-          ls -lah "$DST"
-          test -s "$DST/index.html"
-          test -s "$DST/bgdi.js"
-          test -s "$DST/bgdi.wasm"
-          test -s "$DST/bgdi.data"
+          bash doc/stage-site.sh dist/web-wasm32-static dist/pages
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

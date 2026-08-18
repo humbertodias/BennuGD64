@@ -56,11 +56,8 @@
 #ifdef TARGET_EMSCRIPTEN
 #include "g_video_emscripten.h"
 #endif
-
-#ifdef _WIN32
-#include <windows.h>
-#include <initguid.h>
-#include <ddraw.h>
+#ifdef TARGET_WIN32
+#include "g_video_win32.h"
 #endif
 
 /* --------------------------------------------------------------------------- */
@@ -135,56 +132,10 @@ DLVARFIXUP __bgdexport( libvideo, globals_fixup )[] =
 
 /* --------------------------------------------------------------------------- */
 
-#ifdef _WIN32
-/* Based allegro */
-
-LPDIRECTDRAW2 directdraw = NULL;
-DDCAPS ddcaps;
-
-HRESULT ( WINAPI * _DirectDrawCreate )( GUID FAR *lpGUID, LPDIRECTDRAW FAR *lplpDD, IUnknown FAR *pUnkOuter );
-
-/* --------------------------------------------------------------------------- */
-
-int init_dx( void )
-{
-    HINSTANCE handle;
-    LPDIRECTDRAW directdraw1;
-    HRESULT hr;
-    LPVOID temp;
-
-    handle = LoadLibrary( "DDRAW.DLL" );
-    if ( handle == NULL ) return -1;
-
-    _DirectDrawCreate = ( HRESULT ( WINAPI * )( GUID FAR *, LPDIRECTDRAW FAR *, IUnknown FAR * ) )
-                        GetProcAddress( handle, "DirectDrawCreate" );
-    if ( !_DirectDrawCreate ) return -1;
-
-    hr = _DirectDrawCreate( NULL, &directdraw1, NULL );
-    if ( FAILED( hr ) ) return -1;
-
-    hr = IDirectDraw_QueryInterface( directdraw1, &IID_IDirectDraw2, &directdraw );
-    if ( FAILED( hr ) ) return -1;
-
-    IDirectDraw_Release( directdraw1 );
-
-    hr = IDirectDraw2_SetCooperativeLevel( directdraw, NULL, DDSCL_NORMAL );
-    if ( FAILED( hr ) ) return -1;
-
-    /* get capabilities */
-    ddcaps.dwSize = sizeof( ddcaps );
-    hr = IDirectDraw2_GetCaps( directdraw, &ddcaps, NULL );
-    if ( FAILED( hr ) ) return -1;
-
-    return 0;
-}
-#endif
-
-/* --------------------------------------------------------------------------- */
-
 void gr_wait_vsync()
 {
-#ifdef _WIN32
-    if ( directdraw ) IDirectDraw2_WaitForVerticalBlank( directdraw, DDWAITVB_BLOCKBEGIN, NULL );
+#ifdef TARGET_WIN32
+    gr_video_win32_wait_vsync();
 #endif
 }
 
@@ -890,8 +841,8 @@ void __bgdexport( libvideo, module_initialize )()
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
 #endif
 
-#ifdef _WIN32
-    if ( !directdraw ) init_dx();
+#ifdef TARGET_WIN32
+    gr_video_win32_module_initialize();
 #endif
     apptitle = appname;
 
@@ -910,17 +861,8 @@ void __bgdexport( libvideo, module_initialize )()
 
 void __bgdexport( libvideo, module_finalize )()
 {
-#ifdef _WIN32
-    if ( directdraw )
-    {
-        /* set cooperative level back to normal */
-        IDirectDraw2_SetCooperativeLevel( directdraw, NULL, DDSCL_NORMAL );
-
-        /* release DirectDraw interface */
-        IDirectDraw2_Release( directdraw );
-
-        directdraw = NULL;
-    }
+#ifdef TARGET_WIN32
+    gr_video_win32_module_finalize();
 #endif
     if ( scale_screen )
     {

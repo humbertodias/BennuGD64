@@ -30,11 +30,6 @@
  * INCLUDES
  */
 
-#ifdef _WIN32
-#define  _WIN32_WINNT 0x0500
-#include <windows.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -70,6 +65,9 @@
 #endif
 #ifdef TARGET_PANDORA
 #include "main_pandora.h"
+#endif
+#ifdef TARGET_WIN32
+#include "main_win32.h"
 #endif
 
 /* ---------------------------------------------------------------------- */
@@ -147,25 +145,13 @@ int main( int argc, char *argv[] )
 
     /* get my executable name */
 
-#ifdef _WIN32
-
-    SetConsoleOutputCP(CP_UTF8);
-    SetConsoleCP(CP_UTF8);
-
-    if ( strlen( argv[0] ) < 4 || strncmpi( &argv[0][strlen( argv[0] ) - 4], ".exe", 4 ) )
-    {
-        arg0 = malloc( strlen( argv[0] ) + 5 );
-        sprintf( arg0, "%s.exe", argv[0] );
-    }
+#ifdef TARGET_WIN32
+    arg0 = bgdi_win32_resolve_argv0( argc, argv );
+#else
+    if ( argc < 1 || !argv || !argv[0] )
+        arg0 = strdup( "bgdi" );
     else
-    {
-#endif
-        if ( argc < 1 || !argv || !argv[0] )
-            arg0 = strdup( "bgdi" );
-        else
-            arg0 = strdup( argv[0] );
-#ifdef _WIN32
-    }
+        arg0 = strdup( argv[0] );
 #endif
 
     ptr = arg0 + strlen( arg0 );
@@ -324,12 +310,8 @@ int main( int argc, char *argv[] )
     if ( strlen( appname ) > 3 )
     {
         char ** dcbext = dcb_exts, *ext = &appname[ strlen( appname ) - 4 ];
-#ifdef _WIN32
-        if ( !strncmpi( ext, ".exe", 4 ) )
-        {
-            *ext = '\0';
-        }
-        else
+#ifdef TARGET_WIN32
+        if ( !bgdi_win32_strip_exe_suffix( ext ) )
 #endif
         while ( dcbext && *dcbext )
         {
@@ -387,11 +369,8 @@ fflush(stdout);
 
     sysproc_init() ;
 
-#ifdef _WIN32
-    HWND hWnd = /*GetForegroundWindow()*/ GetConsoleWindow();
-    DWORD dwProcessId;
-    GetWindowThreadProcessId( hWnd, &dwProcessId );
-    if ( dwProcessId == GetCurrentProcessId() ) ShowWindow( hWnd, SW_HIDE );
+#ifdef TARGET_WIN32
+    bgdi_win32_hide_own_console();
 #endif
 
     argv[0] = filename;

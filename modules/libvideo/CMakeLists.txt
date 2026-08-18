@@ -26,6 +26,9 @@ endif ()
 if (EMSCRIPTEN)
   target_sources (video PRIVATE g_video_emscripten.c)
 endif ()
+if (WIN32)
+  target_sources (video PRIVATE g_video_win32.c)
+endif ()
 
 add_dependencies ( video bennugd_git_header )
 

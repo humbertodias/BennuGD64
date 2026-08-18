@@ -32,6 +32,9 @@ endif ()
 if (PLATFORM_PANDORA OR OPENPANDORA)
   target_sources (bgdi PRIVATE main_pandora.c)
 endif ()
+if (WIN32)
+  target_sources (bgdi PRIVATE main_win32.c)
+endif ()
 
 add_dependencies ( bgdi bennugd_git_header )
 

@@ -84,3 +84,6 @@ local.properties
 
 # OpenPandora homebrew
 *.pnd
+
+# Nintendo Wii homebrew
+*.dol

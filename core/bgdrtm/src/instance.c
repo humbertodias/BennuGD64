@@ -86,6 +86,7 @@ static int instance_max_actual_prio = INSTANCE_MIN_PRIORITY ;
 void instance_add_to_list_by_id( INSTANCE * r, uint32_t id )
 {
     if ( !hashed_by_id ) hashed_by_id = calloc( HASH_SIZE, sizeof( INSTANCE * ) );
+    if ( !hashed_by_id ) return;
     hashed_by_id[HASH( id )] = r;
 }
 
@@ -105,6 +106,7 @@ void instance_add_to_list_by_instance( INSTANCE * r )
     unsigned int hash = HASH_INSTANCE( r );
 
     if ( !hashed_by_instance ) hashed_by_instance = calloc( HASH_SIZE, sizeof( INSTANCE * ) );
+    if ( !hashed_by_instance ) return;
 
     r->prev_by_instance = NULL ;
     r->next_by_instance = hashed_by_instance[hash];
@@ -133,6 +135,7 @@ void instance_add_to_list_by_type( INSTANCE * r, uint32_t type )
     unsigned int hash = HASH( type );
 
     if ( !hashed_by_type ) hashed_by_type = calloc( HASH_SIZE, sizeof( INSTANCE * ) );
+    if ( !hashed_by_type ) return;
 
     r->prev_by_type = NULL ;
     r->next_by_type = hashed_by_type[hash];
@@ -166,6 +169,7 @@ void instance_add_to_list_by_priority( INSTANCE * r, int32_t priority )
     hash = HASH_PRIORITY( priority );
 
     if ( !hashed_by_priority ) hashed_by_priority = calloc( HASH_SIZE, sizeof( INSTANCE * ) );
+    if ( !hashed_by_priority ) return;
 
     r->prev_by_priority = NULL ;
     r->next_by_priority = hashed_by_priority[hash];
@@ -269,6 +273,7 @@ int instance_getid()
     int id = instance_maxid++ ;
 
     if ( !hashed_by_id ) hashed_by_id = calloc( HASH_SIZE, sizeof( INSTANCE * ) );
+    if ( !hashed_by_id ) return -1;
 
     if ( id <= LAST_INSTANCE_ID && !hashed_by_id[ HASH( id ) ] ) return id;
 

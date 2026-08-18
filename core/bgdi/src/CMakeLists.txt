@@ -32,6 +32,9 @@ endif ()
 if (PLATFORM_PANDORA OR OPENPANDORA)
   target_sources (bgdi PRIVATE main_pandora.c)
 endif ()
+if (NINTENDO_WII OR PLATFORM_WII)
+  target_sources (bgdi PRIVATE main_wii.c main_wii_posix.c)
+endif ()
 if (WIN32)
   target_sources (bgdi PRIVATE main_win32.c)
 endif ()
@@ -117,6 +120,22 @@ if (PLATFORM_PANDORA OR OPENPANDORA)
     Xrandr
     asound
     atomic
+  )
+endif ()
+
+if (NINTENDO_WII OR PLATFORM_WII)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    "-Wl,--start-group"
+    wiiuse
+    bte
+    wiikeyboard
+    aesnd
+    fat
+    ogc
+    m
+    "-Wl,--end-group"
   )
 endif ()
 

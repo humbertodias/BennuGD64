@@ -1955,7 +1955,7 @@ static int modsound_close( INSTANCE * my, intptr_t * params )
 
 void  __bgdexport( mod_sound, module_initialize )()
 {
-#ifndef TARGET_DINGUX_A320
+#if !defined(TARGET_DINGUX_A320) && !defined(TARGET_WII)
     if ( !SDL_WasInit( SDL_INIT_AUDIO ) ) SDL_InitSubSystem( SDL_INIT_AUDIO );
 #endif
 }

@@ -10,6 +10,7 @@
 #   bash scripts/docker-build.sh dreamcast
 #   bash scripts/docker-build.sh psp
 #   bash scripts/docker-build.sh pandora
+#   bash scripts/docker-build.sh wii
 #   bash scripts/docker-build.sh linux shell
 set -euo pipefail
 
@@ -22,7 +23,8 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 switch [shell]
        $0 dreamcast [shell]
        $0 psp [shell]
-       $0 pandora [shell]"
+       $0 pandora [shell]
+       $0 wii [shell]"
 
 if [[ -f "${ROOT}/versions.env" ]]; then
   set -a
@@ -44,7 +46,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|pandora) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|pandora|wii) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -98,13 +100,19 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
       -t bennugd64-pandora \
       -f docker/Dockerfile.pandora \
       docker/
+  elif [[ "${PLATFORM}" == "wii" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      -t bennugd64-wii \
+      -f docker/Dockerfile.wii \
+      docker/
   else
     docker build -t "${IMAGE}" -f "docker/Dockerfile.${PLATFORM}" docker/
   fi
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
-  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "pandora" ]]; then
+  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
       -w /src \
@@ -698,6 +706,102 @@ if [[ "${PLATFORM}" == "pandora" ]]; then
       cp "${PNDDIR}/"* "${STAGE}/" 2>/dev/null || true
       test -s "${STAGE}/bennugd64.pnd"
       test -s "${STAGE}/bgdi"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "wii" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: wii-host + wii-powerpc"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-wii-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-wii-powerpc/_deps"
+  docker run --platform linux/amd64 --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_WII_REF="${SDL3_WII_REF:-fixes}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -n "${DEVKITPRO:-}"
+      test -x "${DEVKITPRO}/devkitPPC/bin/powerpc-eabi-gcc"
+      HOST_BUILD=/src/build-wii-host
+      WII_BUILD=/src/build-wii-powerpc
+      APPDIR=/src/build-wii-app
+      STAGE=/src/dist/wii-powerpc-static
+      FETCH_DIR="${HOST_BUILD}/_deps"
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_WII_REF="${SDL3_WII_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset wii-host "${COMMON[@]}"
+      cmake --build --preset wii-host
+      for prg in /src/web/demo/*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      cmake --preset wii-powerpc \
+        "${COMMON[@]}" \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
+      cmake --build --preset wii-powerpc
+      ELF=""
+      for cand in \
+        "${WII_BUILD}/core/bgdi/src/bgdi.elf" \
+        "${WII_BUILD}/core/bgdi/src/bgdi"
+      do
+        if [[ -f "${cand}" ]]; then
+          ELF="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${ELF}" ]]; then
+        ELF="$(find "${WII_BUILD}/core/bgdi" \( -type f -o -type l \) \( -name bgdi.elf -o -name bgdi \) | grep -v /CMakeFiles/ | head -n 1 || true)"
+      fi
+      test -n "${ELF}"
+      test -s "${ELF}"
+      ELF2DOL="$(command -v elf2dol || true)"
+      if [[ -z "${ELF2DOL}" ]]; then
+        for cand in "${DEVKITPRO}/tools/bin/elf2dol"; do
+          if [[ -x "${cand}" ]]; then
+            ELF2DOL="${cand}"
+            break
+          fi
+        done
+      fi
+      test -n "${ELF2DOL}"
+      rm -rf "${APPDIR}"
+      mkdir -p "${APPDIR}" "${STAGE}/apps/bennugd64"
+      cp /src/web/demo/*.dcb "${APPDIR}/"
+      cp /src/web/demo/hello.dcb "${APPDIR}/main.dcb"
+      sed "s|<version>dev</version>|<version>${BENNUGD_VERSION}</version>|" \
+        /src/wii/meta.xml > "${APPDIR}/meta.xml"
+      DOL="${APPDIR}/boot.dol"
+      "${ELF2DOL}" "${ELF}" "${DOL}"
+      python3 /src/scripts/pad-wii-dol.py "${DOL}"
+      cmake --install "${WII_BUILD}" --prefix "${STAGE}"
+      # Debug sections sit at vaddr 0; strip so File→Open of the ELF cannot
+      # map them over page 0 in Dolphin.
+      if command -v powerpc-eabi-strip >/dev/null; then
+        powerpc-eabi-strip -g "${ELF}" || true
+      fi
+      cp "${ELF}" "${STAGE}/bgdi.elf"
+      cp "${APPDIR}/"* "${STAGE}/apps/bennugd64/"
+      test -s "${STAGE}/apps/bennugd64/boot.dol"
+      test -s "${STAGE}/apps/bennugd64/main.dcb"
+      test -s "${STAGE}/bgdi.elf"
     '
   exit 0
 fi

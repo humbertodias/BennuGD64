@@ -497,6 +497,11 @@ int libjoy_get_accel_specific( int joy, int * x, int * y, int * z )
 
 void  __bgdexport( libjoy, module_initialize )()
 {
+#ifdef TARGET_WII
+    /* SDL's OGC event pump needs WPAD_Init (done in main_wii). Opening
+     * every pad here still deadlocks Dolphin; open devices on first use. */
+    return;
+#else
     int i;
     int count = 0;
     SDL_JoystickID * ids;
@@ -550,6 +555,7 @@ void  __bgdexport( libjoy, module_initialize )()
     KXTF9_set_lpf_odr(400);
 
     KIONIX_ACCEL_enable_outputs();
+#endif
 #endif
 }
 

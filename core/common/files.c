@@ -643,7 +643,11 @@ static int open_raw( file * f, const char * filename, const char * mode )
     char    *p;
 
 #ifndef NO_ZLIB
-    if ( !strchr( mode, '0' ) )
+    if ( !strchr( mode, '0' )
+#ifdef TARGET_WII
+         && strchr( filename, ':' ) == NULL
+#endif
+       )
     {
         f->type = F_GZFILE ;
         f->gz = gzopen( filename, mode ) ;

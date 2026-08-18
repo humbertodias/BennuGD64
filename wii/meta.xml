@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<app version="1">
+  <name>BennuGD64</name>
+  <coder>BennuGD64</coder>
+  <version>dev</version>
+  <short_description>BennuGD interpreter</short_description>
+  <long_description>64-bit BennuGD homebrew interpreter. Put main.dcb next to boot.dol (Homebrew Channel: apps/bennugd64/).</long_description>
+</app>

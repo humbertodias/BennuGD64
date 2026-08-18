@@ -1,5 +1,5 @@
 /*
- * Minimal glob(3) for newlib (Switch libnx / Dreamcast KallistiOS): headers
+ * Minimal glob(3) for newlib (Switch libnx / Dreamcast KallistiOS / Wii libogc): headers
  * exist, libc does not. Enough for dirs.c: GLOB_ERR | GLOB_NOSORT, fnmatch
  * on the last path component.
  */

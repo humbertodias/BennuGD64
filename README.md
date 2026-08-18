@@ -6,6 +6,11 @@
 
 A fork of [BennuGD](https://www.bennugd.org/) adapted to run on modern 64-bit architectures.
 
+## Web & docs
+
+- **[Web player](https://humbertodias.github.io/BennuGD64/)** — run `.dcb` games in the browser (WebAssembly). Drop a bytecode file plus assets, or pick a bundled demo.
+- **[API reference](https://humbertodias.github.io/BennuGD64/docs/)** — Doxygen docs for the C runtime, compiler, and modules (published from `main` via GitHub Pages).
+
 ## Install
 
 The installer defaults to a **static** build (modules linked into `bgdi`).
@@ -54,9 +59,9 @@ bash scripts/docker-build.sh pandora
 See [BUILDING.md](BUILDING.md) for Windows, wasm, WASI, Android, Switch, Dreamcast, PSP, Pandora, macOS, and native CMake.
 
 
-## Getting starting
+## Getting started
 
-Learn using the [BennuGD documentation](https://divhub.github.io/bennugd-website/docs/)
+Learn the Bennu language with the [BennuGD documentation](https://divhub.github.io/bennugd-website/docs/). For engine internals, see the [API reference](https://humbertodias.github.io/BennuGD64/docs/).
 
 Use the [FPG Editor](https://github.com/humbertodias/fpg-editor/) to make it easier.
 

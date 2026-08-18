@@ -76,6 +76,13 @@ float fps_partial = 0;
 
 void gr_set_fps( int fps, int skip )
 {
+// #ifdef TARGET_PSP
+//     /* SoRR and similar titles call SET_FPS(..., 0). With skip 0 the engine
+//      * never drops a software blit, so logic stalls at draw speed. Allow
+//      * skipping draws so gameplay can catch up. */
+//     if ( skip < 2 ) skip = 2;
+// #endif
+
     if ( fps == fps_value && skip == max_jump ) return ;
 
     frame_ms = fps ? 1000.0 / ( float ) fps : 0.0 ;

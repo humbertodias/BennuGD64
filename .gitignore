@@ -67,3 +67,6 @@ local.properties
 
 # Sega Dreamcast homebrew
 *.cdi
+
+# PlayStation Portable homebrew
+*.pbp

@@ -70,6 +70,21 @@ if (PLATFORM_DREAMCAST OR DREAMCAST)
   )
 endif ()
 
+if (PLATFORM_PSP OR PSP)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+    psppower
+    pspdebug
+    pspsdk
+    c
+    pspuser
+    pspkernel
+    m
+  )
+endif ()
+
 if (EMSCRIPTEN)
   bennugd_emscripten_link (bgdi)
 endif ()

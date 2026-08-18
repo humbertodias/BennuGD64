@@ -265,6 +265,14 @@ int dcb_load_from( file * fp, char * filename, int offset )
     dcb.proc   = ( DCB_PROC * ) calloc(( 1 + dcb.data.NProcs ), sizeof( DCB_PROC ) ) ;
     procs      = ( PROCDEF * ) calloc(( 1 + dcb.data.NProcs ), sizeof( PROCDEF ) ) ;
 
+    if ( !globaldata || !localdata || !dcb.proc || !procs ||
+         ( dcb.data.NLocStrings && !localstr ) )
+    {
+        fprintf( stderr, "ERROR: Out of memory loading DCB (global=%u local=%u procs=%u)\n",
+                 dcb.data.SGlobal, dcb.data.SLocal, dcb.data.NProcs );
+        return 0;
+    }
+
     procdef_count = dcb.data.NProcs ;
     local_size    = dcb.data.SLocal ;
     local_strings = dcb.data.NLocStrings ;

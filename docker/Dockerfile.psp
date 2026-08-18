@@ -1,0 +1,28 @@
+# PlayStation Portable homebrew toolchain (linux/amd64: psp-gcc host tools are x86_64).
+#   docker build --platform linux/amd64 -t bennugd64-psp \
+#     -f docker/Dockerfile.psp docker/
+#   docker run --platform linux/amd64 --rm -v "$PWD":/src -w /src \
+#     bennugd64-psp cmake --preset psp-mips
+#
+# Toolchain only: does not clone this repo or bake Bennu into the image.
+# Compiler, pspsdk, CMake, packaged SDL3, pack-pbp, and mksfoex come from
+# pspdev/pspdev (GCC 15). Host gcc/ninja are added for native bgdc.
+
+FROM pspdev/pspdev:latest
+
+ENV PLATFORM=psp \
+    PSPDEV=/usr/local/pspdev \
+    PATH="/usr/local/pspdev/bin:${PATH}"
+
+RUN apk add --no-cache \
+        gcc \
+        g++ \
+        git \
+        musl-dev \
+        ninja \
+        zip \
+    && git config --system --add safe.directory '*' \
+    && chmod -R a+rX /usr/local/pspdev
+
+WORKDIR /src
+CMD ["bash"]

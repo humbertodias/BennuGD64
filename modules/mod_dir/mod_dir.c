@@ -43,7 +43,9 @@
 #include <unistd.h>
 #ifndef TARGET_SWITCH
 #ifndef TARGET_DC
+#ifndef TARGET_PSP
 #include <sys/utsname.h>
+#endif
 #endif
 #endif
 /* BeOS INCLUDES */

@@ -6,7 +6,7 @@ import "mod_rand";
 
 global
 
-    int fire_buffer[24000];
+    int fire_buffer[6000];
 
     int fire_intensity;
 
@@ -70,13 +70,9 @@ private
 
 begin
 
-    /*
-     * Clear buffer.
-     */
-
     buffer_index = 0;
 
-    while (buffer_index < 24000)
+    while (buffer_index < 6000)
 
         fire_buffer[buffer_index] = 0;
 
@@ -84,24 +80,14 @@ begin
 
     end
 
-
-    /*
-     * Maximum initial intensity.
-     */
-
     fire_intensity = 35;
-
-
-    /*
-     * Initialize bottom row.
-     */
 
     base_x = 0;
 
-    while (base_x < 200)
+    while (base_x < 100)
 
         fire_buffer[
-            119 * 200 + base_x
+            59 * 100 + base_x
         ] = fire_intensity;
 
         base_x = base_x + 1;
@@ -128,49 +114,22 @@ private
 
 begin
 
-    /*
-     * Process every row except
-     * the bottom one.
-     */
-
     fire_y = 1;
 
-    while (fire_y < 120)
+    while (fire_y < 60)
 
         fire_x = 0;
 
-        while (fire_x < 200)
+        while (fire_x < 100)
 
-            /*
-             * Source pixel.
-             */
             source_index =
-                fire_y * 200 + fire_x;
+                fire_y * 100 + fire_x;
 
-
-            /*
-             * Random decay.
-             *
-             * Equivalent to:
-             *
-             * rand() & 3
-             *
-             * producing 0..3.
-             */
             decay_value =
                 rand(0, 3);
 
-
-            /*
-             * Horizontal displacement.
-             */
             destination_x =
                 fire_x - decay_value + 1;
-
-
-            /*
-             * Clamp destination.
-             */
 
             if (destination_x < 0)
 
@@ -178,32 +137,19 @@ begin
 
             end
 
+            if (destination_x > 99)
 
-            if (destination_x > 199)
-
-                destination_x = 199;
+                destination_x = 99;
 
             end
 
-
-            /*
-             * Destination is one row above.
-             */
             destination_index =
-                (fire_y - 1) * 200 +
+                (fire_y - 1) * 100 +
                 destination_x;
 
-
-            /*
-             * Read source intensity.
-             */
             source_value =
                 fire_buffer[source_index];
 
-
-            /*
-             * Apply decay.
-             */
             if (source_value > decay_value)
 
                 fire_buffer[destination_index] =
@@ -215,11 +161,9 @@ begin
 
             end
 
-
             fire_x = fire_x + 1;
 
         end
-
 
         fire_y = fire_y + 1;
 
@@ -236,17 +180,12 @@ private
 
 begin
 
-    /*
-     * Keep the bottom row at the
-     * selected fire intensity.
-     */
-
     base_x = 0;
 
-    while (base_x < 200)
+    while (base_x < 100)
 
         fire_buffer[
-            119 * 200 + base_x
+            59 * 100 + base_x
         ] = fire_intensity;
 
         base_x = base_x + 1;
@@ -265,34 +204,24 @@ private
 
     int buffer_index;
     int palette_index;
+    int sx;
+    int sy;
 
 begin
 
     draw_y = 0;
 
-    while (draw_y < 120)
+    while (draw_y < 60)
 
         draw_x = 0;
 
-        while (draw_x < 200)
+        while (draw_x < 100)
 
-            /*
-             * Fire buffer index.
-             */
             buffer_index =
-                draw_y * 200 + draw_x;
+                draw_y * 100 + draw_x;
 
-
-            /*
-             * Palette index.
-             */
             palette_index =
                 fire_buffer[buffer_index];
-
-
-            /*
-             * Safety.
-             */
 
             if (palette_index < 0)
 
@@ -300,38 +229,29 @@ begin
 
             end
 
-
             if (palette_index > 35)
 
                 palette_index = 35;
 
             end
 
-
-            /*
-             * Select color.
-             */
             drawing_color(
                 fire_palette[palette_index]
             );
 
+            sx = draw_x * 4;
+            sy = draw_y * 4;
 
-            /*
-             * Each logical pixel is
-             * displayed as a 4x4 block.
-             */
             draw_box(
-                draw_x * 4,
-                draw_y * 4,
-                draw_x * 4 + 3,
-                draw_y * 4 + 3
+                sx,
+                sy,
+                sx + 3,
+                sy + 3
             );
-
 
             draw_x = draw_x + 1;
 
         end
-
 
         draw_y = draw_y + 1;
 
@@ -348,65 +268,30 @@ private
 
 begin
 
-    /*
-     * =================================
-     * VIDEO
-     * =================================
-     */
-
     set_mode(
-        800,
-        480,
+        400,
+        240,
         16
     );
 
-
-    /*
-     * =================================
-     * INITIALIZATION
-     * =================================
-     */
+    set_fps(30, 0);
 
     InitPalette();
 
     InitializeFire();
 
-
-    /*
-     * Draw directly to screen.
-     */
     drawing_map(
         0,
         0
     );
 
-
-    /*
-     * =================================
-     * MAIN LOOP
-     * =================================
-     */
-
     repeat
 
-
-        /*
-         * =================================
-         * INPUT
-         * =================================
-         */
-
-        /*
-         * UP
-         *
-         * Increase intensity by 1.
-         */
         if (key(_UP))
 
             fire_intensity =
                 fire_intensity + 1;
 
-
             if (fire_intensity > 35)
 
                 fire_intensity = 35;
@@ -415,18 +300,11 @@ begin
 
         end
 
-
-        /*
-         * DOWN
-         *
-         * Decrease intensity by 1.
-         */
         if (key(_DOWN))
 
             fire_intensity =
                 fire_intensity - 1;
 
-
             if (fire_intensity < 0)
 
                 fire_intensity = 0;
@@ -435,17 +313,10 @@ begin
 
         end
 
-
-        /*
-         * RIGHT
-         *
-         * Increase intensity by 3.
-         */
         if (key(_RIGHT))
 
             fire_intensity =
                 fire_intensity + 3;
-
 
             if (fire_intensity > 35)
 
@@ -455,17 +326,10 @@ begin
 
         end
 
-
-        /*
-         * LEFT
-         *
-         * Decrease intensity by 3.
-         */
         if (key(_LEFT))
 
             fire_intensity =
                 fire_intensity - 3;
-
 
             if (fire_intensity < 0)
 
@@ -475,35 +339,13 @@ begin
 
         end
 
-
-        /*
-         * =================================
-         * FIRE SIMULATION
-         * =================================
-         */
-
         UpdateBase();
 
         UpdateFire();
 
-
-        /*
-         * =================================
-         * DRAW
-         * =================================
-         */
-
         DrawFire();
 
-
-        /*
-         * =================================
-         * FRAME
-         * =================================
-         */
-
         frame;
-
 
     until (key(_ESC));
 

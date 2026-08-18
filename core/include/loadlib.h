@@ -32,7 +32,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <winbase.h>
-#elif defined(__wasi__) || defined(__SWITCH__) || defined(_arch_dreamcast)
+#elif defined(__wasi__) || defined(__SWITCH__) || defined(_arch_dreamcast) || defined(__PSP__)
 #include <unistd.h>
 #define __stdcall
 #define __dllexport

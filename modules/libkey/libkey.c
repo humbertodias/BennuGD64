@@ -461,10 +461,11 @@ void __bgdexport( libkey, module_initialize )()
 
     if ( !keystate ) keystate = SDL_GetKeyboardState( NULL );
 
-#ifndef __EMSCRIPTEN__
+#if !defined(__EMSCRIPTEN__) && !defined(__PSP__)
     /* A hidden text field on the web steals focus after Enter (menus) and
      * the next screen (character select) gets no keys. ascii comes from
-     * KEYDOWN, so text input is not needed. */
+     * KEYDOWN, so text input is not needed.
+     * On PSP, StartTextInput opens the system OSK briefly at startup. */
     if ( window ) SDL_StartTextInput( window );
 #endif
 }

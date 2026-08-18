@@ -152,6 +152,13 @@ int debug = 0;  /* 1 if running in debug mode      */
 #define _OS_ID          OS_SWITCH
 #endif
 
+#ifdef TARGET_PSP
+#ifdef _OS_ID
+#undef _OS_ID
+#endif
+#define _OS_ID          OS_PSP
+#endif
+
 #ifdef TARGET_IOS
 #ifdef _OS_ID
 #undef _OS_ID
@@ -261,6 +268,11 @@ void bgdrtm_entry( int argc, char * argv[] )
 #ifdef TARGET_EMSCRIPTEN
     /* SoRR: os_id 0 (Windows) → P1 keyboard; otherwise P1 is joy 0. */
     GLODWORD( OS_ID ) = libjoy_num() > 0 ? OS_LINUX : OS_WIN32;
+#endif
+
+#if defined(TARGET_PSP)
+    /* SoRR: os_id 0 (Windows) → P1 keyboard; otherwise P1 is joy 0. */
+    GLODWORD( OS_ID ) = OS_LINUX;
 #endif
 
 #if defined(TARGET_GP2X_WIZ) || defined(TARGET_CAANOO)

@@ -55,7 +55,7 @@ jobs:
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Cache FetchContent
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build-static/_deps
@@ -129,7 +129,7 @@ jobs:
           brew install cmake ninja pkg-config || true
 
       - name: Cache FetchContent
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build-static/_deps
@@ -198,7 +198,7 @@ jobs:
         run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
 
       - name: Cache FetchContent
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build-host/_deps/*-src
@@ -260,7 +260,7 @@ jobs:
         run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
 
       - name: Cache FetchContent
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build-android-host/_deps/*-src
@@ -326,7 +326,7 @@ jobs:
         run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
 
       - name: Cache FetchContent
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build-switch-host/_deps/*-src
@@ -385,7 +385,7 @@ jobs:
         run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
 
       - name: Cache FetchContent
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build-dreamcast-host/_deps/*-src
@@ -444,7 +444,7 @@ jobs:
         run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
 
       - name: Cache FetchContent
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build-psp-host/_deps/*-src
@@ -503,7 +503,7 @@ jobs:
         run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
 
       - name: Cache FetchContent
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             build-pandora-host/_deps/*-src
@@ -567,7 +567,7 @@ jobs:
           sudo apt-get install -y build-essential cmake ninja-build curl zip
 
       - name: Cache wasi-sdk and FetchContent
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             .deps/wasi-sdk-${{ env.WASI_SDK_VERSION_FULL }}-x86_64-linux

@@ -1,0 +1,25 @@
+# OpenPandora homebrew toolchain (linux/amd64: Ångström cross gcc is x86_64).
+#   docker build --platform linux/amd64 -t bennugd64-pandora \
+#     -f docker/Dockerfile.pandora docker/
+#   docker run --platform linux/amd64 --rm -v "$PWD":/src -w /src \
+#     bennugd64-pandora cmake --preset pandora-arm
+#
+# Toolchain only: does not clone this repo or bake Bennu into the image.
+# Compiler, sysroot, CMake, and Ninja come from
+# scummvm/dockerized-toolchains:openpandora (GCC 8.3, glibc 2.9).
+
+FROM scummvm/dockerized-toolchains:openpandora
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=pandora \
+    PATH="/opt/openpandora/bin:${PATH}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        zip \
+        squashfs-tools \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*' \
+    && chmod -R a+rX /opt/openpandora
+
+WORKDIR /src
+CMD ["bash"]

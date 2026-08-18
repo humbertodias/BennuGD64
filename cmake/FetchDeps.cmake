@@ -25,8 +25,8 @@ if (PLATFORM_DREAMCAST OR DREAMCAST)
 endif ()
 
 # Static archives must be PIC so they can later link into .so/.dylib modules.
-# Switch/Dreamcast/PSP homebrew uses the toolchain PIE/KOS/pspdev flags instead.
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP)
+# Switch/Dreamcast/PSP/Pandora homebrew uses the toolchain PIE/KOS/pspdev flags instead.
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA)
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -148,6 +148,34 @@ if (PLATFORM_DREAMCAST OR DREAMCAST)
   set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
   set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
 endif ()
+if (PLATFORM_PANDORA OR OPENPANDORA)
+  # Ångström sysroot is glibc 2.9 + X11 + ALSA; no Wayland/GLES/Pulse.
+  # X11 extras: only Xext/Xrandr/Xrender are in the sysroot (no Xi/Xcursor).
+  set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+  set (SDL_UNIX_CONSOLE_BUILD OFF CACHE BOOL "" FORCE)
+  set (SDL_X11 ON CACHE BOOL "" FORCE)
+  set (SDL_X11_XCURSOR OFF CACHE BOOL "" FORCE)
+  set (SDL_X11_XINPUT OFF CACHE BOOL "" FORCE)
+  set (SDL_X11_XFIXES OFF CACHE BOOL "" FORCE)
+  set (SDL_X11_XSCRNSAVER OFF CACHE BOOL "" FORCE)
+  set (SDL_X11_XTEST OFF CACHE BOOL "" FORCE)
+  set (SDL_X11_XRANDR ON CACHE BOOL "" FORCE)
+  set (SDL_WAYLAND OFF CACHE BOOL "" FORCE)
+  set (SDL_KMSDRM OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+  set (SDL_VULKAN OFF CACHE BOOL "" FORCE)
+  set (SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_IBUS OFF CACHE BOOL "" FORCE)
+  set (SDL_DBUS OFF CACHE BOOL "" FORCE)
+  set (SDL_LIBUDEV OFF CACHE BOOL "" FORCE)
+  set (SDL_PIPEWIRE OFF CACHE BOOL "" FORCE)
+  set (SDL_PULSEAUDIO OFF CACHE BOOL "" FORCE)
+  set (SDL_ALSA ON CACHE BOOL "" FORCE)
+  set (SDL_JACK OFF CACHE BOOL "" FORCE)
+  set (SDL_SNDIO OFF CACHE BOOL "" FORCE)
+endif ()
 if (PLATFORM_PSP OR PSP)
   # pspdev already ships SDL3/SDL3_mixer built for Allegrex.
   find_package (SDL3 REQUIRED CONFIG)
@@ -192,6 +220,60 @@ if (PLATFORM_DREAMCAST OR DREAMCAST)
         "if (double_buffer && sdl_dc_buf[sdl_dc_buf_index]) {\n            sq_cpy(vram_l, sdl_dc_buf[sdl_dc_buf_index], h * pitch);"
         _fb_txt "${_fb_txt}")
       file (WRITE "${_fb}" "${_fb_txt}")
+    endif ()
+  endif ()
+endif ()
+
+if (PLATFORM_PANDORA OR OPENPANDORA)
+  # Ångström ALSA 1.0.20 has no snd_pcm_chmap_* (added in 1.0.24). Keep
+  # stereo/default layout and do not require those symbols at dlopen.
+  set (_alsa "${sdl3_SOURCE_DIR}/src/audio/alsa/SDL_alsa_audio.c")
+  if (EXISTS "${_alsa}")
+    file (READ "${_alsa}" _alsa_txt)
+    if (NOT _alsa_txt MATCHES "BENNUGD_PANDORA_ALSA_CHMAP")
+      string (REPLACE
+        "#include \"SDL_alsa_audio.h\"\n#include \"../../core/linux/SDL_udev.h\""
+        "#include \"SDL_alsa_audio.h\"\n#include \"../../core/linux/SDL_udev.h\"\n\n#ifndef SND_CHMAP_TYPE_VAR\n/* BENNUGD_PANDORA_ALSA_CHMAP */\ntypedef enum { SND_CHMAP_TYPE_NONE = 0, SND_CHMAP_TYPE_FIXED, SND_CHMAP_TYPE_VAR, SND_CHMAP_TYPE_PAIRED } snd_pcm_chmap_type_t;\nenum snd_pcm_chmap_position { SND_CHMAP_UNKNOWN = 0, SND_CHMAP_NA, SND_CHMAP_MONO, SND_CHMAP_FL, SND_CHMAP_FR, SND_CHMAP_FC, SND_CHMAP_LFE, SND_CHMAP_RL, SND_CHMAP_RR, SND_CHMAP_RC, SND_CHMAP_SL, SND_CHMAP_SR };\ntypedef struct { unsigned int channels; unsigned int pos[128]; } snd_pcm_chmap_t;\ntypedef struct { snd_pcm_chmap_type_t type; snd_pcm_chmap_t map; } snd_pcm_chmap_query_t;\n#endif\n"
+        _alsa_txt "${_alsa_txt}")
+      string (REPLACE
+        "    SDL_ALSA_SYM(snd_pcm_query_chmaps);\n    SDL_ALSA_SYM(snd_pcm_free_chmaps);\n    SDL_ALSA_SYM(snd_pcm_set_chmap);\n    SDL_ALSA_SYM(snd_pcm_chmap_print);"
+        "#ifdef SDL_AUDIO_DRIVER_ALSA_DYNAMIC\n#define SDL_ALSA_SYM_OPTIONAL(x) load_alsa_sym(#x, (void **)(char *)&ALSA_##x)\n#else\n#define SDL_ALSA_SYM_OPTIONAL(x) ALSA_##x = x\n#endif\n    SDL_ALSA_SYM_OPTIONAL(snd_pcm_query_chmaps);\n    SDL_ALSA_SYM_OPTIONAL(snd_pcm_free_chmaps);\n    SDL_ALSA_SYM_OPTIONAL(snd_pcm_set_chmap);\n    SDL_ALSA_SYM_OPTIONAL(snd_pcm_chmap_print);\n    SDL_ClearError();"
+        _alsa_txt "${_alsa_txt}")
+      string (REPLACE
+        "    ctx->chmap_queries = ALSA_snd_pcm_query_chmaps(ctx->device->hidden->pcm);"
+        "    if (!ALSA_snd_pcm_query_chmaps) {\n        ctx->chmap_queries = NULL;\n        LOGDEBUG(\"channel map API missing, swizzling off\");\n        return CHMAP_INSTALLED;\n    }\n    ctx->chmap_queries = ALSA_snd_pcm_query_chmaps(ctx->device->hidden->pcm);"
+        _alsa_txt "${_alsa_txt}")
+      string (REPLACE
+        "        ALSA_snd_pcm_free_chmaps(ctx->chmap_queries);"
+        "        if (ALSA_snd_pcm_free_chmaps) ALSA_snd_pcm_free_chmaps(ctx->chmap_queries);"
+        _alsa_txt "${_alsa_txt}")
+      string (REPLACE
+        "    ALSA_snd_pcm_free_chmaps(cfg_ctx.chmap_queries);"
+        "    if (ALSA_snd_pcm_free_chmaps) ALSA_snd_pcm_free_chmaps(cfg_ctx.chmap_queries);"
+        _alsa_txt "${_alsa_txt}")
+      file (WRITE "${_alsa}" "${_alsa_txt}")
+    endif ()
+  endif ()
+  set (_evdev "${sdl3_SOURCE_DIR}/src/core/linux/SDL_evdev_capabilities.h")
+  if (EXISTS "${_evdev}")
+    file (READ "${_evdev}" _evdev_txt)
+    if (NOT _evdev_txt MATCHES "INPUT_PROP_BUTTONPAD")
+      string (REPLACE
+        "#ifndef INPUT_PROP_SEMI_MT\n#define INPUT_PROP_SEMI_MT          0x03\n#endif"
+        "#ifndef INPUT_PROP_BUTTONPAD\n#define INPUT_PROP_BUTTONPAD        0x02\n#endif\n#ifndef INPUT_PROP_SEMI_MT\n#define INPUT_PROP_SEMI_MT          0x03\n#endif"
+        _evdev_txt "${_evdev_txt}")
+      file (WRITE "${_evdev}" "${_evdev_txt}")
+    endif ()
+  endif ()
+  set (_joy "${sdl3_SOURCE_DIR}/src/joystick/linux/SDL_sysjoystick.c")
+  if (EXISTS "${_joy}")
+    file (READ "${_joy}" _joy_txt)
+    if (NOT _joy_txt MATCHES "ifndef EVIOCGPROP")
+      string (REPLACE
+        "#ifndef MSC_TIMESTAMP\n#define MSC_TIMESTAMP 0x05\n#endif"
+        "#ifndef MSC_TIMESTAMP\n#define MSC_TIMESTAMP 0x05\n#endif\n#ifndef EVIOCGPROP\n#define EVIOCGPROP(len) _IOC(_IOC_READ, 'E', 0x09, len)\n#endif"
+        _joy_txt "${_joy_txt}")
+      file (WRITE "${_joy}" "${_joy_txt}")
     endif ()
   endif ()
 endif ()

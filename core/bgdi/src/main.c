@@ -313,6 +313,17 @@ int main( int argc, char *argv[] )
     }
 #endif
 
+#ifdef TARGET_PANDORA
+    {
+        standalone = 1;
+        if ( argc < 2 )
+        {
+            if ( access( "main.dcb", R_OK ) == 0 ) filename = "main.dcb";
+            else if ( access( "hello.dcb", R_OK ) == 0 ) filename = "hello.dcb";
+        }
+    }
+#endif
+
     /* get my executable name */
 
 #ifdef _WIN32
@@ -378,6 +389,9 @@ int main( int argc, char *argv[] )
 #elif defined(_arch_dreamcast)
     standalone = 1 ;
 #elif defined(__PSP__)
+    standalone = 1 ;
+#elif defined(TARGET_PANDORA)
+    standalone = 1 ;
     standalone = 1 ;
 #else
     standalone = ( strncmpi( appexename, "bgdi", 4 ) == 0 ) ;

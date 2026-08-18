@@ -85,6 +85,22 @@ if (PLATFORM_PSP OR PSP)
   )
 endif ()
 
+if (PLATFORM_PANDORA OR OPENPANDORA)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    pthread
+    dl
+    m
+    rt
+    X11
+    Xext
+    Xrandr
+    asound
+    atomic
+  )
+endif ()
+
 if (EMSCRIPTEN)
   bennugd_emscripten_link (bgdi)
 endif ()

@@ -70,3 +70,6 @@ local.properties
 
 # PlayStation Portable homebrew
 *.pbp
+
+# OpenPandora homebrew
+*.pnd

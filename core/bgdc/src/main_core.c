@@ -75,6 +75,7 @@ constants_def[] =
     { "OS_EMSCRIPTEN"   , TYPE_DWORD, OS_EMSCRIPTEN       },
     { "OS_SWITCH"       , TYPE_DWORD, OS_SWITCH           },
     { "OS_PSP"          , TYPE_DWORD, OS_PSP              },
+    { "OS_PANDORA"      , TYPE_DWORD, OS_PANDORA          },
 
     { "MIN_INT"         , TYPE_INT  , -2147483647L - 1    },
     { "MAX_INT"         , TYPE_INT  , 2147483647L         },

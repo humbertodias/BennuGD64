@@ -674,6 +674,12 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
         window_flags |= SDL_WINDOW_FULLSCREEN;
     }
 #endif
+#ifdef TARGET_PANDORA
+    /* 800x480 LCD. Keep the game framebuffer and present it scaled. */
+    width = 800;
+    height = 480;
+    window_flags |= SDL_WINDOW_FULLSCREEN;
+#endif
 
     if ( !window )
     {
@@ -798,6 +804,9 @@ int gr_set_mode( int width, int height, int depth )
 #ifdef TARGET_PSP
     full_screen = 1;
     waitvsync = 0;
+#endif
+#ifdef TARGET_PANDORA
+    full_screen = 1;
 #endif
 
     scale_resolution = GLODWORD( libvideo, SCALE_RESOLUTION );
@@ -1157,7 +1166,6 @@ void __bgdexport( libvideo, module_initialize )()
     SDL_SetHint( SDL_HINT_RENDER_DRIVER, "opengles2" );
 #endif
 #ifdef _arch_dreamcast
-    /* GPF defaults to OpenGL. Bennu presents a software framebuffer. */
     SDL_SetHint( SDL_HINT_DC_VIDEO_MODE, "SDL_DC_DIRECT_VIDEO" );
     /* CreateWindowFramebuffer only allocates a backbuffer when this hint is
      * set; UpdateWindowFramebuffer still defaults it to true. Unset, the first
@@ -1172,6 +1180,10 @@ void __bgdexport( libvideo, module_initialize )()
         SDL_InitSubSystem( SDL_INIT_VIDEO | SDL_INIT_EVENTS );
     SDL_SetHint( SDL_HINT_RENDER_DRIVER, "psp" );
     SDL_SetHint( SDL_HINT_RENDER_VSYNC, "0" );
+#elif defined(TARGET_PANDORA)
+    SDL_SetHint( SDL_HINT_RENDER_DRIVER, "software" );
+    SDL_SetHint( SDL_HINT_VIDEO_DRIVER, "x11" );
+    if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
 #else
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
 #endif

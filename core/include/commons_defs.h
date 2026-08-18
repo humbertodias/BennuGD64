@@ -59,6 +59,7 @@
 #define OS_EMSCRIPTEN           1004  /* compile-time only; wasm runtime picks OS_WIN32 (keyboard) or OS_LINUX (pad) from connected joysticks */
 #define OS_SWITCH               1005
 #define OS_PSP                  1006
+#define OS_PANDORA              1007
 
 #endif
 

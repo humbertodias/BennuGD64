@@ -33,5 +33,4 @@ test -s "$DST/bgdi.wasm"
 test -s "$DST/bgdi.data"
 test -s "$DST/docs/index.html"
 
-echo "Pages site staged at: $DST"
-ls -lah "$DST" "$DST/docs" | head -40
+echo "Pages site staged at: $DST ($(find "$DST" -type f | wc -l) files)"

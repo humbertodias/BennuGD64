@@ -67,11 +67,6 @@ static void wii_add_search_paths( void )
 static char * wii_pick_dcb( void )
 {
     static const char * names[] = {
-        "main.dcb",
-        "hello.dcb",
-        "apps/bennugd64/main.dcb",
-        "sd:/main.dcb",
-        "sd:/hello.dcb",
         "sd:/apps/bennugd64/main.dcb",
         NULL
     };

@@ -80,6 +80,9 @@ add_executable (
   ../../common/xctype.c
 )
 
+include (${CMAKE_SOURCE_DIR}/cmake/FilesNative.cmake)
+bennugd_files_native (bgdc)
+
 add_dependencies ( bgdc bennugd_git_header )
 
 if (USE_LIBDES)

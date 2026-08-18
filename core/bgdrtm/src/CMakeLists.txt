@@ -37,6 +37,9 @@ if (NINTENDO_SWITCH OR PLATFORM_DREAMCAST OR DREAMCAST OR NINTENDO_WII OR PLATFO
   target_sources (bgdrtm PRIVATE nx_glob.c)
 endif ()
 
+include (${CMAKE_SOURCE_DIR}/cmake/FilesNative.cmake)
+bennugd_files_native (bgdrtm)
+
 if (PLATFORM_PSP OR PSP)
   target_sources (bgdrtm PRIVATE misc_psp.c)
 endif ()

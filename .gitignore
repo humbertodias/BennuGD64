@@ -36,9 +36,11 @@ Makefile
 *.dll
 *.exe
 
-# Project binaries
-bgdi
-bgdc
+# Project binaries (the executables only, never core/bgdi or core/bgdc sources)
+/bgdi
+/bgdc
+/core/bgdi/src/bgdi
+/core/bgdc/src/bgdc
 
 # Editor / IDE
 .idea/
@@ -67,6 +69,9 @@ local.properties
 
 # Sega Dreamcast homebrew
 *.cdi
+
+# PlayStation Portable homebrew
+*.pbp
 
 # OpenPandora homebrew
 *.pnd

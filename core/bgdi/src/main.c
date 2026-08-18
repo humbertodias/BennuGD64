@@ -76,6 +76,10 @@
 KOS_INIT_FLAGS(INIT_DEFAULT);
 #endif
 
+#ifdef TARGET_PSP
+#include "main_psp.h"
+#endif
+
 /* ---------------------------------------------------------------------- */
 
 static char * dcb_exts[] = { ".dcb", ".dat", ".bin", NULL };
@@ -228,6 +232,14 @@ int main( int argc, char *argv[] )
     }
 #endif
 
+#ifdef TARGET_PSP
+    {
+        char * psp_dcb = bgdi_psp_startup( argc, argv, &standalone );
+        if ( psp_dcb )
+            filename = psp_dcb;
+    }
+#endif
+
 #ifdef TARGET_PANDORA
     {
         standalone = 1;
@@ -303,7 +315,10 @@ int main( int argc, char *argv[] )
     standalone = 1 ;
 #elif defined(_arch_dreamcast)
     standalone = 1 ;
+#elif defined(TARGET_PSP)
+    standalone = 1 ;
 #elif defined(TARGET_PANDORA)
+    standalone = 1 ;
     standalone = 1 ;
 #else
     standalone = ( strncmpi( appexename, "bgdi", 4 ) == 0 ) ;

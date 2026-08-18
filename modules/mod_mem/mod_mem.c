@@ -65,7 +65,6 @@
 #include <sys/sysinfo.h>
 #endif
 
-/* PANDORA INCLUDES */
 #ifdef TARGET_PANDORA
 #include <sys/sysinfo.h>
 #endif
@@ -86,6 +85,7 @@
 
 #include "bgddl.h"
 #include "bgd_handles.h"
+#include "bgd_platform.h"
 
 /*
  * Dynamic memory
@@ -150,7 +150,7 @@ static int modmem_memory_free( INSTANCE * my, intptr_t * params )
     if ( sysinfo( &meminf ) == -1 ) return -1;
     return ( int )( meminf.freeram * meminf.mem_unit );
 
-#elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN) && !defined(TARGET_SWITCH) && !defined(TARGET_DC) && !defined(TARGET_PANDORA)
+#elif !defined(BGD_NO_SYSINFO_MEM)
     /* Linux and other Unix (?) */
     struct sysinfo meminf;
     int fv;
@@ -193,7 +193,7 @@ static int modmem_memory_total( INSTANCE * my, intptr_t * params )
     if ( sysinfo( &meminf ) == -1 ) return -1;
     return ( int )( meminf.totalram * meminf.mem_unit );
 
-#elif !defined(TARGET_MAC) && !defined(TARGET_WII) && !defined(TARGET_EMSCRIPTEN) && !defined(TARGET_SWITCH) && !defined(TARGET_DC) && !defined(TARGET_PANDORA)
+#elif !defined(BGD_NO_SYSINFO_MEM)
     /* Linux and other Unix (?) */
     struct sysinfo meminf;
     int fv;

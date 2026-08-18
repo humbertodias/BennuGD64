@@ -429,6 +429,65 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  build-psp:
+    name: psp-mips-static
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Load versions
+        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
+
+      - name: Cache FetchContent
+        uses: actions/cache@v4
+        with:
+          path: |
+            build-psp-host/_deps/*-src
+            build-psp-mips/_deps/*-src
+          key: fetch-psp-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.psp') }}
+          restore-keys: |
+            fetch-psp-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build PSP toolchain image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker
+          file: docker/Dockerfile.psp
+          tags: bennugd64-psp
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          cache-from: type=gha,scope=bennugd-psp
+          cache-to: type=gha,mode=max,scope=bennugd-psp
+
+      - name: Build
+        env:
+          SKIP_DOCKER_BUILD: "1"
+        run: bash scripts/docker-build.sh psp
+
+      - name: Resolve version
+        id: meta
+        run: |
+          VERSION="$(tr -d '[:space:]' < build-psp-mips/generated/VERSION)"
+          [[ -n "$VERSION" ]] || VERSION="dev"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: bennugd64-${{ steps.meta.outputs.version }}-psp-mips-static
+          path: dist/psp-mips-static/
+          if-no-files-found: error
+          retention-days: 14
+
   build-pandora:
     name: pandora-arm-static
     runs-on: ubuntu-22.04
@@ -550,7 +609,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [build, build-macos, build-wasm, build-wasi, build-android, build-switch, build-dreamcast, build-pandora]
+    needs: [build, build-macos, build-wasm, build-wasi, build-android, build-switch, build-dreamcast, build-psp, build-pandora]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -578,7 +637,7 @@ jobs:
             esac
             echo "Packaging $base"
             case "$base" in
-              *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*pandora*)
+              *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*psp*|*pandora*)
                 (cd artifacts && zip -r "$GITHUB_WORKSPACE/release-assets/${base}.zip" "$base")
                 ;;
               *)
@@ -599,9 +658,9 @@ jobs:
           generate_release_notes: true
           files: release-assets/*
           body: |
-            Builds of `bgdc` and `bgdi` for Linux, Windows, macOS, WebAssembly, Android, Nintendo Switch, Sega Dreamcast, and OpenPandora.
+            Builds of `bgdc` and `bgdi` for Linux, Windows, macOS, WebAssembly, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, and OpenPandora.
 
-            Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared>.tar.gz` (`.zip` on Windows, wasm, Android, Switch, Dreamcast, and Pandora):
+            Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared>.tar.gz` (`.zip` on Windows, wasm, Android, Switch, Dreamcast, PSP, and Pandora):
             - **static** — modules linked into `bgdi`
             - **shared** — modules as `.so`/`.dll`/`.dylib` under `modules/`
             - **web-wasm32-static** — browser interpreter (`index.html`, `bgdi.js`, `bgdi.wasm`, `bgdi.data`); serve the folder over HTTP
@@ -609,10 +668,11 @@ jobs:
             - **android-arm64-static** — debug APK (`bennugd64.apk`) plus `libmain.so` / `libSDL3.so`; install the APK (arm64-v8a, API 28+)
             - **switch-aarch64-static** — homebrew NRO (`bennugd64.nro`); copy to `sdmc:/switch/` or send with `nxlink`
             - **dreamcast-sh4-static** — homebrew CDI (`bennugd64.cdi`); burn or emulate, or send `bgdi.elf` with `dc-tool`
+            - **psp-mips-static** — homebrew PBP (`EBOOT.PBP`); copy the folder to `ms0:/PSP/GAME/bennugd64/`
             - **pandora-arm-static** — homebrew PND (`bennugd64.pnd`); copy to the Pandora SD card, or run `./bgdi` next to `main.dcb`
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-            Linux, Windows, wasm, Android, Switch, Dreamcast, and Pandora CI images come from `docker/Dockerfile.linux` (`--target linux` / `--target wasm`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), and `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`).
+            Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, and Pandora CI images come from `docker/Dockerfile.linux` (`--target linux` / `--target wasm`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), and `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`).
             OS graphics/audio libraries may still be required at runtime.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

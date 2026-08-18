@@ -514,9 +514,9 @@ void gr_unlock_screen()
                 )
            )
         {
-            if ( SDL_MUSTLOCK( screen ) ) SDL_UnlockSurface( screen ) ;
+            if ( SDL_MUSTLOCK( screen ) ) SDL_UnlockSurface( screen );
             if ( waitvsync ) gr_wait_vsync();
-            gr_video_present( screen ) ;
+            gr_video_present( screen );
         }
         else
         {
@@ -531,9 +531,9 @@ void gr_unlock_screen()
                     rects[ i ].w = ( updaterects[ i ].x2 - rects[ i ].x + 1 );
                     rects[ i ].h = ( updaterects[ i ].y2 - rects[ i ].y + 1 );
                 }
-                if ( SDL_MUSTLOCK( screen ) ) SDL_UnlockSurface( screen ) ;
+                if ( SDL_MUSTLOCK( screen ) ) SDL_UnlockSurface( screen );
                 if ( waitvsync ) gr_wait_vsync();
-                gr_video_present_rects( screen, rects, updaterects_count ) ;
+                gr_video_present_rects( screen, rects, updaterects_count );
             }
         }
     }

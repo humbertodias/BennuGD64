@@ -37,6 +37,7 @@
 #include "bgdrtm.h"
 #include "dirs.h"
 #include "xstrings.h"
+#include "bgd_platform.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -261,7 +262,7 @@ __DIR_ST * dir_open( const char * path )
     /* Convert '*.*' to '*' */
     if ( fptr > hDir->pattern + 2 && fptr[ -1 ] == '*' && fptr[ -2 ] == '.' && fptr[ -3 ] == '*' ) fptr[ -2 ] = 0;
 
-#if defined(TARGET_MAC) || defined(TARGET_BEOS) || defined(TARGET_ANDROID) || defined(TARGET_SWITCH) || defined(TARGET_DC)
+#ifdef BGD_GLOB_NO_PERIOD
     r = glob( hDir->pattern, GLOB_ERR | GLOB_NOSORT, NULL, &hDir->globd );
 #else
     r = glob( hDir->pattern, GLOB_ERR | GLOB_PERIOD | GLOB_NOSORT, NULL, &hDir->globd );

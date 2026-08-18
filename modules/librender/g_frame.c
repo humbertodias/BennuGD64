@@ -32,6 +32,10 @@
 
 #include "librender.h"
 
+#ifdef TARGET_PSP
+#include "g_frame_psp.h"
+#endif
+
 /* --------------------------------------------------------------------------- */
 
 #define FPS_INTIAL_VALUE    25
@@ -76,6 +80,10 @@ float fps_partial = 0;
 
 void gr_set_fps( int fps, int skip )
 {
+#ifdef TARGET_PSP
+    skip = gr_frame_psp_adjust_skip( skip );
+#endif
+
     if ( fps == fps_value && skip == max_jump ) return ;
 
     frame_ms = fps ? 1000.0 / ( float ) fps : 0.0 ;

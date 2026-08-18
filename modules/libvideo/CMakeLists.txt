@@ -9,7 +9,11 @@ add_library (
   ${MODULES}
   g_video.c
   g_regions.c
-) 
+)
+
+if (PLATFORM_PSP OR PSP)
+  target_sources (video PRIVATE g_video_psp.c)
+endif ()
 
 add_dependencies ( video bennugd_git_header )
 

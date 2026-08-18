@@ -33,6 +33,7 @@
 #include <ctype.h>
 
 #include "dirs.h"
+#include "bgd_platform.h"
 
 /* WIN32 INCLUDES */
 #ifdef WIN32
@@ -41,10 +42,8 @@
 #include <windef.h>
 #else
 #include <unistd.h>
-#ifndef TARGET_SWITCH
-#ifndef TARGET_DC
+#ifndef BGD_NO_UTSNAME
 #include <sys/utsname.h>
-#endif
 #endif
 /* BeOS INCLUDES */
 #ifdef TARGET_BEOS

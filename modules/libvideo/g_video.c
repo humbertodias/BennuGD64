@@ -41,6 +41,10 @@
 
 #include "libvideo.h"
 
+#ifdef TARGET_PSP
+#include "g_video_psp.h"
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #include <initguid.h>
@@ -278,6 +282,10 @@ void gr_video_present( SDL_Surface * src )
     gr_video_present_renderer( src );
     return;
 #endif
+#ifdef TARGET_PSP
+    gr_video_psp_present( src );
+    return;
+#endif
 
     winsurf = SDL_GetWindowSurface( window );
     if ( !winsurf )
@@ -307,6 +315,10 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 
 #ifdef __SWITCH__
     gr_video_present( src );
+    return;
+#endif
+#ifdef TARGET_PSP
+    gr_video_psp_present_rects( src, rects, count );
     return;
 #endif
 
@@ -391,6 +403,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
      * the game size so present is a 1:1 blit, not a software scale on SH4. */
     window_flags |= SDL_WINDOW_FULLSCREEN;
 #endif
+#ifdef TARGET_PSP
+    gr_video_psp_adjust_window( &width, &height, &window_flags );
+#endif
 #ifdef TARGET_PANDORA
     /* 800x480 LCD. Keep the game framebuffer and present it scaled. */
     width = 800;
@@ -421,6 +436,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
         if ( window )
         {
             gr_destroy_present_renderer();
+#ifdef TARGET_PSP
+            gr_video_psp_destroy();
+#endif
             SDL_DestroyWindow( window );
             window = NULL;
         }
@@ -517,6 +535,9 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef _arch_dreamcast
     full_screen = 1;
+#endif
+#ifdef TARGET_PSP
+    gr_video_psp_apply_mode();
 #endif
 #ifdef TARGET_PANDORA
     full_screen = 1;
@@ -747,6 +768,10 @@ int gr_set_mode( int width, int height, int depth )
 
     if ( !screen ) return -1;
 
+#ifdef TARGET_PSP
+    if ( !gr_video_psp_ready_present( screen->w, screen->h ) ) return -1;
+#endif
+
     SDL_SetWindowMouseGrab( window, grab_input ? true : false ) ;
     SDL_SetWindowKeyboardGrab( window, grab_input ? true : false ) ;
 
@@ -884,12 +909,15 @@ void __bgdexport( libvideo, module_initialize )()
     SDL_DC_ShowAskHz( false );
     SDL_DC_Default60Hz( true );
 #endif
-#ifdef TARGET_PANDORA
+#ifdef TARGET_PSP
+    gr_video_psp_module_initialize();
+#elif defined(TARGET_PANDORA)
     SDL_SetHint( SDL_HINT_RENDER_DRIVER, "software" );
     SDL_SetHint( SDL_HINT_VIDEO_DRIVER, "x11" );
-#endif
-
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
+#else
+    if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
+#endif
 
 #ifdef _WIN32
     if ( !directdraw ) init_dx();
@@ -936,6 +964,9 @@ void __bgdexport( libvideo, module_finalize )()
     if ( window )
     {
         gr_destroy_present_renderer();
+#ifdef TARGET_PSP
+        gr_video_psp_destroy();
+#endif
         SDL_DestroyWindow( window );
         window = NULL;
     }

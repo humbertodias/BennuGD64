@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <stdio.h>
+#include <string.h>
 #include <math.h>
 
 #include "libblit.h"
@@ -1122,6 +1123,30 @@ static void draw_hspan_8to16( uint16_t *scr, uint8_t * tex, int pixels, int incs
     int i;
     uint8_t * _scr = ( uint8_t * ) scr, * _tex = ( uint8_t * ) tex;
 
+    if ( incs == 1 )
+    {
+        while ( l-- )
+        {
+            i = pixels;
+            while ( i >= 4 )
+            {
+                uint8_t a = tex[0], b = tex[1], c = tex[2], d = tex[3];
+                if ( a ) scr[0] = pcolorequiv[a];
+                if ( b ) scr[1] = pcolorequiv[b];
+                if ( c ) scr[2] = pcolorequiv[c];
+                if ( d ) scr[3] = pcolorequiv[d];
+                scr += 4; tex += 4; i -= 4;
+            }
+            while ( i-- )
+            {
+                if ( *tex ) *scr = pcolorequiv[*tex];
+                scr++; tex++;
+            }
+            scr = ( uint16_t * )( _scr += scr_inc ); tex = _tex += tex_inc;
+        }
+        return;
+    }
+
     while ( l-- )
     {
         for ( i = pixels; i--; )
@@ -1210,6 +1235,30 @@ static void draw_hspan_16to16( uint16_t *scr, uint16_t * tex, int pixels, int in
     int i;
     uint8_t * _scr = ( uint8_t * ) scr, * _tex = ( uint8_t * ) tex;
 
+    if ( incs == 1 )
+    {
+        while ( l-- )
+        {
+            i = pixels;
+            while ( i >= 4 )
+            {
+                uint16_t a = tex[0], b = tex[1], c = tex[2], d = tex[3];
+                if ( a ) scr[0] = a;
+                if ( b ) scr[1] = b;
+                if ( c ) scr[2] = c;
+                if ( d ) scr[3] = d;
+                scr += 4; tex += 4; i -= 4;
+            }
+            while ( i-- )
+            {
+                if ( *tex ) *scr = *tex;
+                scr++; tex++;
+            }
+            scr = ( uint16_t * )( _scr += scr_inc ); tex = ( uint16_t * )( _tex += tex_inc );
+        }
+        return;
+    }
+
     while ( l-- )
     {
         for ( i = pixels; i--; )
@@ -1277,6 +1326,17 @@ static void draw_hspan_16to16_nocolorkey( uint16_t *scr, uint16_t * tex, int pix
 {
     int i;
     uint8_t * _scr = ( uint8_t * ) scr, * _tex = ( uint8_t * ) tex;
+
+    if ( incs == 1 )
+    {
+        const size_t bytes = ( size_t ) pixels * sizeof( uint16_t );
+        while ( l-- )
+        {
+            memcpy( scr, tex, bytes );
+            scr = ( uint16_t * )( _scr += scr_inc ); tex = ( uint16_t * )( _tex += tex_inc );
+        }
+        return;
+    }
 
     while ( l-- )
     {

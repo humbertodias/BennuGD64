@@ -17,6 +17,10 @@ else ()
   )
 endif ()
 
+if (PLATFORM_PSP OR PSP)
+  target_sources (bgdi PRIVATE main_psp.c)
+endif ()
+
 add_dependencies ( bgdi bennugd_git_header )
 
 if (USE_LIBDES)
@@ -67,6 +71,21 @@ if (PLATFORM_DREAMCAST OR DREAMCAST)
     m
     pthread
     GL
+  )
+endif ()
+
+if (PLATFORM_PSP OR PSP)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+    psppower
+    pspdebug
+    pspsdk
+    c
+    pspuser
+    pspkernel
+    m
   )
 endif ()
 

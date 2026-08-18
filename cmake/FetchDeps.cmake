@@ -25,8 +25,8 @@ if (PLATFORM_DREAMCAST OR DREAMCAST)
 endif ()
 
 # Static archives must be PIC so they can later link into .so/.dylib modules.
-# Switch/Dreamcast homebrew uses the toolchain PIE/KOS flags instead.
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA)
+# Switch/Dreamcast/PSP/Pandora homebrew uses the toolchain PIE/KOS/pspdev flags instead.
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA)
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -176,6 +176,13 @@ if (PLATFORM_PANDORA OR OPENPANDORA)
   set (SDL_JACK OFF CACHE BOOL "" FORCE)
   set (SDL_SNDIO OFF CACHE BOOL "" FORCE)
 endif ()
+if (PLATFORM_PSP OR PSP)
+  # pspdev already ships SDL3/SDL3_mixer built for Allegrex.
+  find_package (SDL3 REQUIRED CONFIG)
+  if (NOT NO_SOUND)
+    find_package (SDL3_mixer REQUIRED CONFIG)
+  endif ()
+else ()
 FetchContent_Declare (
   sdl3
   GIT_REPOSITORY "${BENNUGD_SDL3_GIT_REPOSITORY}"
@@ -330,6 +337,7 @@ if (NOT NO_SOUND)
     endif ()
     add_subdirectory (${sdl3_mixer_SOURCE_DIR} ${sdl3_mixer_BINARY_DIR} EXCLUDE_FROM_ALL)
   endif ()
+endif ()
 endif ()
 
 set (BUILD_SHARED_LIBS "${_bennugd_saved_shared}")

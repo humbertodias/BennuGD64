@@ -8,6 +8,7 @@
 #   bash scripts/docker-build.sh android
 #   bash scripts/docker-build.sh switch
 #   bash scripts/docker-build.sh dreamcast
+#   bash scripts/docker-build.sh psp
 #   bash scripts/docker-build.sh pandora
 #   bash scripts/docker-build.sh linux shell
 set -euo pipefail
@@ -20,6 +21,7 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 android [shell]
        $0 switch [shell]
        $0 dreamcast [shell]
+       $0 psp [shell]
        $0 pandora [shell]"
 
 if [[ -f "${ROOT}/versions.env" ]]; then
@@ -42,7 +44,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|pandora) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|pandora) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -84,6 +86,12 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
       -t bennugd64-dreamcast \
       -f docker/Dockerfile.dreamcast \
       docker/
+  elif [[ "${PLATFORM}" == "psp" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      -t bennugd64-psp \
+      -f docker/Dockerfile.psp \
+      docker/
   elif [[ "${PLATFORM}" == "pandora" ]]; then
     docker build \
       --platform linux/amd64 \
@@ -96,7 +104,7 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
-  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "pandora" ]]; then
+  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "pandora" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
       -w /src \
@@ -140,7 +148,9 @@ reuse_fetchcontent_src() {
     "${ROOT}/build-windows-static/_deps/${name}" \
     "${ROOT}/build-windows-shared/_deps/${name}" \
     "${ROOT}/build-android-arm64/_deps/${name}" \
-    "${ROOT}/build-host/_deps/${name}"
+    "${ROOT}/build-host/_deps/${name}" \
+    "${ROOT}/build-psp-host/_deps/${name}" \
+    "${ROOT}/build-pandora-host/_deps/${name}"
   do
     if [[ -f "${cand}/CMakeLists.txt" ]]; then
       echo "reuse: ${cand} -> ${dest}"
@@ -538,6 +548,81 @@ if [[ "${PLATFORM}" == "dreamcast" ]]; then
       cp "${ELF}" "${STAGE}/bgdi.elf"
       cp "${ISODIR}/"* "${STAGE}/" 2>/dev/null || true
       test -s "${STAGE}/bennugd64.cdi"
+      test -s "${STAGE}/bgdi.elf"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "psp" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: psp-host + psp-mips"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-psp-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-psp-mips/_deps"
+  docker run --platform linux/amd64 --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -n "${PSPDEV:-}"
+      test -x "${PSPDEV}/bin/psp-gcc"
+      test -x "${PSPDEV}/bin/pack-pbp"
+      HOST_BUILD=/src/build-psp-host
+      PSP_BUILD=/src/build-psp-mips
+      GAMEDIR=/src/build-psp-game
+      STAGE=/src/dist/psp-mips-static
+      FETCH_DIR="${HOST_BUILD}/_deps"
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+      )
+      cmake --preset psp-host "${COMMON[@]}"
+      cmake --build --preset psp-host
+      for prg in /src/web/demo/*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      cmake --preset psp-mips \
+        "${COMMON[@]}" \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
+      cmake --build --preset psp-mips
+      ELF=""
+      for cand in \
+        "${PSP_BUILD}/core/bgdi/src/bgdi.elf" \
+        "${PSP_BUILD}/core/bgdi/src/bgdi"
+      do
+        if [[ -f "${cand}" ]]; then
+          ELF="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${ELF}" ]]; then
+        ELF="$(find "${PSP_BUILD}/core/bgdi" \( -type f -o -type l \) \( -name bgdi.elf -o -name bgdi \) | grep -v /CMakeFiles/ | head -n 1 || true)"
+      fi
+      test -n "${ELF}"
+      test -s "${ELF}"
+      rm -rf "${GAMEDIR}"
+      mkdir -p "${GAMEDIR}" "${STAGE}"
+      cp "${ELF}" "${GAMEDIR}/bgdi.elf"
+      "${PSPDEV}/bin/psp-fixup-imports" "${GAMEDIR}/bgdi.elf"
+      "${PSPDEV}/bin/mksfoex" -d MEMSIZE=1 -s "APP_VER=1.0" "BennuGD64" "${GAMEDIR}/PARAM.SFO"
+      "${PSPDEV}/bin/pack-pbp" "${GAMEDIR}/EBOOT.PBP" "${GAMEDIR}/PARAM.SFO" \
+        NULL NULL NULL NULL NULL "${GAMEDIR}/bgdi.elf" NULL
+      cp /src/web/demo/*.dcb "${GAMEDIR}/"
+      cp /src/web/demo/hello.dcb "${GAMEDIR}/main.dcb"
+      cmake --install "${PSP_BUILD}" --prefix "${STAGE}"
+      cp "${GAMEDIR}/EBOOT.PBP" "${GAMEDIR}/bgdi.elf" "${STAGE}/"
+      cp "${GAMEDIR}/"* "${STAGE}/" 2>/dev/null || true
+      test -s "${STAGE}/EBOOT.PBP"
       test -s "${STAGE}/bgdi.elf"
     '
   exit 0

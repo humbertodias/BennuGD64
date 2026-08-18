@@ -27,12 +27,14 @@
 #ifndef _LOADLIB_H
 #define _LOADLIB_H
 
+#include "bgd_platform.h"
+
 /* --------------------------------------------------------------------------- */
 
 #ifdef _WIN32
 #include <windows.h>
 #include <winbase.h>
-#elif defined(__wasi__) || defined(__SWITCH__) || defined(_arch_dreamcast)
+#elif defined(BGD_NO_DLOPEN)
 #include <unistd.h>
 #define __stdcall
 #define __dllexport

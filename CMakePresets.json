@@ -129,6 +129,26 @@
       }
     },
     {
+      "name": "psp-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile PSP demo DCBs",
+      "binaryDir": "${sourceDir}/build-psp-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "psp-mips",
+      "inherits": "base",
+      "displayName": "PlayStation Portable interpreter (bgdi.elf)",
+      "binaryDir": "${sourceDir}/build-psp-mips",
+      "toolchainFile": "${sourceDir}/cmake/pspdev.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
       "name": "pandora-host",
       "inherits": "static",
       "displayName": "Native bgdc used to compile Pandora demo DCBs",
@@ -162,6 +182,8 @@
     { "name": "switch-aarch64", "configurePreset": "switch-aarch64", "targets": ["bgdi"] },
     { "name": "dreamcast-host", "configurePreset": "dreamcast-host", "targets": ["bgdc"] },
     { "name": "dreamcast-sh4", "configurePreset": "dreamcast-sh4", "targets": ["bgdi"] },
+    { "name": "psp-host", "configurePreset": "psp-host", "targets": ["bgdc"] },
+    { "name": "psp-mips", "configurePreset": "psp-mips", "targets": ["bgdi"] },
     { "name": "pandora-host", "configurePreset": "pandora-host", "targets": ["bgdc"] },
     { "name": "pandora-arm", "configurePreset": "pandora-arm", "targets": ["bgdi"] }
   ],

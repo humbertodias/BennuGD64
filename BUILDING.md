@@ -296,11 +296,41 @@ That configures native `bgdc` (`wii-host`), compiles `web/demo/*.prg`, cross-com
 
 In Dolphin, **File → Open** `dist/wii-powerpc-static/bgdi.elf` (not the game list, and not `boot.dol` from the SD). Opening a DOL/ELF that lives **on** the virtual SD is a black screen; the interpreter must stay on the host disk, and `main.dcb` must be on the SD image. Do **not** point **SD Card Path** at a folder — that path is the `.raw` file, and using a directory makes Dolphin report **Failed to init core**. Use **Options → Configuration → Wii**:
 
-1. Leave **SD Card Path** as the default `WiiSD.raw` / `sd.raw`.
+1. Leave **SD Card Path** as the default `WiiSD.raw` (macOS: `~/Library/Application Support/Dolphin/Load/WiiSD.raw`).
 2. Enable **Insert SD Card**.
 3. Set **SD Sync Folder** to Dolphin's `Load/WiiSDSync` (macOS: `~/Library/Application Support/Dolphin/Load/WiiSDSync`). Put `main.dcb` in that folder root (`sd:/main.dcb`). Do not put `bgdi.elf` or `boot.dol` there.
 4. Click **Convert Folder to File Now**. Leave **Automatically Sync with Folder** off while you run — converting an empty folder wipes the SD image.
 5. **File → Open** `dist/wii-powerpc-static/bgdi.elf`.
+
+The interpreter reads `sd:/main.dcb` from **`WiiSD.raw`**, not from `WiiSDSync` and not from `dist/`. The sync folder is only a staging area. Files move into the image when you click **Convert Folder to File Now** (or when automatic sync is on). Deleting `WiiSDSync` does not empty the `.raw`.
+
+### Update only the DCB
+
+Compile on the host (`bgdc -o main.dcb game.prg`). Then either:
+
+**Mount the image** (replaces one file, leaves the rest of the card). Quit Dolphin first.
+
+macOS:
+
+```shell
+hdiutil attach -imagekey diskimage-class=CRawDiskImage ~/Library/Application\ Support/Dolphin/Load/WiiSD.raw
+```
+
+The volume appears in Finder (often named **NO NAME**). Replace `main.dcb` at the root, then eject before opening Dolphin again:
+
+```shell
+hdiutil detach "/Volumes/NO NAME"
+```
+
+If attach reports *no mountable file systems*:
+
+```shell
+hdiutil mount "$(hdiutil attach -nomount -imagekey diskimage-class=CRawDiskImage ~/Library/Application\ Support/Dolphin/Load/WiiSD.raw)"
+```
+
+**Or use Convert:** **Convert File to Folder Now** (extracts `WiiSD.raw` into `WiiSDSync/`), replace `WiiSDSync/main.dcb`, then **Convert Folder to File Now**. Do not convert from an empty folder.
+
+For **Streets of Rage Remake**, copy the **entire** install onto the SD image root (not only the DCB): `palettes/`, `mod/`, maps, and so on, plus `SorR.dat` or `main.dcb`. The interpreter adds those subfolders to the file PATH (SoRR loads `galsia.pal` by basename). In `mod/system.txt`, handheld ports use `PSP`; on Wii try `PC` if menus look wrong.
 
 SDL3 comes from the [lucaspcamargo/SDL3-libogc2](https://github.com/lucaspcamargo/SDL3-libogc2) `fixes` branch (GX video / AESND audio). Modules are linked into `bgdi.elf`.
 

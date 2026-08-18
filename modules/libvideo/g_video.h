@@ -112,6 +112,7 @@ extern void gr_wait_vsync();
 extern void gr_set_surface_palette( SDL_Surface * surface, SDL_Color * colors, int first, int ncolors );
 extern void gr_video_present( SDL_Surface * src );
 extern void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int count );
+extern int  gr_video_present_via_renderer( SDL_Surface * src );
 
 /* --------------------------------------------------------------------------- */
 

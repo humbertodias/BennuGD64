@@ -14,6 +14,18 @@ add_library (
 if (PLATFORM_PSP OR PSP)
   target_sources (video PRIVATE g_video_psp.c)
 endif ()
+if (NINTENDO_SWITCH)
+  target_sources (video PRIVATE g_video_switch.c)
+endif ()
+if (PLATFORM_DREAMCAST OR DREAMCAST)
+  target_sources (video PRIVATE g_video_dc.c)
+endif ()
+if (PLATFORM_PANDORA OR OPENPANDORA)
+  target_sources (video PRIVATE g_video_pandora.c)
+endif ()
+if (EMSCRIPTEN)
+  target_sources (video PRIVATE g_video_emscripten.c)
+endif ()
 
 add_dependencies ( video bennugd_git_header )
 

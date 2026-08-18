@@ -42,11 +42,8 @@
 #include <assert.h>
 #include <stdint.h>
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#endif
-
 #include "typedef_st.h"
+#include "interpreter_p.h"
 
 /* ---------------------------------------------------------------------- */
 /* Interpreter's main module                                              */
@@ -119,7 +116,7 @@ static int stack_dump( INSTANCE * r )
 
 /* Run until one FRAME is complete (all processes framed + hooks).
  * Returns 1 to keep going, 0 when the program should stop. */
-static int instance_go_one_turn( void )
+int instance_go_one_turn( void )
 {
     INSTANCE * i = NULL;
     int i_count = 0 ;
@@ -243,27 +240,7 @@ static int instance_go_one_turn( void )
     }
 }
 
-#ifdef __EMSCRIPTEN__
-static void bgdrtm_browser_tick( void )
-{
-    /* Do not count RAFs: that assumed 60 Hz and made SET_FPS games (and
-     * key() polling) run 2× on 120 Hz displays. */
-    if ( !bgdrtm_browser_frame_due() )
-        return;
-
-    if ( !instance_go_one_turn() )
-        emscripten_cancel_main_loop();
-}
-
-int instance_go_all()
-{
-    must_exit = 0 ;
-    /* fps=0 → requestAnimationFrame. simulate_infinite_loop keeps main()
-     * parked until the game exits (no SDL_Delay / emscripten_sleep). */
-    emscripten_set_main_loop( bgdrtm_browser_tick, 0, 1 );
-    return exit_value;
-}
-#else
+#ifndef TARGET_EMSCRIPTEN
 int instance_go_all()
 {
     must_exit = 0 ;

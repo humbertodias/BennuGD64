@@ -36,4 +36,17 @@
 #define BGD_NO_SYSINFO_MEM 1
 #endif
 
+#if defined(__EMSCRIPTEN__) || defined(TARGET_EMSCRIPTEN)
+#define BGD_NO_SDL_DELAY 1
+#endif
+
+#if defined(__EMSCRIPTEN__) || defined(TARGET_EMSCRIPTEN) \
+ || defined(__ANDROID__) || defined(TARGET_ANDROID) \
+ || defined(__SWITCH__) || defined(TARGET_SWITCH) \
+ || defined(_arch_dreamcast) || defined(TARGET_DC) \
+ || defined(__PSP__) || defined(TARGET_PSP) \
+ || defined(TARGET_PANDORA)
+#define BGD_STANDALONE_INTERPRETER 1
+#endif
+
 #endif

@@ -6,11 +6,6 @@
 
 #include "bgdrtm.h"
 
-#ifdef __EMSCRIPTEN__
-#include <emscripten.h>
-#include <SDL3/SDL.h>
-#endif
-
 static float pace_ms = 40.0f;
 
 void bgdrtm_set_frame_pace( int fps )
@@ -24,39 +19,12 @@ double bgdrtm_frame_period_ms( void )
     return pace_ms > 0.0f ? ( double ) pace_ms : ( 1000.0 / 60.0 );
 }
 
+#ifndef TARGET_EMSCRIPTEN
 int bgdrtm_browser_frame_due( void )
 {
-#ifdef __EMSCRIPTEN__
-    static double last_ms = -1.0;
-    static double acc_ms = 0.0;
-    const double now = emscripten_get_now();
-    const double period = bgdrtm_frame_period_ms();
-
-    if ( last_ms < 0.0 )
-    {
-        last_ms = now;
-        return 1;
-    }
-
-    acc_ms += now - last_ms;
-    last_ms = now;
-
-    if ( acc_ms < period )
-    {
-        /* Keep KEYUP flowing while we skip rAFs, or Enter stays stuck. */
-        SDL_PumpEvents();
-        return 0;
-    }
-
-    acc_ms -= period;
-    /* Drop only a large backlog (backgrounded tab). Small leftover keeps SET_FPS. */
-    if ( acc_ms > period )
-        acc_ms = 0.0;
     return 1;
-#else
-    return 1;
-#endif
 }
+#endif
 
 void bgdrtm_frame_throttle( void )
 {

@@ -12,6 +12,9 @@ add_library (
 if (PLATFORM_PSP OR PSP)
   target_sources (key PRIVATE libkey_psp.c)
 endif ()
+if (EMSCRIPTEN)
+  target_sources (key PRIVATE libkey_emscripten.c)
+endif ()
 
 target_link_libraries (
   key

@@ -40,6 +40,13 @@ endif ()
 if (PLATFORM_PSP OR PSP)
   target_sources (bgdrtm PRIVATE misc_psp.c)
 endif ()
+if (EMSCRIPTEN)
+  target_sources (bgdrtm PRIVATE
+    misc_emscripten.c
+    frame_pace_emscripten.c
+    interpreter_emscripten.c
+  )
+endif ()
 
 if (USE_LIBDES)
   target_link_libraries (

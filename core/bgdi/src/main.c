@@ -54,30 +54,22 @@
 #include "bgdrtm.h"
 #include "xstrings.h"
 #include "dirs.h"
+#include "bgd_platform.h"
 
-#ifdef __ANDROID__
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
+#ifdef TARGET_ANDROID
+#include "main_android.h"
 #endif
-
-#ifdef __SWITCH__
-#include <switch.h>
-#include <unistd.h>
-#define SDL_MAIN_HANDLED
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
+#ifdef TARGET_SWITCH
+#include "main_switch.h"
 #endif
-
-#ifdef _arch_dreamcast
-#include <kos.h>
-#define SDL_MAIN_HANDLED
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
-KOS_INIT_FLAGS(INIT_DEFAULT);
+#ifdef TARGET_DC
+#include "main_dc.h"
 #endif
-
 #ifdef TARGET_PSP
 #include "main_psp.h"
+#endif
+#ifdef TARGET_PANDORA
+#include "main_pandora.h"
 #endif
 
 /* ---------------------------------------------------------------------- */
@@ -102,41 +94,6 @@ static int embedded    = 0;  /* 1 only if this is a stub with an embedded DCB */
  *
  */
 
-#ifdef __ANDROID__
-static int android_write_file ( const char * path, const void * data, size_t size )
-{
-    FILE * fp = fopen( path, "wb" );
-    if ( !fp ) return 0;
-    if ( size && fwrite( data, 1, size, fp ) != size )
-    {
-        fclose( fp );
-        return 0;
-    }
-    fclose( fp );
-    return 1;
-}
-
-static void android_extract_assets ( const char * dest_dir )
-{
-    const char * bundled[] = { "main.dcb", "hello.dcb", NULL };
-    int i;
-    for ( i = 0 ; bundled[i] ; i++ )
-    {
-        char dest[ __MAX_PATH ];
-        size_t sz = 0;
-        void * data;
-        snprintf( dest, sizeof( dest ), "%s/%s", dest_dir, bundled[i] );
-        if ( access( dest, R_OK ) == 0 ) continue;
-        data = SDL_LoadFile( bundled[i], &sz );
-        if ( data )
-        {
-            android_write_file( dest, data, sz );
-            SDL_free( data );
-        }
-    }
-}
-#endif
-
 int main( int argc, char *argv[] )
 {
     char * filename = NULL, dcbname[ __MAX_PATH ], *ptr, *arg0, *ext ;
@@ -148,87 +105,27 @@ int main( int argc, char *argv[] )
     /* disable stdout buffering */
     setvbuf( stdout, NULL, _IONBF, BUFSIZ );
 
-#ifdef __ANDROID__
+#ifdef TARGET_ANDROID
     {
-        const char * storage = SDL_GetAndroidInternalStoragePath();
-        if ( storage )
-        {
-            android_extract_assets( storage );
-            chdir( storage );
-            file_addp( storage );
-        }
-        standalone = 1;
-        if ( argc < 2 )
-        {
-            if ( access( "main.dcb", R_OK ) == 0 ) filename = "main.dcb";
-            else if ( access( "hello.dcb", R_OK ) == 0 ) filename = "hello.dcb";
-            else
-            {
-                fprintf( stderr, "Android: no main.dcb or hello.dcb in %s\n",
-                         storage ? storage : "(no storage)" );
-            }
-        }
+        char * android_dcb = bgdi_android_startup( argc, argv, &standalone );
+        if ( android_dcb )
+            filename = android_dcb;
     }
 #endif
 
-#ifdef __SWITCH__
+#ifdef TARGET_SWITCH
     {
-        static const char * bundled[] = {
-            "romfs:/main.dcb", "romfs:/hello.dcb", "main.dcb", "hello.dcb", NULL
-        };
-        int k;
-        FILE * test;
-
-        SDL_SetMainReady();
-        romfsInit();
-        socketInitializeDefault();
-        nxlinkStdio();
-        file_addp( "romfs:/" );
-        file_addp( "sdmc:/switch/bennugd64" );
-        chdir( "romfs:/" );
-        standalone = 1;
-        if ( argc < 2 )
-        {
-            for ( k = 0 ; bundled[k] ; k++ )
-            {
-                test = fopen( bundled[k], "rb" );
-                if ( test )
-                {
-                    fclose( test );
-                    filename = ( char * ) bundled[k];
-                    break;
-                }
-            }
-        }
+        char * switch_dcb = bgdi_switch_startup( argc, argv, &standalone );
+        if ( switch_dcb )
+            filename = switch_dcb;
     }
 #endif
 
-#ifdef _arch_dreamcast
+#ifdef TARGET_DC
     {
-        static const char * bundled[] = {
-            "/cd/main.dcb", "/cd/hello.dcb", "main.dcb", "hello.dcb", NULL
-        };
-        int k;
-        FILE * test;
-
-        SDL_SetMainReady();
-        chdir( "/cd" );
-        file_addp( "/cd/" );
-        file_addp( "/pc/" );
-        standalone = 1;
-        if ( argc < 2 )
-        {
-            for ( k = 0 ; bundled[k] ; k++ )
-            {
-                test = fopen( bundled[k], "rb" );
-                if ( test )
-                {
-                    fclose( test );
-                    filename = ( char * ) bundled[k];
-                    break;
-                }
-            }
-        }
+        char * dc_dcb = bgdi_dc_startup( argc, argv, &standalone );
+        if ( dc_dcb )
+            filename = dc_dcb;
     }
 #endif
 
@@ -242,12 +139,9 @@ int main( int argc, char *argv[] )
 
 #ifdef TARGET_PANDORA
     {
-        standalone = 1;
-        if ( argc < 2 )
-        {
-            if ( access( "main.dcb", R_OK ) == 0 ) filename = "main.dcb";
-            else if ( access( "hello.dcb", R_OK ) == 0 ) filename = "hello.dcb";
-        }
+        char * pandora_dcb = bgdi_pandora_startup( argc, argv, &standalone );
+        if ( pandora_dcb )
+            filename = pandora_dcb;
     }
 #endif
 
@@ -306,19 +200,7 @@ int main( int argc, char *argv[] )
     appexepath = calloc( 1, (size_t)( ptr - appexefullpath ) + 1 );
     strncpy( appexepath, appexefullpath, ptr - appexefullpath );
 
-#ifdef __EMSCRIPTEN__
-    /* argv[0] is typically "this.program" in the browser. */
-    standalone = 1 ;
-#elif defined(__ANDROID__)
-    standalone = 1 ;
-#elif defined(__SWITCH__)
-    standalone = 1 ;
-#elif defined(_arch_dreamcast)
-    standalone = 1 ;
-#elif defined(TARGET_PSP)
-    standalone = 1 ;
-#elif defined(TARGET_PANDORA)
-    standalone = 1 ;
+#ifdef BGD_STANDALONE_INTERPRETER
     standalone = 1 ;
 #else
     standalone = ( strncmpi( appexename, "bgdi", 4 ) == 0 ) ;

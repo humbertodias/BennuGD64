@@ -44,16 +44,23 @@
 #ifdef TARGET_PSP
 #include "g_video_psp.h"
 #endif
+#ifdef TARGET_SWITCH
+#include "g_video_switch.h"
+#endif
+#ifdef TARGET_DC
+#include "g_video_dc.h"
+#endif
+#ifdef TARGET_PANDORA
+#include "g_video_pandora.h"
+#endif
+#ifdef TARGET_EMSCRIPTEN
+#include "g_video_emscripten.h"
+#endif
 
 #ifdef _WIN32
 #include <windows.h>
 #include <initguid.h>
 #include <ddraw.h>
-#endif
-
-#ifdef _arch_dreamcast
-void SDL_DC_ShowAskHz( bool value );
-void SDL_DC_Default60Hz( bool value );
 #endif
 
 /* --------------------------------------------------------------------------- */
@@ -231,7 +238,7 @@ static void gr_destroy_present_renderer( void )
 }
 
 /* Canvas / GLES backends (Emscripten) have no window surface; blit via a renderer. */
-static int gr_video_present_renderer( SDL_Surface * src )
+int gr_video_present_via_renderer( SDL_Surface * src )
 {
     SDL_Surface * converted;
     const SDL_PixelFormat fmt = SDL_PIXELFORMAT_XRGB8888;
@@ -278,21 +285,23 @@ void gr_video_present( SDL_Surface * src )
 
     if ( !window || !src ) return ;
 
-#ifdef __SWITCH__
-    gr_video_present_renderer( src );
+#ifdef TARGET_SWITCH
+    gr_video_switch_present( src );
     return;
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_present( src );
     return;
 #endif
+#ifdef TARGET_DC
+    gr_video_dc_present( src );
+    return;
+#endif
 
     winsurf = SDL_GetWindowSurface( window );
     if ( !winsurf )
     {
-#ifndef _arch_dreamcast
-        gr_video_present_renderer( src );
-#endif
+        gr_video_present_via_renderer( src );
         return;
     }
 
@@ -313,8 +322,8 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 
     if ( !window || !src || count <= 0 ) return ;
 
-#ifdef __SWITCH__
-    gr_video_present( src );
+#ifdef TARGET_SWITCH
+    gr_video_switch_present_rects( src, rects, count );
     return;
 #endif
 #ifdef TARGET_PSP
@@ -380,37 +389,17 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
     int recreate = 0;
     char caption_buf[512];
 
-#ifdef __SWITCH__
-    /* GLES only; mesa fatalThrows if the NWindow is not 720p/1080p. Keep the
-     * game framebuffer at the requested size and present it scaled. */
-    {
-        const SDL_DisplayMode * mode = SDL_GetCurrentDisplayMode( SDL_GetPrimaryDisplay() );
-        if ( mode && mode->w > 0 && mode->h > 0 )
-        {
-            width = mode->w;
-            height = mode->h;
-        }
-        else
-        {
-            width = 1280;
-            height = 720;
-        }
-        window_flags |= SDL_WINDOW_FULLSCREEN | SDL_WINDOW_OPENGL;
-    }
+#ifdef TARGET_SWITCH
+    gr_video_switch_adjust_window( &width, &height, &window_flags );
 #endif
-#ifdef _arch_dreamcast
-    /* DIRECT_VIDEO supports 320x240 and 640x480 natively. Keep the window at
-     * the game size so present is a 1:1 blit, not a software scale on SH4. */
-    window_flags |= SDL_WINDOW_FULLSCREEN;
+#ifdef TARGET_DC
+    gr_video_dc_adjust_window( &width, &height, &window_flags );
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_adjust_window( &width, &height, &window_flags );
 #endif
 #ifdef TARGET_PANDORA
-    /* 800x480 LCD. Keep the game framebuffer and present it scaled. */
-    width = 800;
-    height = 480;
-    window_flags |= SDL_WINDOW_FULLSCREEN;
+    gr_video_pandora_adjust_window( &width, &height, &window_flags );
 #endif
 
     if ( !window )
@@ -424,10 +413,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
             recreate = 1;
         if ( !!( SDL_GetWindowFlags( window ) & SDL_WINDOW_FULLSCREEN ) != !!full_screen )
             recreate = 1;
-#ifdef __EMSCRIPTEN__
-        /* Destroy+CreateWindow stacks Emscripten key listeners, so every
-         * physical keypress becomes two SDL_EVENT_KEY_DOWN. Resize in place. */
-        recreate = 0;
+#ifdef TARGET_EMSCRIPTEN
+        if ( !gr_video_emscripten_should_recreate_window() )
+            recreate = 0;
 #endif
     }
 
@@ -530,17 +518,17 @@ int gr_set_mode( int width, int height, int depth )
     waitvsync = ( GLODWORD( libvideo, GRAPH_MODE ) & MODE_WAITVSYNC ) ? 1 : 0 ;
     scale_mode = GLODWORD( libvideo, SCALE_MODE );
     full_screen |= GLODWORD( libvideo, FULL_SCREEN );
-#ifdef __SWITCH__
-    full_screen = 1;
+#ifdef TARGET_SWITCH
+    gr_video_switch_apply_mode();
 #endif
-#ifdef _arch_dreamcast
-    full_screen = 1;
+#ifdef TARGET_DC
+    gr_video_dc_apply_mode();
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_apply_mode();
 #endif
 #ifdef TARGET_PANDORA
-    full_screen = 1;
+    gr_video_pandora_apply_mode();
 #endif
 
     scale_resolution = GLODWORD( libvideo, SCALE_RESOLUTION );
@@ -863,10 +851,8 @@ int gr_set_mode( int width, int height, int depth )
 
     if ( background ) background->modified = 1;
 
-#ifdef __EMSCRIPTEN__
-    /* set_mode on character select can drop the menu Enter KEYUP; SoRR then
-     * waits forever for that key to be released. */
-    SDL_ResetKeyboard();
+#ifdef TARGET_EMSCRIPTEN
+    gr_video_emscripten_after_set_mode();
 #endif
 
     return 0;
@@ -887,34 +873,19 @@ void __bgdexport( libvideo, module_initialize )()
 
     GLODWORD( libvideo, SCALE_RESOLUTION ) = -1; // hack for backward compatibility
 
-#ifdef __EMSCRIPTEN__
-    SDL_SetHint( SDL_HINT_EMSCRIPTEN_ASYNCIFY, "1" );
-    /* Listen on the window, not the canvas: after Enter, page chrome can
-     * steal canvas focus and in-game keys would stop. */
-    SDL_SetHint( "SDL_EMSCRIPTEN_KEYBOARD_ELEMENT", "#window" );
+#ifdef TARGET_EMSCRIPTEN
+    gr_video_emscripten_module_initialize();
 #endif
-#ifdef __SWITCH__
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES );
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 2 );
-    SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
-    SDL_SetHint( SDL_HINT_RENDER_DRIVER, "opengles2" );
+#ifdef TARGET_SWITCH
+    gr_video_switch_module_initialize();
 #endif
-#ifdef _arch_dreamcast
-    SDL_SetHint( SDL_HINT_DC_VIDEO_MODE, "SDL_DC_DIRECT_VIDEO" );
-    /* CreateWindowFramebuffer only allocates a backbuffer when this hint is
-     * set; UpdateWindowFramebuffer still defaults it to true. Unset, the first
-     * blit hits VRAM and the next present copies from a NULL buffer (flash
-     * then black). GPF samples always set both hints together. */
-    SDL_SetHint( SDL_HINT_VIDEO_DOUBLE_BUFFER, "1" );
-    SDL_DC_ShowAskHz( false );
-    SDL_DC_Default60Hz( true );
+#ifdef TARGET_DC
+    gr_video_dc_module_initialize();
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_module_initialize();
 #elif defined(TARGET_PANDORA)
-    SDL_SetHint( SDL_HINT_RENDER_DRIVER, "software" );
-    SDL_SetHint( SDL_HINT_VIDEO_DRIVER, "x11" );
-    if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
+    gr_video_pandora_module_initialize();
 #else
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
 #endif

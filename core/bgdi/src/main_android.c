@@ -26,23 +26,17 @@ static int android_write_file ( const char * path, const void * data, size_t siz
 
 static void android_extract_assets ( const char * dest_dir )
 {
-    const char * bundled[] = { "main.dcb", "hello.dcb", NULL };
-    int i;
+    char dest[ __MAX_PATH ];
+    size_t sz = 0;
+    void * data;
 
-    for ( i = 0 ; bundled[i] ; i++ )
+    snprintf( dest, sizeof( dest ), "%s/main.dcb", dest_dir );
+    if ( access( dest, R_OK ) == 0 ) return;
+    data = SDL_LoadFile( "main.dcb", &sz );
+    if ( data )
     {
-        char dest[ __MAX_PATH ];
-        size_t sz = 0;
-        void * data;
-
-        snprintf( dest, sizeof( dest ), "%s/%s", dest_dir, bundled[i] );
-        if ( access( dest, R_OK ) == 0 ) continue;
-        data = SDL_LoadFile( bundled[i], &sz );
-        if ( data )
-        {
-            android_write_file( dest, data, sz );
-            SDL_free( data );
-        }
+        android_write_file( dest, data, sz );
+        SDL_free( data );
     }
 }
 
@@ -66,9 +60,8 @@ char * bgdi_android_startup( int argc, char * argv[], int * standalone )
         return NULL;
 
     if ( access( "main.dcb", R_OK ) == 0 ) return "main.dcb";
-    if ( access( "hello.dcb", R_OK ) == 0 ) return "hello.dcb";
 
-    fprintf( stderr, "Android: no main.dcb or hello.dcb in %s\n",
+    fprintf( stderr, "Android: no main.dcb in %s\n",
              storage ? storage : "(no storage)" );
     return NULL;
 }

@@ -14,7 +14,7 @@
 char * bgdi_switch_startup( int argc, char * argv[], int * standalone )
 {
     static const char * bundled[] = {
-        "romfs:/main.dcb", "romfs:/hello.dcb", "main.dcb", "hello.dcb", NULL
+        "romfs:/main.dcb", "main.dcb", NULL
     };
     int k;
     FILE * test;

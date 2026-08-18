@@ -16,7 +16,7 @@ KOS_INIT_FLAGS(INIT_DEFAULT);
 char * bgdi_dc_startup( int argc, char * argv[], int * standalone )
 {
     static const char * bundled[] = {
-        "/cd/main.dcb", "/cd/hello.dcb", "main.dcb", "hello.dcb", NULL
+        "/cd/main.dcb", "main.dcb", NULL
     };
     int k;
     FILE * test;

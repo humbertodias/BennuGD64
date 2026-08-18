@@ -17,6 +17,5 @@ char * bgdi_pandora_startup( int argc, char * argv[], int * standalone )
         return NULL;
 
     if ( access( "main.dcb", R_OK ) == 0 ) return "main.dcb";
-    if ( access( "hello.dcb", R_OK ) == 0 ) return "hello.dcb";
     return NULL;
 }

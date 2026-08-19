@@ -10,5 +10,6 @@
 
 int    file_native_try_gzip( const char * filename );
 FILE * file_native_fopen( const char * filename, const char * mode );
+int    file_native_move( const char * source_file, const char * target_file );
 
 #endif

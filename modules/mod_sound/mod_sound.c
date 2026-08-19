@@ -45,6 +45,10 @@
 
 #include "bgload.h"
 
+#ifdef TARGET_WII
+#include "mod_sound_wii.h"
+#endif
+
 /* --------------------------------------------------------------------------- */
 
 #define MAX_SOUND_CHANNELS  32
@@ -228,6 +232,10 @@ static int sound_init()
         audio_rate = 22050;
     else
         audio_rate = 11025;
+
+#ifdef TARGET_WII
+    modsound_wii_adjust_rate( &audio_rate );
+#endif
 
     audio_channels = GLODWORD( mod_sound, SOUND_MODE ) + 1;
 
@@ -1955,7 +1963,7 @@ static int modsound_close( INSTANCE * my, intptr_t * params )
 
 void  __bgdexport( mod_sound, module_initialize )()
 {
-#if !defined(TARGET_DINGUX_A320) && !defined(TARGET_WII)
+#ifndef TARGET_DINGUX_A320
     if ( !SDL_WasInit( SDL_INIT_AUDIO ) ) SDL_InitSubSystem( SDL_INIT_AUDIO );
 #endif
 }

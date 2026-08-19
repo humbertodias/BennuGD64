@@ -9,6 +9,7 @@
 
 #include <fat.h>
 #include <gccore.h>
+#include <ogc/system.h>
 #include <ogc/usbmouse.h>
 #include <wiikeyboard/keyboard.h>
 #include <wiiuse/wpad.h>
@@ -87,11 +88,47 @@ static char * wii_pick_dcb( void )
     return NULL;
 }
 
+static volatile int wii_poweroff = 0;
+static volatile int wii_reset = 0;
+
+static void wii_power_cb( void )
+{
+    wii_poweroff = 1;
+}
+
+static void wii_wpad_power_cb( s32 chan )
+{
+    ( void ) chan;
+    wii_poweroff = 1;
+}
+
+static void wii_reset_cb( u32 irq, void * ctx )
+{
+    ( void ) irq;
+    ( void ) ctx;
+    wii_reset = 1;
+}
+
+void bgdi_wii_handle_power( void )
+{
+    if ( wii_poweroff )
+    {
+        SDL_Quit();
+        SYS_ResetSystem( SYS_POWEROFF, 0, 0 );
+    }
+    if ( wii_reset )
+    {
+        SDL_Quit();
+        exit( 1 );
+    }
+}
+
 static void wii_hold( void )
 {
     for ( ;; )
     {
         WPAD_ScanPads();
+        bgdi_wii_handle_power();
         if ( WPAD_ButtonsDown( 0 ) & WPAD_BUTTON_HOME )
             break;
         VIDEO_WaitVSync();
@@ -110,6 +147,10 @@ char * bgdi_wii_startup( int argc, char * argv[], int * standalone )
     WPAD_Init();
     WPAD_SetDataFormat( WPAD_CHAN_ALL, WPAD_FMT_BTNS_ACC_IR );
     WPAD_SetVRes( WPAD_CHAN_ALL, 640, 480 );
+    WPAD_SetPowerButtonCallback( wii_wpad_power_cb );
+    SYS_SetPowerCallback( wii_power_cb );
+    SYS_SetResetCallback( wii_reset_cb );
+    PAD_Init();
     wii_banner( "wpad ok" );
 
     wii_banner( "mouse..." );

@@ -49,3 +49,10 @@ FILE * file_native_fopen( const char * filename, const char * mode )
 
     return fopen( filename, mode );
 }
+
+int file_native_move( const char * source_file, const char * target_file )
+{
+    ( void ) source_file;
+    ( void ) target_file;
+    return -1;
+}

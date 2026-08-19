@@ -11,6 +11,10 @@ add_library (
 
 if (EMSCRIPTEN)
   target_sources (joy PRIVATE libjoy_emscripten.c)
+endif ()
+
+if (NINTENDO_WII OR PLATFORM_WII)
+  target_sources (joy PRIVATE libjoy_wii.c)
 endif () 
 
 target_link_libraries (

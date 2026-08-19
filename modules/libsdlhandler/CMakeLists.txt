@@ -10,6 +10,9 @@ add_library (
 
 if (EMSCRIPTEN)
   target_sources (sdlhandler PRIVATE libsdlhandler_emscripten.c)
+endif ()
+if (NINTENDO_WII OR PLATFORM_WII)
+  target_sources (sdlhandler PRIVATE libsdlhandler_wii.c)
 endif () 
 
 target_link_libraries (

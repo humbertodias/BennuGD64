@@ -57,6 +57,10 @@
 #include "libjoy_emscripten.h"
 #endif
 
+#ifdef TARGET_WII
+#include "libjoy_wii.h"
+#endif
+
 /* --------------------------------------------------------------------------- */
 
 #ifdef TARGET_CAANOO
@@ -76,10 +80,12 @@ SDL_JoystickID _joystick_ids[MAX_JOYS];
 char _joystick_names[MAX_JOYS][128];
 static int _selected_joystick = -1;
 
+#ifndef TARGET_WII
 static int libjoy_valid( int joy )
 {
     return joy >= 0 && joy < _max_joys && _joysticks[ joy ];
 }
+#endif
 
 void libjoy_remember_name( int slot )
 {
@@ -101,7 +107,11 @@ void libjoy_remember_name( int slot )
 
 int libjoy_num( void )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_num();
+#else
     return _max_joys ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -112,6 +122,11 @@ int libjoy_num( void )
 int libjoy_name( int joy )
 {
     int result;
+#ifdef TARGET_WII
+    result = string_new( libjoy_wii_name( joy ) );
+    string_use( result );
+    return result;
+#else
     if ( joy < 0 || joy >= _max_joys )
     {
         result = string_new( "" );
@@ -129,6 +144,7 @@ int libjoy_name( int joy )
     }
     string_use( result );
     return result;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -148,6 +164,9 @@ int libjoy_select( int joy )
 
 int libjoy_buttons( void )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_buttons( _selected_joystick );
+#else
     if ( libjoy_valid( _selected_joystick ) )
     {
 #ifdef TARGET_CAANOO
@@ -156,6 +175,7 @@ int libjoy_buttons( void )
         return SDL_GetNumJoystickButtons( _joysticks[ _selected_joystick ] ) ;
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -165,11 +185,15 @@ int libjoy_buttons( void )
 
 int libjoy_axes( void )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_axes( _selected_joystick );
+#else
     if ( libjoy_valid( _selected_joystick ) )
     {
         return SDL_GetNumJoystickAxes( _joysticks[ _selected_joystick ] ) ;
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -179,6 +203,9 @@ int libjoy_axes( void )
 
 int libjoy_get_button( int button )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_get_button( _selected_joystick, button );
+#else
     if ( libjoy_valid( _selected_joystick ) )
     {
 #ifdef TARGET_CAANOO
@@ -217,6 +244,7 @@ int libjoy_get_button( int button )
         return SDL_GetJoystickButton( _joysticks[ _selected_joystick ], button ) ;
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -226,11 +254,15 @@ int libjoy_get_button( int button )
 
 int libjoy_get_position( int axis )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_get_position( _selected_joystick, axis );
+#else
     if ( libjoy_valid( _selected_joystick ) )
     {
         return SDL_GetJoystickAxis( _joysticks[ _selected_joystick ], axis ) ;
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -240,11 +272,15 @@ int libjoy_get_position( int axis )
 
 int libjoy_hats( void )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_hats( _selected_joystick );
+#else
     if ( libjoy_valid( _selected_joystick ) )
     {
         return SDL_GetNumJoystickHats( _joysticks[ _selected_joystick ] ) ;
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -254,11 +290,15 @@ int libjoy_hats( void )
 
 int libjoy_balls( void )
 {
+#ifdef TARGET_WII
+    return 0;
+#else
     if ( libjoy_valid( _selected_joystick ) )
     {
         return SDL_GetNumJoystickBalls( _joysticks[ _selected_joystick ] ) ;
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -268,6 +308,9 @@ int libjoy_balls( void )
 
 int libjoy_get_hat( int hat )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_get_hat( _selected_joystick, hat );
+#else
     if ( libjoy_valid( _selected_joystick ) )
     {
         if ( hat >= 0 && hat <= SDL_GetNumJoystickHats( _joysticks[ _selected_joystick ] ) )
@@ -276,6 +319,7 @@ int libjoy_get_hat( int hat )
         }
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -285,6 +329,12 @@ int libjoy_get_hat( int hat )
 
 int libjoy_get_ball( int ball, int * dx, int * dy )
 {
+#ifdef TARGET_WII
+    ( void ) ball;
+    ( void ) dx;
+    ( void ) dy;
+    return -1;
+#else
     if ( libjoy_valid( _selected_joystick ) )
     {
         if ( ball >= 0 && ball <= SDL_GetNumJoystickBalls( _joysticks[ _selected_joystick ] ) )
@@ -293,13 +343,16 @@ int libjoy_get_ball( int ball, int * dx, int * dy )
         }
     }
     return -1 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
 
 int libjoy_get_accel( int * x, int * y, int * z )
 {
-#ifdef TARGET_CAANOO
+#ifdef TARGET_WII
+    return libjoy_wii_get_accel( _selected_joystick, x, y, z );
+#elif defined(TARGET_CAANOO)
     if ( _selected_joystick == 0 )
     {
         KIONIX_ACCEL_read_LPF_g( x, y, z );
@@ -321,6 +374,9 @@ int libjoy_get_accel( int * x, int * y, int * z )
 
 int libjoy_buttons_specific( int joy )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_buttons( joy );
+#else
     if ( libjoy_valid( joy ) )
     {
 #ifdef TARGET_CAANOO
@@ -329,6 +385,7 @@ int libjoy_buttons_specific( int joy )
         return SDL_GetNumJoystickButtons( _joysticks[ joy ] ) ;
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -338,11 +395,15 @@ int libjoy_buttons_specific( int joy )
 
 int libjoy_axes_specific( int joy )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_axes( joy );
+#else
     if ( libjoy_valid( joy ) )
     {
         return SDL_GetNumJoystickAxes( _joysticks[ joy ] ) ;
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -352,6 +413,9 @@ int libjoy_axes_specific( int joy )
 
 int libjoy_get_button_specific( int joy, int button )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_get_button( joy, button );
+#else
     if ( libjoy_valid( joy ) )
     {
 #ifdef TARGET_CAANOO
@@ -397,6 +461,7 @@ int libjoy_get_button_specific( int joy, int button )
         }
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -406,6 +471,9 @@ int libjoy_get_button_specific( int joy, int button )
 
 int libjoy_get_position_specific( int joy, int axis )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_get_position( joy, axis );
+#else
     if ( libjoy_valid( joy ) )
     {
         if ( axis >= 0 && axis <= SDL_GetNumJoystickAxes( _joysticks[ joy ] ) )
@@ -414,6 +482,7 @@ int libjoy_get_position_specific( int joy, int axis )
         }
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -426,11 +495,15 @@ int libjoy_get_position_specific( int joy, int axis )
 
 int libjoy_hats_specific( int joy )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_hats( joy );
+#else
     if ( libjoy_valid( joy ) )
     {
         return SDL_GetNumJoystickHats( _joysticks[ joy ] ) ;
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -440,11 +513,16 @@ int libjoy_hats_specific( int joy )
 
 int libjoy_balls_specific( int joy )
 {
+#ifdef TARGET_WII
+    ( void ) joy;
+    return 0;
+#else
     if ( libjoy_valid( joy ) )
     {
         return SDL_GetNumJoystickBalls( _joysticks[ joy ] ) ;
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -454,6 +532,9 @@ int libjoy_balls_specific( int joy )
 
 int libjoy_get_hat_specific( int joy, int hat )
 {
+#ifdef TARGET_WII
+    return libjoy_wii_get_hat( joy, hat );
+#else
     if ( libjoy_valid( joy ) )
     {
         if ( hat >= 0 && hat <= SDL_GetNumJoystickHats( _joysticks[ joy ] ) )
@@ -462,6 +543,7 @@ int libjoy_get_hat_specific( int joy, int hat )
         }
     }
     return 0 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -471,6 +553,13 @@ int libjoy_get_hat_specific( int joy, int hat )
 
 int libjoy_get_ball_specific( int joy, int ball, int * dx, int * dy )
 {
+#ifdef TARGET_WII
+    ( void ) joy;
+    ( void ) ball;
+    ( void ) dx;
+    ( void ) dy;
+    return -1;
+#else
     if ( libjoy_valid( joy ) )
     {
         if ( ball >= 0 && ball <= SDL_GetNumJoystickBalls( _joysticks[ joy ] ) )
@@ -479,13 +568,16 @@ int libjoy_get_ball_specific( int joy, int ball, int * dx, int * dy )
         }
     }
     return -1 ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
 
 int libjoy_get_accel_specific( int joy, int * x, int * y, int * z )
 {
-#ifdef TARGET_CAANOO
+#ifdef TARGET_WII
+    return libjoy_wii_get_accel( joy, x, y, z );
+#elif defined(TARGET_CAANOO)
     if ( joy == 0 )
     {
         KIONIX_ACCEL_read_LPF_g( x, y, z );
@@ -498,8 +590,9 @@ int libjoy_get_accel_specific( int joy, int * x, int * y, int * z )
 void  __bgdexport( libjoy, module_initialize )()
 {
 #ifdef TARGET_WII
-    /* SDL's OGC event pump needs WPAD_Init (done in main_wii). Opening
-     * every pad here still deadlocks Dolphin; open devices on first use. */
+    /* Do not SDL_OpenJoystick: SDL3-libogc2 deadlocks Dolphin. WPAD/PAD
+     * are polled directly with the bennugd-wii button/axis/hat map. */
+    libjoy_wii_module_initialize();
     return;
 #else
     int i;
@@ -563,6 +656,10 @@ void  __bgdexport( libjoy, module_initialize )()
 
 void  __bgdexport( libjoy, module_finalize )()
 {
+#ifdef TARGET_WII
+    libjoy_wii_module_finalize();
+    return;
+#else
     int i;
 
 #ifdef TARGET_CAANOO
@@ -573,13 +670,16 @@ void  __bgdexport( libjoy, module_finalize )()
         if ( _joysticks[ i ] ) SDL_CloseJoystick( _joysticks[ i ] ) ;
 
     if ( SDL_WasInit( SDL_INIT_JOYSTICK ) ) SDL_QuitSubSystem( SDL_INIT_JOYSTICK );
-
+#endif
 }
 
 HOOK __bgdexport( libjoy, handler_hooks )[] =
 {
 #ifdef TARGET_EMSCRIPTEN
     { 4900, libjoy_emscripten_refresh },
+#endif
+#ifdef TARGET_WII
+    { 4900, libjoy_wii_pump },
 #endif
     {    0, NULL           }
 };

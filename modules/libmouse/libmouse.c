@@ -41,6 +41,10 @@
 
 #include "sysprocs_st.h"
 
+#ifdef TARGET_WII
+#include "libmouse_wii.h"
+#endif
+
 /* --------------------------------------------------------------------------- */
 
 static int last_mousex = 0;
@@ -268,6 +272,10 @@ static void do_mouse_events()
                 break ;
         }
     }
+
+#ifdef TARGET_WII
+    libmouse_wii_after_events();
+#endif
 
     last_mouse_x = GLOINT32( libmouse, MOUSEX ) ;
     last_mouse_y = GLOINT32( libmouse, MOUSEY ) ;

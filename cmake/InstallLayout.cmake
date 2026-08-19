@@ -155,7 +155,7 @@ if (NOT STATIC_MODULES)
     mod_grproc mod_effects mod_key mod_cd mod_dir mod_file mod_crypt mod_joy
     mod_math mod_mathi mod_mem mod_proc mod_rand mod_regex mod_say mod_sort
     mod_sound mod_string mod_sys mod_time mod_timers mod_path mod_wm mod_debug
-    mod_flic mod_m7
+    mod_flic mod_m7 mod_wpad
   )
   if (NO_SOUND)
     list (REMOVE_ITEM _bennugd_modules mod_sound)

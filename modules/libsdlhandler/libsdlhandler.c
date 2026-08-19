@@ -32,6 +32,9 @@
 #ifdef TARGET_EMSCRIPTEN
 #include "libsdlhandler_emscripten.h"
 #endif
+#ifdef TARGET_WII
+#include "libsdlhandler_wii.h"
+#endif
 
 /* ----------------------------------------------------------------- */
 /* Public functions                                                  */
@@ -49,6 +52,9 @@ static void  dump_new_events( void )
 
     /* Get new events */
     SDL_PumpEvents();
+#endif
+#ifdef TARGET_WII
+    libsdlhandler_wii_after_pump();
 #endif
 }
 

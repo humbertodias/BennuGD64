@@ -809,7 +809,7 @@ int file_remove( const char * filename )
 
 int file_move( const char * source_file, const char * target_file )
 {
-    return ( rename( source_file, target_file ) );
+    return file_native_move( source_file, target_file );
 }
 
 /* Check for file exists */

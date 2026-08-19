@@ -11,5 +11,6 @@
 #include <SDL3/SDL_main.h>
 
 char * bgdi_wii_startup( int argc, char * argv[], int * standalone );
+void bgdi_wii_handle_power( void );
 
 #endif

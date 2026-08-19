@@ -51,6 +51,7 @@ if (STATIC_MODULES)
     ../../../modules/mod_debug
     ../../../modules/mod_flic
     ../../../modules/mod_m7
+    ../../../modules/mod_wpad
   )
 endif ()
 

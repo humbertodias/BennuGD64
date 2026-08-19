@@ -36,6 +36,7 @@
 
 #include "bgdrtm.h"
 #include "dirs.h"
+#include "dirs_native.h"
 #include "xstrings.h"
 #include "bgd_platform.h"
 
@@ -164,7 +165,7 @@ int dir_delete( const char * dir )
 {
     char *c = dir_path_convert( dir ) ;
     if ( !c ) return 0;
-    int r = rmdir( c ) ;
+    int r = dir_native_rmdir( c ) ;
     free( c ) ;
     return r ;
 }

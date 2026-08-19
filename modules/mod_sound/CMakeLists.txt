@@ -10,6 +10,10 @@ add_library (
   mod_sound.c
 ) 
 
+if (NINTENDO_WII OR PLATFORM_WII)
+  target_sources (mod_sound PRIVATE mod_sound_wii.c)
+endif ()
+
 target_link_libraries (
   mod_sound
   ${BENNUGD_SDL3_TARGET}

@@ -77,6 +77,7 @@
 #include "mod_debug_exports.h"
 #include "mod_flic_exports.h"
 #include "mod_m7_exports.h"
+#include "mod_wpad_exports.h"
 #endif
  
 #ifndef __BGDC__
@@ -144,6 +145,7 @@ extern DLSYSFUNCS mod_wm_functions_exports[];
 extern DLSYSFUNCS mod_debug_functions_exports[];
 extern DLSYSFUNCS mod_flic_functions_exports[];
 extern DLSYSFUNCS mod_m7_functions_exports[];
+extern DLSYSFUNCS mod_wpad_functions_exports[];
  
 /* ---------- module_initialize ---------- */
  
@@ -229,6 +231,7 @@ extern char * mod_path_modules_dependency[];
 extern char * mod_wm_modules_dependency[];
 extern char * mod_debug_modules_dependency[];
 extern char * mod_m7_modules_dependency[];
+extern char * mod_wpad_modules_dependency[];
  
 #endif
 
@@ -257,7 +260,7 @@ typedef struct __FAKE_DL
 
 /* ---------- FAKE DYNAMIC LIBRARY ---------- */
  
-__FAKE_DL __fake_dl[48];
+__FAKE_DL __fake_dl[49];
  
 /* ------------------------------------------ */
  
@@ -2143,17 +2146,27 @@ void fake_dl_init()
     __fake_dl[46].handler_hooks                = NULL;
 #endif
     __fake_dl[46].modules_dependency           = mod_m7_modules_dependency;
- 
-    /* -------------------- LAST -------------------- */
- 
-    __fake_dl[47].dlname                       = NULL;
+
+    /* -------------------- mod_wpad -------------------- */
+
+    __fake_dl[47].dlname                       = "mod_wpad";
+#ifdef __BGDC__
+    __fake_dl[47].constants_def                = mod_wpad_constants_def;
+    __fake_dl[47].types_def                    = NULL;
+    __fake_dl[47].globals_def                  = NULL;
+    __fake_dl[47].locals_def                   = NULL;
+    __fake_dl[47].globals_fixup                = NULL;
+    __fake_dl[47].locals_fixup                 = NULL;
+#else
     __fake_dl[47].constants_def                = NULL;
     __fake_dl[47].types_def                    = NULL;
     __fake_dl[47].globals_def                  = NULL;
     __fake_dl[47].locals_def                   = NULL;
     __fake_dl[47].globals_fixup                = NULL;
     __fake_dl[47].locals_fixup                 = NULL;
-    __fake_dl[47].functions_exports            = NULL;
+#endif
+    __fake_dl[47].functions_exports            = mod_wpad_functions_exports;
+#ifdef __BGDC__
     __fake_dl[47].module_initialize            = NULL;
     __fake_dl[47].module_finalize              = NULL;
     __fake_dl[47].instance_create_hook         = NULL;
@@ -2162,7 +2175,37 @@ void fake_dl_init()
     __fake_dl[47].instance_pos_execute_hook    = NULL;
     __fake_dl[47].process_exec_hook            = NULL;
     __fake_dl[47].handler_hooks                = NULL;
-    __fake_dl[47].modules_dependency           = NULL;
+#else
+    __fake_dl[47].module_initialize            = NULL;
+    __fake_dl[47].module_finalize              = NULL;
+    __fake_dl[47].instance_create_hook         = NULL;
+    __fake_dl[47].instance_destroy_hook        = NULL;
+    __fake_dl[47].instance_pre_execute_hook    = NULL;
+    __fake_dl[47].instance_pos_execute_hook    = NULL;
+    __fake_dl[47].process_exec_hook            = NULL;
+    __fake_dl[47].handler_hooks                = NULL;
+#endif
+    __fake_dl[47].modules_dependency           = mod_wpad_modules_dependency;
+
+    /* -------------------- LAST -------------------- */
+ 
+    __fake_dl[48].dlname                       = NULL;
+    __fake_dl[48].constants_def                = NULL;
+    __fake_dl[48].types_def                    = NULL;
+    __fake_dl[48].globals_def                  = NULL;
+    __fake_dl[48].locals_def                   = NULL;
+    __fake_dl[48].globals_fixup                = NULL;
+    __fake_dl[48].locals_fixup                 = NULL;
+    __fake_dl[48].functions_exports            = NULL;
+    __fake_dl[48].module_initialize            = NULL;
+    __fake_dl[48].module_finalize              = NULL;
+    __fake_dl[48].instance_create_hook         = NULL;
+    __fake_dl[48].instance_destroy_hook        = NULL;
+    __fake_dl[48].instance_pre_execute_hook    = NULL;
+    __fake_dl[48].instance_pos_execute_hook    = NULL;
+    __fake_dl[48].process_exec_hook            = NULL;
+    __fake_dl[48].handler_hooks                = NULL;
+    __fake_dl[48].modules_dependency           = NULL;
  
 }
  

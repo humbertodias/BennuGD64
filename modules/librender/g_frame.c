@@ -36,6 +36,9 @@
 #ifdef TARGET_PSP
 #include "g_frame_psp.h"
 #endif
+#ifdef TARGET_WII
+#include "g_frame_wii.h"
+#endif
 
 /* --------------------------------------------------------------------------- */
 
@@ -104,6 +107,8 @@ static int bennu_get_ticks_ms( void )
 {
 #if defined(TARGET_GP2X_WIZ) || defined(TARGET_CAANOO)
     return ( int )( bgdrtm_ptimer_get_ticks_us() / 1000L );
+#elif defined(TARGET_WII)
+    return gr_frame_wii_get_ticks_ms();
 #else
     return ( int ) SDL_GetTicks();
 #endif
@@ -112,8 +117,12 @@ static int bennu_get_ticks_ms( void )
 #ifndef BGD_NO_SDL_DELAY
 static void bennu_delay_ms( int delay )
 {
+#ifdef TARGET_WII
+    gr_frame_wii_delay_ms( delay );
+#else
     if ( delay > 0 )
         SDL_Delay( delay );
+#endif
 }
 #endif
 

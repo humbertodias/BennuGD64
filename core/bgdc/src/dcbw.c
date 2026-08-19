@@ -393,7 +393,7 @@ int dcb_save( const char * filename, int options, const char * stubname )
         dcb.locvar[n].Offset = local.vars[n].offset;                            ARRANGE_DWORD( &dcb.locvar[n].Offset );
     }
 
-    dcb.data.NVarSpaces = dcb_varspaces;
+    dcb.data.NVarSpaces = dcb_varspaces;                                         ARRANGE_DWORD( &dcb.data.NVarSpaces );
 
     dcb.file = dcb_files;
 
@@ -880,6 +880,7 @@ int dcb_load_lib( const char * filename )
     ARRANGE_DWORD( &dcb.data.NLocVars );
     ARRANGE_DWORD( &dcb.data.NLocStrings );
     ARRANGE_DWORD( &dcb.data.NGloVars );
+    ARRANGE_DWORD( &dcb.data.NVarSpaces );
 
     ARRANGE_DWORD( &dcb.data.SGlobal );
     ARRANGE_DWORD( &dcb.data.SLocal );

@@ -66,6 +66,9 @@
 #ifdef TARGET_PANDORA
 #include "main_pandora.h"
 #endif
+#ifdef TARGET_WII
+#include "main_wii.h"
+#endif
 #ifdef TARGET_WIN32
 #include "main_win32.h"
 #endif
@@ -140,6 +143,25 @@ int main( int argc, char *argv[] )
         char * pandora_dcb = bgdi_pandora_startup( argc, argv, &standalone );
         if ( pandora_dcb )
             filename = pandora_dcb;
+    }
+#endif
+
+#ifdef TARGET_WII
+    {
+        /* Dolphin File→Open and HBC pass argc=0 / argv=NULL. main() later does
+         * argv[0] = filename, which is a write to 0x00000000. */
+        static char * wii_argv[2] = { "bgdi", NULL };
+        char * wii_dcb;
+
+        if ( argc < 1 || !argv || !argv[0] )
+        {
+            argc = 1;
+            argv = wii_argv;
+        }
+
+        wii_dcb = bgdi_wii_startup( argc, argv, &standalone );
+        if ( wii_dcb )
+            filename = wii_dcb;
     }
 #endif
 
@@ -373,7 +395,8 @@ fflush(stdout);
     bgdi_win32_hide_own_console();
 #endif
 
-    argv[0] = filename;
+    if ( argv && argc > 0 )
+        argv[0] = filename;
     bgdrtm_entry( argc, argv );
 
     if ( mainproc )

@@ -27,6 +27,9 @@ add_library (
 if (PLATFORM_PSP OR PSP)
   target_sources (render PRIVATE g_frame_psp.c)
 endif ()
+if (NINTENDO_WII OR PLATFORM_WII)
+  target_sources (render PRIVATE g_frame_wii.c)
+endif ()
 
 target_link_libraries (
   render

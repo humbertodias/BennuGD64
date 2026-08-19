@@ -13,6 +13,7 @@ set (BENNUGD_SDL3_REF "release-3.4.14" CACHE STRING "SDL3 git tag/branch to fetc
 set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git" CACHE STRING "SDL3 git repository")
 set (BENNUGD_SDL3_SWITCH_REF "switch-sdl-3.4" CACHE STRING "devkitPro SDL3 Switch branch")
 set (BENNUGD_SDL3_DREAMCAST_REF "dreamcastSDL3" CACHE STRING "GPF SDL3 Dreamcast branch")
+set (BENNUGD_SDL3_WII_REF "fixes" CACHE STRING "libogc2 SDL3 Wii branch")
 set (BENNUGD_SDL3_MIXER_REF "release-3.2.4" CACHE STRING "SDL3_mixer git tag/branch to fetch")
 
 if (NINTENDO_SWITCH)
@@ -23,10 +24,14 @@ if (PLATFORM_DREAMCAST OR DREAMCAST)
   set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/GPF/SDL.git")
   set (BENNUGD_SDL3_REF "${BENNUGD_SDL3_DREAMCAST_REF}")
 endif ()
+if (NINTENDO_WII OR PLATFORM_WII)
+  set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/lucaspcamargo/SDL3-libogc2.git")
+  set (BENNUGD_SDL3_REF "${BENNUGD_SDL3_WII_REF}")
+endif ()
 
 # Static archives must be PIC so they can later link into .so/.dylib modules.
-# Switch/Dreamcast/PSP/Pandora homebrew uses the toolchain PIE/KOS/pspdev flags instead.
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA)
+# Switch/Dreamcast/PSP/Pandora/Wii homebrew uses the toolchain PIE/KOS/pspdev/libogc flags instead.
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -139,6 +144,14 @@ endif ()
 if (NINTENDO_SWITCH)
   # newlib has no iconv; static try_compile must not claim GNU libc extras.
   set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+endif ()
+if (NINTENDO_WII OR PLATFORM_WII)
+  set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+  set (SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
 endif ()
 if (PLATFORM_DREAMCAST OR DREAMCAST)
   set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
@@ -336,6 +349,21 @@ if (NOT NO_SOUND)
       endif ()
     endif ()
     add_subdirectory (${sdl3_mixer_SOURCE_DIR} ${sdl3_mixer_BINARY_DIR} EXCLUDE_FROM_ALL)
+  endif ()
+  if (NINTENDO_WII OR PLATFORM_WII)
+    # libogc has u8, not uint8. Keep SDL_mixer's aliases (undo a prior Wii patch
+    # that stripped them from a cached FetchContent tree).
+    set (_stb "${sdl3_mixer_SOURCE_DIR}/src/decoder_stb_vorbis.c")
+    if (EXISTS "${_stb}")
+      file (READ "${_stb}" _stb_txt)
+      if (_stb_txt MATCHES "libogc gctypes.h may already provide")
+        string (REPLACE
+          "/* libogc gctypes.h may already provide these integer aliases */\n"
+          "typedef Uint8 uint8;\ntypedef Sint8 int8;\ntypedef Uint16 uint16;\ntypedef Sint16 int16;\ntypedef Uint32 uint32;\ntypedef Sint32 int32;\n"
+          _stb_txt "${_stb_txt}")
+        file (WRITE "${_stb}" "${_stb_txt}")
+      endif ()
+    endif ()
   endif ()
 endif ()
 endif ()

@@ -45,6 +45,10 @@
 
 #include "bgload.h"
 
+#ifdef TARGET_WII
+#include "mod_sound_wii.h"
+#endif
+
 /* --------------------------------------------------------------------------- */
 
 #define MAX_SOUND_CHANNELS  32
@@ -228,6 +232,10 @@ static int sound_init()
         audio_rate = 22050;
     else
         audio_rate = 11025;
+
+#ifdef TARGET_WII
+    modsound_wii_adjust_rate( &audio_rate );
+#endif
 
     audio_channels = GLODWORD( mod_sound, SOUND_MODE ) + 1;
 

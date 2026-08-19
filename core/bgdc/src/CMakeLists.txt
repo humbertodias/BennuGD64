@@ -51,6 +51,7 @@ if (STATIC_MODULES)
     ../../../modules/mod_debug
     ../../../modules/mod_flic
     ../../../modules/mod_m7
+    ../../../modules/mod_wpad
   )
 endif ()
 
@@ -79,6 +80,9 @@ add_executable (
   ../../common/files.c
   ../../common/xctype.c
 )
+
+include (${CMAKE_SOURCE_DIR}/cmake/FilesNative.cmake)
+bennugd_files_native (bgdc)
 
 add_dependencies ( bgdc bennugd_git_header )
 

@@ -229,6 +229,7 @@ int dcb_load_from( file * fp, char * filename, int offset )
     ARRANGE_DWORD( &dcb.data.NLocVars );
     ARRANGE_DWORD( &dcb.data.NLocStrings );
     ARRANGE_DWORD( &dcb.data.NGloVars );
+    ARRANGE_DWORD( &dcb.data.NVarSpaces );
 
     ARRANGE_DWORD( &dcb.data.SGlobal );
     ARRANGE_DWORD( &dcb.data.SLocal );
@@ -281,9 +282,13 @@ int dcb_load_from( file * fp, char * filename, int offset )
 
     file_seek( fp, offset + dcb.data.OGlobal, SEEK_SET ) ;
     file_read( fp, globaldata, dcb.data.SGlobal ) ;         /* **** */
+    if ( dcb.data.SGlobal >= 4 )
+        ARRANGE_DWORDS( globaldata, dcb.data.SGlobal / 4 );
 
     file_seek( fp, offset + dcb.data.OLocal, SEEK_SET ) ;
     file_read( fp, localdata, dcb.data.SLocal ) ;           /* **** */
+    if ( dcb.data.SLocal >= 4 )
+        ARRANGE_DWORDS( localdata, dcb.data.SLocal / 4 );
 
     if ( dcb.data.NLocStrings )
     {
@@ -454,6 +459,8 @@ int dcb_load_from( file * fp, char * filename, int offset )
             procs[n].pridata = ( int * )bgd_low_calloc( dcb.proc[n].data.SPrivate ) ; /* El size ya esta calculado en bytes */
             file_seek( fp, offset + dcb.proc[n].data.OPrivate, SEEK_SET ) ;
             file_read( fp, procs[n].pridata, dcb.proc[n].data.SPrivate ) ;      /* *** */
+            if ( dcb.proc[n].data.SPrivate >= 4 )
+                ARRANGE_DWORDS( procs[n].pridata, dcb.proc[n].data.SPrivate / 4 );
         }
 
         if ( dcb.proc[n].data.SPublic )
@@ -461,6 +468,8 @@ int dcb_load_from( file * fp, char * filename, int offset )
             procs[n].pubdata = ( int * )bgd_low_calloc( dcb.proc[n].data.SPublic ) ; /* El size ya esta calculado en bytes */
             file_seek( fp, offset + dcb.proc[n].data.OPublic, SEEK_SET ) ;
             file_read( fp, procs[n].pubdata, dcb.proc[n].data.SPublic ) ;       /* *** */
+            if ( dcb.proc[n].data.SPublic >= 4 )
+                ARRANGE_DWORDS( procs[n].pubdata, dcb.proc[n].data.SPublic / 4 );
         }
 
         if ( dcb.proc[n].data.SCode )

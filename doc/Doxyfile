@@ -209,6 +209,7 @@ PREDEFINED             = __BGDI__ \
                          TARGET_SWITCH \
                          TARGET_DC \
                          TARGET_PANDORA \
+                         TARGET_WII \
                          TARGET_EMSCRIPTEN \
                          TARGET_ANDROID \
                          DOXYGEN

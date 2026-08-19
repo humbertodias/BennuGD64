@@ -33,9 +33,18 @@ add_library (
   ../../common/xctype.c
 )
 
-if (NINTENDO_SWITCH OR PLATFORM_DREAMCAST OR DREAMCAST)
+if (NINTENDO_SWITCH OR PLATFORM_DREAMCAST OR DREAMCAST OR NINTENDO_WII OR PLATFORM_WII)
   target_sources (bgdrtm PRIVATE nx_glob.c)
 endif ()
+
+if (NINTENDO_WII OR PLATFORM_WII)
+  target_sources (bgdrtm PRIVATE dirs_wii.c)
+else ()
+  target_sources (bgdrtm PRIVATE dirs_native.c)
+endif ()
+
+include (${CMAKE_SOURCE_DIR}/cmake/FilesNative.cmake)
+bennugd_files_native (bgdrtm)
 
 if (PLATFORM_PSP OR PSP)
   target_sources (bgdrtm PRIVATE misc_psp.c)
@@ -62,7 +71,7 @@ else ()
   )
 endif ()
 
-if (UNIX OR NINTENDO_SWITCH OR PLATFORM_DREAMCAST OR DREAMCAST OR PLATFORM_PSP OR PSP)
+if (UNIX OR NINTENDO_SWITCH OR PLATFORM_DREAMCAST OR DREAMCAST OR PLATFORM_PSP OR PSP OR NINTENDO_WII OR PLATFORM_WII)
   target_link_libraries ( bgdrtm m )
 endif ()
 if (NOT STATIC_MODULES)
@@ -118,6 +127,7 @@ if (STATIC_MODULES)
     mod_wm
     mod_debug
     mod_flic
-    mod_m7    
+    mod_m7
+    mod_wpad
   )
 endif ()

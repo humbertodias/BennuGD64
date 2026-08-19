@@ -15,6 +15,9 @@ endif ()
 if (EMSCRIPTEN)
   target_sources (key PRIVATE libkey_emscripten.c)
 endif ()
+if (NINTENDO_WII OR PLATFORM_WII)
+  target_sources (key PRIVATE libkey_wii.c)
+endif ()
 
 target_link_libraries (
   key

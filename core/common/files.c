@@ -53,6 +53,7 @@
 #endif
 
 #include "files.h"
+#include "files_native.h"
 
 #define MAX_POSSIBLE_PATHS  128
 
@@ -643,7 +644,7 @@ static int open_raw( file * f, const char * filename, const char * mode )
     char    *p;
 
 #ifndef NO_ZLIB
-    if ( !strchr( mode, '0' ) )
+    if ( !strchr( mode, '0' ) && file_native_try_gzip( filename ) )
     {
         f->type = F_GZFILE ;
         f->gz = gzopen( filename, mode ) ;
@@ -666,7 +667,7 @@ static int open_raw( file * f, const char * filename, const char * mode )
 
     f->eof  = 0 ;
     f->type = F_FILE ;
-    f->fp = fopen( filename, _mode ) ;
+    f->fp = file_native_fopen( filename, _mode ) ;
     if ( f->fp ) return 1 ;
     return 0 ;
 }
@@ -714,7 +715,7 @@ file * file_open( const char * filename, char * mode )
                 f->pos  = x_file[i].offset;
                 f->type = F_XFILE;
                 f->n    = i;
-                f->fp = fopen( x_file[i].stubname, "rb" );
+                f->fp = file_native_fopen( x_file[i].stubname, "rb" );
 
                 opened_files++;
                 return f ;
@@ -808,7 +809,7 @@ int file_remove( const char * filename )
 
 int file_move( const char * source_file, const char * target_file )
 {
-    return ( rename( source_file, target_file ) );
+    return file_native_move( source_file, target_file );
 }
 
 /* Check for file exists */

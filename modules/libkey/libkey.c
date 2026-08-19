@@ -45,6 +45,9 @@
 #ifdef TARGET_EMSCRIPTEN
 #include "libkey_emscripten.h"
 #endif
+#ifdef TARGET_WII
+#include "libkey_wii.h"
+#endif
 
 /* ---------------------------------------------------------------------- */
 
@@ -409,6 +412,10 @@ static void process_key_events()
         ( ( m & KMOD_NUM    ) ? STAT_NUM    : 0 ) |
         ( ( m & KMOD_CAPS   ) ? STAT_CAPS   : 0 ) |
         ( ( m & KMOD_SHIFT  ) ? STAT_SHIFT  : 0 ) ;
+
+#ifdef TARGET_WII
+    libkey_wii_after_events();
+#endif
 }
 
 /* ---------------------------------------------------------------------- */

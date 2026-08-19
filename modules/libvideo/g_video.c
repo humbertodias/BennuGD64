@@ -53,6 +53,9 @@
 #ifdef TARGET_PANDORA
 #include "g_video_pandora.h"
 #endif
+#ifdef TARGET_WII
+#include "g_video_wii.h"
+#endif
 #ifdef TARGET_EMSCRIPTEN
 #include "g_video_emscripten.h"
 #endif
@@ -196,6 +199,10 @@ int gr_video_present_via_renderer( SDL_Surface * src )
 
     if ( !present_renderer )
     {
+#ifdef TARGET_WII
+        present_renderer = SDL_CreateRenderer( window, "OGC EFB" );
+        if ( !present_renderer )
+#endif
         present_renderer = SDL_CreateRenderer( window, NULL );
         if ( !present_renderer ) return 0;
         /* rAF already paces the interpreter on the web; extra vsync here
@@ -248,6 +255,10 @@ void gr_video_present( SDL_Surface * src )
     gr_video_dc_present( src );
     return;
 #endif
+#ifdef TARGET_WII
+    gr_video_wii_present( src );
+    return;
+#endif
 
     winsurf = SDL_GetWindowSurface( window );
     if ( !winsurf )
@@ -279,6 +290,10 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_present_rects( src, rects, count );
+    return;
+#endif
+#ifdef TARGET_WII
+    gr_video_wii_present_rects( src, rects, count );
     return;
 #endif
 
@@ -352,6 +367,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 #ifdef TARGET_PANDORA
     gr_video_pandora_adjust_window( &width, &height, &window_flags );
 #endif
+#ifdef TARGET_WII
+    gr_video_wii_adjust_window( &width, &height, &window_flags );
+#endif
 
     if ( !window )
     {
@@ -377,6 +395,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
             gr_destroy_present_renderer();
 #ifdef TARGET_PSP
             gr_video_psp_destroy();
+#endif
+#ifdef TARGET_WII
+            gr_video_wii_destroy();
 #endif
             SDL_DestroyWindow( window );
             window = NULL;
@@ -480,6 +501,9 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_PANDORA
     gr_video_pandora_apply_mode();
+#endif
+#ifdef TARGET_WII
+    gr_video_wii_apply_mode();
 #endif
 
     scale_resolution = GLODWORD( libvideo, SCALE_RESOLUTION );
@@ -833,6 +857,9 @@ void __bgdexport( libvideo, module_initialize )()
 #ifdef TARGET_DC
     gr_video_dc_module_initialize();
 #endif
+#ifdef TARGET_WII
+    gr_video_wii_module_initialize();
+#endif
 #ifdef TARGET_PSP
     gr_video_psp_module_initialize();
 #elif defined(TARGET_PANDORA)
@@ -879,6 +906,9 @@ void __bgdexport( libvideo, module_finalize )()
         gr_destroy_present_renderer();
 #ifdef TARGET_PSP
         gr_video_psp_destroy();
+#endif
+#ifdef TARGET_WII
+        gr_video_wii_destroy();
 #endif
         SDL_DestroyWindow( window );
         window = NULL;

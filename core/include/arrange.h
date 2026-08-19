@@ -34,13 +34,20 @@
     #define __LIL_ENDIAN 1234
     #define __BIG_ENDIAN 4321
 
-    #if defined(__hppa__) || \
+    #if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+        #define __BYTEORDER  __BIG_ENDIAN
+    #elif defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        #define __BYTEORDER  __LIL_ENDIAN
+    #elif defined(__hppa__) || \
         defined(__m68k__) || \
         defined(mc68000) || \
         defined(_M_M68K) || \
         (defined(__MIPS__) && defined(__MISPEB__)) || \
+        defined(__powerpc__) || \
         defined(__ppc__) || \
+        defined(__PPC__) || \
         defined(__POWERPC__) || \
+        defined(_ARCH_PPC) || \
         defined(_M_PPC) || \
         defined(__sparc__)
         #define __BYTEORDER  __BIG_ENDIAN
@@ -59,12 +66,20 @@
         #define ARRANGE_DWORDS(x,c)
         #define ARRANGE_WORDS(x,c)
     #else
+        #include <string.h>
+
         static __inline__ void DO_Swap16(uint16_t * D) {
-            *D = ((*D<<8)|(*D>>8));
+            uint16_t v;
+            memcpy( &v, D, sizeof( v ) );
+            v = ( uint16_t )( ( v << 8 ) | ( v >> 8 ) );
+            memcpy( D, &v, sizeof( v ) );
         }
 
         static __inline__ void DO_Swap32(uint32_t * D) {
-            *D = ((*D<<24)|((*D<<8)&0x00FF0000)|((*D>>8)&0x0000FF00)|(*D>>24));
+            uint32_t v;
+            memcpy( &v, D, sizeof( v ) );
+            v = ( ( v << 24 ) | ( ( v << 8 ) & 0x00FF0000 ) | ( ( v >> 8 ) & 0x0000FF00 ) | ( v >> 24 ) );
+            memcpy( D, &v, sizeof( v ) );
         }
 
         #define ARRANGE_DWORD(x)    DO_Swap32(x)

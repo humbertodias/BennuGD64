@@ -1,0 +1,32 @@
+# Nintendo Wii homebrew toolchain (linux/amd64: devkitPPC host tools are x86_64).
+#   docker build --platform linux/amd64 -t bennugd64-wii \
+#     -f docker/Dockerfile.wii docker/
+#   docker run --platform linux/amd64 --rm -v "$PWD":/src -w /src \
+#     bennugd64-wii cmake --preset wii-powerpc
+#
+# Toolchain only: does not clone this repo or bake Bennu into the image.
+
+FROM devkitpro/devkitppc:latest
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=wii \
+    DEVKITPRO=/opt/devkitpro \
+    DEVKITPPC=/opt/devkitpro/devkitPPC
+
+ENV PATH="${DEVKITPRO}/tools/bin:${DEVKITPRO}/devkitPPC/bin:${PATH}"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        cmake \
+        git \
+        ninja-build \
+        pkg-config \
+        python3 \
+        zip \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*' \
+    && chmod -R a+rX ${DEVKITPRO}
+
+WORKDIR /src
+CMD ["bash"]

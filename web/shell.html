@@ -76,6 +76,8 @@
       }
       #bar { color: var(--muted); font-size: 13px; }
       #bar button { margin-left: 8px; padding: 4px 10px; font-size: 13px; }
+      a { color: var(--accent); }
+      code { font-size: 0.92em; }
       #demos {
         position: absolute;
         top: 20px;
@@ -119,6 +121,7 @@
       <div id="drop">
         <h1>BennuGD64</h1>
         <p>Drop a <strong>.dcb</strong> plus its assets, or a game folder.</p>
+        <p class="hint"><a href="ide/">Web IDE</a> — edit <code>.prg</code>, compile with <code>bgdc.wasm</code>, run in <code>bgdi</code>.</p>
         <p class="hint">Subfolders are kept. Names are case-sensitive. Files stay in this tab (MEMFS).</p>
         <p class="hint">Gamepad: press a button on the pad before the game starts to use it as P1. Enter selects keyboard.</p>
         <div id="actions">

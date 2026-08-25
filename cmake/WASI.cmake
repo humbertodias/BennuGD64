@@ -17,6 +17,11 @@ if (NOT CMAKE_EXECUTABLE_SUFFIX)
 endif ()
 set (CMAKE_EXECUTABLE_SUFFIX_C ".wasm")
 
+# zlib's check_type_size (off64_t, …) uses try_compile + COPY_FILE. With a
+# .wasm executable suffix, CMake 3.22 cannot find the test binary (empty
+# COPY_FILE source). Probe as static archives, same as PSP/Wii toolchains.
+set (CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
+
 add_compile_definitions (TARGET_WASI)
 
 # Compiler recursion and token buffers need more than the WASI default stack.

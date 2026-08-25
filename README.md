@@ -10,6 +10,7 @@ A fork of [BennuGD](https://www.bennugd.org/) adapted to run on modern 64-bit ar
 ## Web & docs
 
 - [Web player](https://humbertodias.github.io/BennuGD64/) - run `.dcb` games in the browser (WebAssembly). Drop a bytecode file plus assets, or pick a bundled demo.
+- [Web IDE](https://humbertodias.github.io/BennuGD64/ide/) - edit `.prg` in Monaco, compile with `bgdc.wasm`, detect the DCB version, run in `bgdi`.
 - [API reference](https://humbertodias.github.io/BennuGD64/docs/) - Doxygen docs for the C runtime, compiler, and modules (published from `main` via GitHub Pages).
 
 ## Install

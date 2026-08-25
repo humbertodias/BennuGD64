@@ -163,7 +163,7 @@ There are two wasm targets. They use different toolchains and are not interchang
 
 ### WASI compiler (`bgdc.wasm`)
 
-CMake fetches [wasi-sdk](https://github.com/WebAssembly/wasi-sdk) into `.deps/` on the first configure (needs network). If `WASI_SDK_PATH` already points at an SDK with `bin/clang`, that install is used instead.
+CMake fetches [wasi-sdk](https://github.com/WebAssembly/wasi-sdk) into `.deps/` on the first configure (needs network). The tarball matches the **build machine** (`uname -m`: `x86_64` or `arm64`/`aarch64`), including Linux containers on Apple Silicon. If `WASI_SDK_PATH` already points at an SDK whose `bin/clang` runs, that install is used instead.
 
 ```shell
 cmake --preset wasi
@@ -198,6 +198,15 @@ python3 -m http.server 8080 --directory dist/web-wasm32-static
 ```
 
 Open `http://localhost:8080/`. Drop a `.dcb` plus assets (or a game folder) onto the page to run it. Every `web/demo/*.dcb` is preloaded and listed as a bundled demo. Asyncify lets `SDL_Delay` yield to the browser.
+
+The same folder also ships the **Web IDE** at `http://localhost:8080/ide/`:
+
+- Monaco edits `.prg` sources in a virtual filesystem
+- WASI `bgdc.wasm` compiles them to a `.dcb`
+- a header detector prints the DCB version (`0x0710` = 7.10)
+- Emscripten `bgdi` runs the bytecode on the canvas (`xterm.js` shows compiler output)
+
+The wasm Docker job builds both toolchains (`emcmake` for `bgdi`, `cmake --preset wasi` for `bgdc.wasm`) and copies `web/ide/` plus `web/demo/*.prg` into `dist/web-wasm32-static/`.
 
 Pushes to `main` run CI, then `.github/workflows/pages.yml` publishes the `web-wasm32-static` artifact as the site root and Doxygen API docs under `/docs/` (see `doc/pages.yml`). In the repo set **Settings → Pages → Source** to **GitHub Actions**.
 

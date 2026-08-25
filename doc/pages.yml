@@ -6,7 +6,7 @@ site:
 
 sections:
   demo:
-    description: WebAssembly browser interpreter (CI artifact)
+    description: WebAssembly browser interpreter, WASI compiler, and Web IDE (CI artifact)
     source: ci-artifact
     artifact_pattern: "*-web-wasm32-static"
     dest: /
@@ -15,6 +15,9 @@ sections:
       - bgdi.js
       - bgdi.wasm
       - bgdi.data
+      - bgdc.wasm
+      - ide/
+      - samples/
     optional_files:
       - bgdi.wasm.map
       - bgdi.js.map

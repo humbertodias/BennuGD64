@@ -130,7 +130,7 @@ function languageFor(path) {
 }
 
 function openFile(path) {
-  flushEditor();
+  if (path !== currentPath) flushEditor();
   currentPath = path;
   editorTitle.textContent = path;
   const binary = !vfs.isText(path);

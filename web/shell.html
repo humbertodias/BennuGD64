@@ -44,7 +44,7 @@
       #drop p { margin: 0 0 8px; color: var(--muted); }
       #drop .hint { font-size: 13px; }
       #actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
-      button {
+      button, a.secondary {
         appearance: none;
         border: 0;
         border-radius: 8px;
@@ -53,8 +53,10 @@
         color: #081018;
         font-weight: 650;
         cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
       }
-      button.secondary { background: #2c3548; color: var(--text); }
+      button.secondary, a.secondary { background: #2c3548; color: var(--text); }
       button[disabled] { opacity: 0.45; cursor: default; }
       #status { min-height: 1.4em; margin-top: 16px; color: var(--muted); font-size: 13px; white-space: pre-wrap; }
       #status.err { color: #ff8b8b; }
@@ -121,12 +123,12 @@
       <div id="drop">
         <h1>BennuGD64</h1>
         <p>Drop a <strong>.dcb</strong> plus its assets, or a game folder.</p>
-        <p class="hint"><a href="ide/">Web IDE</a> — edit <code>.prg</code>, compile with <code>bgdc.wasm</code>, run in <code>bgdi</code>.</p>
         <p class="hint">Subfolders are kept. Names are case-sensitive. Files stay in this tab (MEMFS).</p>
         <p class="hint">Gamepad: press a button on the pad before the game starts to use it as P1. Enter selects keyboard.</p>
         <div id="actions">
           <button type="button" id="btn-files">Choose files</button>
           <button type="button" class="secondary" id="btn-folder">Choose folder</button>
+          <a class="secondary" href="ide/">Web IDE</a>
         </div>
         <div id="status">Loading interpreter…</div>
         <div id="chooser" hidden>
@@ -138,6 +140,7 @@
         <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
         <div id="bar">
           <span id="running-as"></span>
+          <a class="secondary" href="ide/">Web IDE</a>
           <button type="button" class="secondary" id="btn-new">New game</button>
         </div>
       </div>

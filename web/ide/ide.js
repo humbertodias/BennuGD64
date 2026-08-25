@@ -4,6 +4,7 @@ import { VirtualFS } from './vfs.js';
 import { detectDcb, formatDcb } from './dcb.js';
 import { compileWithBgdc, dcbNameFor, loadBgdc } from './bgdc.js';
 import { zipStore } from './zip.js';
+import { Shell } from './shell.js';
 
 const SAMPLE_NAMES = [
   'hello', 'fire', 'firework', 'rain', 'starfield', 'keyboard', 'joystick', 'wpad'
@@ -39,6 +40,7 @@ let selectedPath = 'hello.prg';
 let editorLocked = false;
 let term;
 let fit;
+let shell;
 const collapsed = new Set();
 
 const filesEl = document.getElementById('files');
@@ -54,7 +56,16 @@ function pill(id, text, cls) {
 }
 
 function log(line, err) {
+  if (shell) {
+    shell.println(line, err);
+    return;
+  }
+  if (!term) return;
   term.writeln((err ? '\x1b[31m' : '') + String(line).replace(/\r/g, '') + (err ? '\x1b[0m' : ''));
+}
+
+function exclusive(fn) {
+  return shell ? shell.runExclusive(fn) : fn();
 }
 
 function loadMonaco() {
@@ -452,11 +463,15 @@ function setDcbPill(info) {
   pill('pill-dcb', `${info.kind} ${info.label}`, info.runtimeOk ? 'ok' : 'warn');
 }
 
-async function compile() {
+async function compileInner(srcPath) {
   flushEditor();
-  const src = sourcePath();
+  const src = srcPath || sourcePath();
   if (!/\.prg$/i.test(src)) {
     log('Open a .prg file to compile.', true);
+    return null;
+  }
+  if (!vfs.has(src)) {
+    log(src + ' not found', true);
     return null;
   }
   log(`$ bgdc.wasm -g -o ${dcbNameFor(src)} ${src}`);
@@ -487,6 +502,10 @@ async function compile() {
   }
 }
 
+function compile(srcPath) {
+  return exclusive(() => compileInner(srcPath));
+}
+
 function stopGame() {
   frame.hidden = true;
   empty.hidden = false;
@@ -510,14 +529,97 @@ function runGame(dcbPath) {
   frame.src = 'run.html';
 }
 
-async function compileAndRun() {
-  const compiled = await compile();
+async function runTarget(path) {
+  if (path && /\.dcb$/i.test(path)) {
+    flushEditor();
+    const bytes = vfs.read(path);
+    if (!bytes) {
+      log(path + ' not found', true);
+      return;
+    }
+    const info = detectDcb(bytes);
+    setDcbPill(info);
+    log(formatDcb(info), !info.ok);
+    if (!info.ok || !info.runtimeOk) {
+      log('Not running: DCB missing or incompatible.', true);
+      return;
+    }
+    log(`$ bgdi ${path}`);
+    runGame(path);
+    return;
+  }
+  const compiled = await compileInner(path);
   if (!compiled || !compiled.ok) {
     log('Not running: DCB missing or incompatible.', true);
     return;
   }
   log(`$ bgdi ${compiled.path}`);
   runGame(compiled.path);
+}
+
+function compileAndRun() {
+  return exclusive(() => runTarget());
+}
+
+function runFromShell(path) {
+  return exclusive(() => runTarget(path));
+}
+
+function mkdirPath(path) {
+  vfs.mkdir(path);
+  selectedPath = vfs.normalize(path);
+  expandTo(selectedPath);
+  renderExplorer();
+}
+
+function writePath(path, data) {
+  vfs.write(path, data);
+  expandTo(path);
+  renderExplorer();
+}
+
+function removePath(path, recursive) {
+  if (!path) throw new Error('empty path');
+  if (!vfs.has(path)) throw new Error(path + ': no such file or directory');
+  const folder = vfs.isDir(path) && !vfs.files.has(path);
+  if (folder && !recursive) throw new Error(path + ' is a directory (use rm -r)');
+  const lostOpen = currentPath === path || (folder && currentPath.startsWith(path + '/'));
+  if (lostOpen) flushEditor();
+  vfs.remove(path);
+  if (shell && (shell.cwd === path || (folder && shell.cwd.startsWith(path + '/')))) {
+    shell.cwd = vfs.parent(path);
+  }
+  selectedPath = '';
+  if (lostOpen || !vfs.has(currentPath)) {
+    const next = vfs.list()[0];
+    if (next) openFile(next);
+    else {
+      vfs.write('hello.prg', FALLBACK_HELLO);
+      openFile('hello.prg');
+    }
+  } else {
+    renderExplorer();
+  }
+}
+
+function movePath(src, dest) {
+  if (currentPath === src || currentPath.startsWith(src + '/')) flushEditor();
+  const to = (vfs.isDir(dest) && dest !== src) ? vfs.move(src, dest) : vfs.rename(src, dest);
+  remapOpenPath(src, to);
+  if (shell) {
+    if (shell.cwd === src) shell.cwd = to;
+    else if (shell.cwd.startsWith(src + '/')) shell.cwd = to + shell.cwd.slice(src.length);
+  }
+  expandTo(to);
+  selectedPath = to;
+  renderExplorer();
+  log('moved ' + src + ' → ' + to);
+}
+
+function selectDir(path) {
+  selectedPath = path || '';
+  if (path) expandTo(path);
+  renderExplorer();
 }
 
 function onParentMessage(ev) {
@@ -679,18 +781,10 @@ function bindUi() {
     if (!victim) return;
     const folder = vfs.isDir(victim);
     if (!confirm(folder ? 'Delete folder ' + victim + ' and its files?' : 'Delete ' + victim + '?')) return;
-    const lostOpen = currentPath === victim || (folder && currentPath.startsWith(victim + '/'));
-    vfs.remove(victim);
-    selectedPath = '';
-    if (lostOpen || !vfs.has(currentPath)) {
-      const next = vfs.list()[0];
-      if (next) openFile(next);
-      else {
-        vfs.write('hello.prg', FALLBACK_HELLO);
-        openFile('hello.prg');
-      }
-    } else {
-      renderExplorer();
+    try {
+      removePath(victim, folder);
+    } catch (err) {
+      log(err.message, true);
     }
   };
   document.getElementById('btn-upload').onclick = (e) => {
@@ -729,6 +823,7 @@ function bindUi() {
 async function main() {
   term = new Terminal({
     convertEol: true,
+    cursorBlink: true,
     fontSize: 12,
     fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
     theme: { background: '#0b0e14', foreground: '#e8edf7', cursor: '#5b9dff' }
@@ -738,10 +833,32 @@ async function main() {
   term.open(document.getElementById('term'));
   fit.fit();
   new ResizeObserver(() => fit.fit()).observe(document.getElementById('term'));
+  document.getElementById('term-wrap').addEventListener('mousedown', () => term.focus());
+
+  shell = new Shell(term, {
+    vfs,
+    log,
+    compile,
+    run: runFromShell,
+    stop: stopGame,
+    open: openFile,
+    download: downloadPath,
+    mkdir: mkdirPath,
+    write: writePath,
+    remove: removePath,
+    move: movePath,
+    selectDir,
+    flush: flushEditor,
+    refresh: renderExplorer,
+    currentPath: () => currentPath,
+    detectDcb,
+    formatDcb
+  });
 
   log('BennuGD Web IDE');
   log('Virtual FS → bgdc.wasm → DCB detector → bgdi → canvas');
   log('Ctrl/Cmd+Shift+B compiles. Ctrl/Cmd+Enter runs. F1 opens the command palette.');
+  log('Click the terminal and type help for commands.');
 
   monacoApi = await loadMonaco();
   registerBennu(monacoApi);
@@ -778,6 +895,8 @@ async function main() {
     pill('pill-bgdi', 'bgdi missing', 'err');
     log('bgdi.js not found. Serve this page from dist/web-wasm32-static.', true);
   }
+
+  shell.start();
 }
 
 main().catch((err) => {

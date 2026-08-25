@@ -251,6 +251,7 @@ body.resizing iframe { pointer-events: none; }
   flex: 1;
   min-height: 0;
   padding: 6px 8px 8px;
+  cursor: text;
 }
 
 @media (max-width: 960px) {

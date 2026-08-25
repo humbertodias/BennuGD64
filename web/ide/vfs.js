@@ -35,6 +35,56 @@ export class VirtualFS {
     return base ? base + '/' + leaf : leaf;
   }
 
+  resolve(from, path) {
+    const rel = path == null ? '' : String(path);
+    const abs = rel.startsWith('/') || rel.startsWith('\\');
+    const combined = abs
+      ? rel
+      : (rel ? (this.normalize(from) ? this.normalize(from) + '/' + rel : rel) : this.normalize(from));
+    const parts = [];
+    for (const p of String(combined).replace(/\\/g, '/').split('/')) {
+      if (!p || p === '.') continue;
+      if (p === '..') {
+        parts.pop();
+        continue;
+      }
+      parts.push(p);
+    }
+    return parts.join('/');
+  }
+
+  entries(dir = '') {
+    const key = this.normalize(dir);
+    if (key && this.files.has(key)) {
+      return { kind: 'file', dirs: [], files: [this.basename(key)] };
+    }
+    if (key && !this.isDir(key)) throw new Error((key || '/') + ' not found');
+    const prefix = key ? key + '/' : '';
+    const dirs = new Set();
+    const files = [];
+    for (const d of this.dirs) {
+      if (!key) {
+        if (!d.includes('/')) dirs.add(d);
+      } else if (d.startsWith(prefix)) {
+        const rest = d.slice(prefix.length);
+        if (rest && !rest.includes('/')) dirs.add(rest);
+      }
+    }
+    for (const f of this.files.keys()) {
+      if (!key) {
+        const slash = f.indexOf('/');
+        if (slash < 0) files.push(f);
+        else dirs.add(f.slice(0, slash));
+      } else if (f.startsWith(prefix)) {
+        const rest = f.slice(prefix.length);
+        const slash = rest.indexOf('/');
+        if (slash < 0) files.push(rest);
+        else dirs.add(rest.slice(0, slash));
+      }
+    }
+    return { kind: 'dir', dirs: [...dirs].sort(), files: files.sort() };
+  }
+
   list() {
     return [...this.files.keys()].sort((a, b) => a.localeCompare(b));
   }
@@ -108,18 +158,16 @@ export class VirtualFS {
     return hit;
   }
 
-  move(from, destDir) {
+  rename(from, to) {
     const src = this.normalize(from);
-    const destParent = this.normalize(destDir);
+    const dest = this.normalize(to);
     if (!src) throw new Error('empty path');
-    if (src.split('/').includes('..') || destParent.split('/').includes('..')) {
+    if (!dest) throw new Error('empty path');
+    if (src.split('/').includes('..') || dest.split('/').includes('..')) {
       throw new Error('invalid path');
     }
-    if (destParent === src || (destParent && destParent.startsWith(src + '/'))) {
-      throw new Error('cannot move into itself');
-    }
-    const dest = destParent ? destParent + '/' + this.basename(src) : this.basename(src);
     if (dest === src) return dest;
+    if (dest.startsWith(src + '/')) throw new Error('cannot move into itself');
     if (this.has(dest)) throw new Error(dest + ' already exists');
 
     if (this.files.has(src)) {
@@ -140,6 +188,20 @@ export class VirtualFS {
     }
     this.remove(src);
     return dest;
+  }
+
+  move(from, destDir) {
+    const src = this.normalize(from);
+    const destParent = this.normalize(destDir);
+    if (!src) throw new Error('empty path');
+    if (src.split('/').includes('..') || destParent.split('/').includes('..')) {
+      throw new Error('invalid path');
+    }
+    if (destParent === src || (destParent && destParent.startsWith(src + '/'))) {
+      throw new Error('cannot move into itself');
+    }
+    const dest = destParent ? destParent + '/' + this.basename(src) : this.basename(src);
+    return this.rename(src, dest);
   }
 
   readText(path) {

@@ -5,6 +5,7 @@ import { detectDcb, formatDcb } from './dcb.js';
 import { compileWithBgdc, dcbNameFor, loadBgdc } from './bgdc.js';
 import { zipStore } from './zip.js';
 import { Shell } from './shell.js';
+import { registerBennu } from './bennu-lang.js';
 
 const SAMPLE_NAMES = [
   'hello', 'fire', 'firework', 'rain', 'starfield', 'keyboard', 'joystick', 'wpad'
@@ -80,37 +81,6 @@ function loadMonaco() {
     };
     script.onerror = () => reject(new Error('failed to load Monaco'));
     document.head.appendChild(script);
-  });
-}
-
-function registerBennu(monaco) {
-  monaco.languages.register({ id: 'bennu' });
-  monaco.languages.setMonarchTokensProvider('bennu', {
-    ignoreCase: true,
-    keywords: [
-      'program', 'begin', 'end', 'process', 'function', 'frame', 'loop',
-      'from', 'to', 'step', 'while', 'repeat', 'until', 'for', 'if', 'else',
-      'elseif', 'switch', 'case', 'default', 'break', 'continue', 'return',
-      'global', 'local', 'private', 'const', 'type', 'struct', 'pointer',
-      'import', 'include', 'onexit', 'clone', 'signal'
-    ],
-    tokenizer: {
-      root: [
-        [/\/\/.*$/, 'comment'],
-        [/\/\*/, 'comment', '@comment'],
-        [/"([^"\\]|\\.)*"/, 'string'],
-        [/'([^'\\]|\\.)*'/, 'string'],
-        [/\b\d+\b/, 'number'],
-        [/#\w+/, 'keyword'],
-        [/\b(process|function|begin|end|frame|loop|from|to|step|while|repeat|until|if|else|elseif|switch|case|default|break|continue|return|global|local|private|const|type|struct|import|include|program|onexit|clone|signal)\b/, 'keyword'],
-        [/[a-zA-Z_][\w]*/, 'identifier']
-      ],
-      comment: [
-        [/[^/*]+/, 'comment'],
-        [/\*\//, 'comment', '@pop'],
-        [/[/*]/, 'comment']
-      ]
-    }
   });
 }
 
@@ -1123,11 +1093,14 @@ async function main() {
 
   log('BennuGD Web IDE');
   log('Virtual FS → bgdc.wasm → DCB detector → bgdi → canvas');
-  log('Ctrl/Cmd+Shift+B compiles. Ctrl/Cmd+Enter runs. F1 opens the command palette.');
+  log('Ctrl/Cmd+Space opens IntelliSense. Ctrl/Cmd+Shift+B compiles. Ctrl/Cmd+Enter runs. F1 opens the command palette.');
   log('Click the terminal and type help for commands.');
 
   monacoApi = await loadMonaco();
-  registerBennu(monacoApi);
+  registerBennu(monacoApi, {
+    listPaths: () => vfs.list(),
+    readText: (p) => vfs.readText(p)
+  });
   editor = monacoApi.editor.create(document.getElementById('editor'), {
     value: '',
     language: 'bennu',
@@ -1135,7 +1108,13 @@ async function main() {
     automaticLayout: true,
     minimap: { enabled: false },
     fontSize: 13,
-    tabSize: 4
+    tabSize: 4,
+    quickSuggestions: { other: true, comments: false, strings: true },
+    suggestOnTriggerCharacters: true,
+    tabCompletion: 'on',
+    snippetSuggestions: 'inline',
+    wordBasedSuggestions: 'off',
+    parameterHints: { enabled: true }
   });
   registerIdeCommands(monacoApi, editor);
 

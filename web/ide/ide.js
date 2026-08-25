@@ -713,7 +713,7 @@ function bindExplorerResize() {
   split.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     split.classList.add('dragging');
-    document.body.classList.add('resizing');
+    document.body.classList.add('resizing', 'resizing-col');
     split.setPointerCapture(e.pointerId);
     const onMove = (ev) => {
       const width = applyExplorerWidth(ev.clientX - work.getBoundingClientRect().left);
@@ -721,12 +721,58 @@ function bindExplorerResize() {
     };
     const onUp = () => {
       split.classList.remove('dragging');
-      document.body.classList.remove('resizing');
+      document.body.classList.remove('resizing', 'resizing-col');
       split.removeEventListener('pointermove', onMove);
       split.removeEventListener('pointerup', onUp);
     };
     split.addEventListener('pointermove', onMove);
     split.addEventListener('pointerup', onUp);
+  });
+}
+
+const TERM_HEIGHT_KEY = 'bennugd-ide-term-height';
+
+function applyTermHeight(px) {
+  const min = 80;
+  const top = document.getElementById('top');
+  const reserved = (top ? top.getBoundingClientRect().height : 48) + 6 + 140;
+  const max = Math.max(min, Math.floor(window.innerHeight - reserved));
+  const height = Math.max(min, Math.min(max, Math.round(px)));
+  document.body.style.setProperty('--term-height', height + 'px');
+  if (fit) fit.fit();
+  return height;
+}
+
+function bindTermResize() {
+  const split = document.getElementById('term-split');
+  const saved = parseInt(localStorage.getItem(TERM_HEIGHT_KEY), 10);
+  if (saved) applyTermHeight(saved);
+
+  split.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    split.classList.add('dragging');
+    document.body.classList.add('resizing', 'resizing-row');
+    try { split.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events */ }
+    const onMove = (ev) => {
+      const height = applyTermHeight(window.innerHeight - ev.clientY);
+      localStorage.setItem(TERM_HEIGHT_KEY, String(height));
+    };
+    const onUp = () => {
+      split.classList.remove('dragging');
+      document.body.classList.remove('resizing', 'resizing-row');
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    onMove(e);
+  });
+
+  window.addEventListener('resize', () => {
+    const current = parseInt(getComputedStyle(document.body).getPropertyValue('--term-height'), 10)
+      || parseInt(localStorage.getItem(TERM_HEIGHT_KEY), 10)
+      || 180;
+    applyTermHeight(current);
   });
 }
 
@@ -817,6 +863,7 @@ function bindUi() {
   };
   window.addEventListener('message', onParentMessage);
   bindExplorerResize();
+  bindTermResize();
   bindExplorerDrop();
 }
 

@@ -925,6 +925,78 @@ function bindExplorerResize() {
   });
 }
 
+const PLAYER_WIDTH_KEY = 'bennugd-ide-player-width';
+const PLAYER_HEIGHT_KEY = 'bennugd-ide-player-height';
+
+function playerStacked() {
+  return window.matchMedia('(max-width: 960px)').matches;
+}
+
+function applyPlayerWidth(px) {
+  const work = document.getElementById('work');
+  const explorer = parseInt(getComputedStyle(work).getPropertyValue('--explorer-width'), 10) || 220;
+  const min = 180;
+  const rest = work.clientWidth - explorer - 12;
+  const max = Math.max(min, rest - min);
+  const width = Math.max(min, Math.min(max, Math.round(px)));
+  work.style.setProperty('--player-width', width + 'px');
+  return width;
+}
+
+function applyPlayerHeight(px) {
+  const work = document.getElementById('work');
+  const min = 120;
+  const max = Math.max(min, work.clientHeight - 140);
+  const height = Math.max(min, Math.min(max, Math.round(px)));
+  work.style.setProperty('--player-height', height + 'px');
+  return height;
+}
+
+function bindPlayerResize() {
+  const split = document.getElementById('player-split');
+  const work = document.getElementById('work');
+  const savedW = parseInt(localStorage.getItem(PLAYER_WIDTH_KEY), 10);
+  const savedH = parseInt(localStorage.getItem(PLAYER_HEIGHT_KEY), 10);
+  if (savedW) applyPlayerWidth(savedW);
+  if (savedH) applyPlayerHeight(savedH);
+
+  split.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const stacked = playerStacked();
+    split.classList.add('dragging');
+    document.body.classList.add('resizing', stacked ? 'resizing-row' : 'resizing-col');
+    try { split.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events */ }
+    const onMove = (ev) => {
+      const box = work.getBoundingClientRect();
+      if (stacked) {
+        const height = applyPlayerHeight(box.bottom - ev.clientY);
+        localStorage.setItem(PLAYER_HEIGHT_KEY, String(height));
+      } else {
+        const width = applyPlayerWidth(box.right - ev.clientX);
+        localStorage.setItem(PLAYER_WIDTH_KEY, String(width));
+      }
+    };
+    const onUp = () => {
+      split.classList.remove('dragging');
+      document.body.classList.remove('resizing', 'resizing-row', 'resizing-col');
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    onMove(e);
+  });
+
+  window.addEventListener('resize', () => {
+    const width = parseInt(getComputedStyle(work).getPropertyValue('--player-width'), 10)
+      || parseInt(localStorage.getItem(PLAYER_WIDTH_KEY), 10);
+    const height = parseInt(getComputedStyle(work).getPropertyValue('--player-height'), 10)
+      || parseInt(localStorage.getItem(PLAYER_HEIGHT_KEY), 10);
+    if (width) applyPlayerWidth(width);
+    if (height) applyPlayerHeight(height);
+  });
+}
+
 const TERM_HEIGHT_KEY = 'bennugd-ide-term-height';
 
 function applyTermHeight(px) {
@@ -1008,6 +1080,7 @@ function bindUi() {
   };
   window.addEventListener('message', onParentMessage);
   bindExplorerResize();
+  bindPlayerResize();
   bindTermResize();
   bindExplorerDrop();
   bindExplorerMenu();

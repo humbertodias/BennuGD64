@@ -93,7 +93,7 @@ button:focus-visible, select:focus-visible {
 #work {
   flex: 1;
   display: grid;
-  grid-template-columns: var(--explorer-width, 220px) 6px minmax(280px, 1fr) minmax(280px, 1fr);
+  grid-template-columns: var(--explorer-width, 220px) 6px minmax(180px, 1fr) 6px minmax(180px, var(--player-width, 1fr));
   grid-template-rows: 1fr;
   min-height: 0;
 }
@@ -233,13 +233,16 @@ button:focus-visible, select:focus-visible {
   margin: 4px 6px;
 }
 
-#explorer-split {
+#explorer-split,
+#player-split {
   cursor: col-resize;
   background: var(--line);
   touch-action: none;
 }
 #explorer-split:hover,
-#explorer-split.dragging {
+#explorer-split.dragging,
+#player-split:hover,
+#player-split.dragging {
   background: var(--accent);
 }
 #term-split {
@@ -303,7 +306,11 @@ body.resizing iframe { pointer-events: none; }
 @media (max-width: 960px) {
   #work {
     grid-template-columns: var(--explorer-width, 180px) 6px 1fr;
-    grid-template-rows: 1fr 280px;
+    grid-template-rows: 1fr 6px var(--player-height, 280px);
+  }
+  #player-split {
+    grid-column: 1 / -1;
+    cursor: row-resize;
   }
   #player-pane { grid-column: 1 / -1; }
 }

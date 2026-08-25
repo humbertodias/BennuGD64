@@ -186,7 +186,16 @@ button:focus-visible, select:focus-visible {
   border: 0;
   border-radius: 4px;
 }
-.file-dl:hover { background: #2c3548; color: var(--text); }
+.file.drop,
+#files.drop {
+  outline: 1px dashed var(--accent);
+  background: #1d2a44;
+}
+#files.drop {
+  outline-offset: -3px;
+  border-radius: 8px;
+  min-height: 48px;
+}
 
 #explorer-split {
   cursor: col-resize;

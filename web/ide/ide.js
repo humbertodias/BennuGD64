@@ -155,8 +155,20 @@ function renderExplorer() {
 function rowFor(node, depth, highlight) {
   const row = document.createElement('div');
   row.className = 'file ' + (node.kind === 'dir' ? 'dir' : extOf(node.path));
+  row.dataset.path = node.path;
+  row.dataset.kind = node.kind;
+  row.draggable = true;
   if (node.path === highlight) row.classList.add('active');
   row.style.paddingLeft = 4 + depth * 12 + 'px';
+  row.addEventListener('dragstart', (e) => {
+    if (e.target.closest('.file-dl, .file-twist')) {
+      e.preventDefault();
+      return;
+    }
+    e.dataTransfer.setData('application/x-bennugd-path', node.path);
+    e.dataTransfer.setData('text/plain', node.path);
+    e.dataTransfer.effectAllowed = 'move';
+  });
 
   const twist = document.createElement('button');
   twist.type = 'button';
@@ -199,9 +211,161 @@ function rowFor(node, depth, highlight) {
     dl.setAttribute('aria-label', 'Download ' + node.path);
     dl.textContent = '↓';
     dl.onclick = () => downloadFile(node.path);
+    dl.draggable = false;
     row.append(ext, dl);
   }
   return row;
+}
+
+function skipDropName(name) {
+  const base = String(name || '').split('/').pop();
+  return !base || base === '.DS_Store' || base === 'Thumbs.db' || base.startsWith('._');
+}
+
+function readEntries(reader) {
+  return new Promise((resolve, reject) => {
+    const all = [];
+    const next = () => {
+      reader.readEntries((batch) => {
+        if (!batch.length) return resolve(all);
+        all.push(...batch);
+        next();
+      }, reject);
+    };
+    next();
+  });
+}
+
+async function walkEntry(entry, prefix) {
+  const path = prefix ? prefix + entry.name : entry.name;
+  if (skipDropName(path)) return [];
+  if (entry.isFile) {
+    const file = await new Promise((res, rej) => entry.file(res, rej));
+    return [{ path, file }];
+  }
+  const kids = await readEntries(entry.createReader());
+  if (!kids.length) return [{ path, dir: true }];
+  const out = [];
+  for (const kid of kids) out.push(...await walkEntry(kid, path + '/'));
+  return out;
+}
+
+async function itemsFromDataTransfer(dt) {
+  const items = [...(dt.items || [])];
+  if (items.some((it) => it.webkitGetAsEntry)) {
+    const collected = [];
+    for (const it of items) {
+      const entry = it.webkitGetAsEntry && it.webkitGetAsEntry();
+      if (entry) collected.push(...await walkEntry(entry, ''));
+    }
+    if (collected.length) return collected;
+  }
+  return [...(dt.files || [])].map((file) => ({
+    path: file.webkitRelativePath || file.name,
+    file
+  }));
+}
+
+function isInternalDrag(dt) {
+  return [...(dt.types || [])].includes('application/x-bennugd-path');
+}
+
+function dropDestFromEvent(e) {
+  const row = e.target.closest && e.target.closest('#files .file');
+  if (!row) return '';
+  const path = row.dataset.path || '';
+  if (row.dataset.kind === 'dir') return path;
+  return vfs.parent(path);
+}
+
+function clearDropMarks() {
+  filesEl.classList.remove('drop');
+  filesEl.querySelectorAll('.file.drop').forEach((el) => el.classList.remove('drop'));
+}
+
+function markDropDest(destPath) {
+  clearDropMarks();
+  if (!destPath) {
+    filesEl.classList.add('drop');
+    return;
+  }
+  const row = [...filesEl.querySelectorAll('.file[data-path]')].find((el) => el.dataset.path === destPath);
+  if (row) row.classList.add('drop');
+  else filesEl.classList.add('drop');
+}
+
+function remapOpenPath(from, to) {
+  const prefix = from + '/';
+  const fix = (path) => {
+    if (!path) return path;
+    if (path === from) return to;
+    if (path.startsWith(prefix)) return to + path.slice(from.length);
+    return path;
+  };
+  currentPath = fix(currentPath);
+  selectedPath = fix(selectedPath);
+  if (editorTitle && currentPath) editorTitle.textContent = currentPath;
+}
+
+async function importDropped(pairs, destDir) {
+  let last = '';
+  for (const item of pairs) {
+    if (skipDropName(item.path)) continue;
+    const dest = destDir ? vfs.join(destDir, item.path) : vfs.normalize(item.path);
+    try {
+      if (item.dir) vfs.mkdir(dest);
+      else vfs.write(dest, new Uint8Array(await item.file.arrayBuffer()));
+      expandTo(dest);
+      last = dest;
+    } catch (err) {
+      log((dest || item.path) + ': ' + err.message, true);
+    }
+  }
+  if (last) selectedPath = last;
+  renderExplorer();
+}
+
+function bindExplorerDrop() {
+  const pane = document.getElementById('explorer-pane');
+
+  pane.addEventListener('dragover', (e) => {
+    if (!e.dataTransfer) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = isInternalDrag(e.dataTransfer) ? 'move' : 'copy';
+    markDropDest(dropDestFromEvent(e));
+  });
+  pane.addEventListener('dragleave', (e) => {
+    if (!pane.contains(e.relatedTarget)) clearDropMarks();
+  });
+  pane.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    clearDropMarks();
+    const dest = dropDestFromEvent(e);
+    const internal = e.dataTransfer.getData('application/x-bennugd-path')
+      || (isInternalDrag(e.dataTransfer) ? e.dataTransfer.getData('text/plain') : '');
+    if (internal) {
+      try {
+        if (currentPath === internal || currentPath.startsWith(internal + '/')) flushEditor();
+        const to = vfs.move(internal, dest);
+        remapOpenPath(internal, to);
+        expandTo(to);
+        selectedPath = to;
+        renderExplorer();
+        log('moved ' + internal + ' → ' + to);
+      } catch (err) {
+        log(err.message, true);
+      }
+      return;
+    }
+    try {
+      const pairs = await itemsFromDataTransfer(e.dataTransfer);
+      if (!pairs.length) return log('No files dropped.', true);
+      await importDropped(pairs, dest);
+      log('imported ' + pairs.length + ' item(s)' + (dest ? ' into ' + dest : ''));
+    } catch (err) {
+      log(String(err), true);
+    }
+  });
 }
 
 function languageFor(path) {
@@ -530,6 +694,7 @@ function bindUi() {
   };
   window.addEventListener('message', onParentMessage);
   bindExplorerResize();
+  bindExplorerDrop();
 }
 
 async function main() {

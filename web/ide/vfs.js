@@ -108,6 +108,40 @@ export class VirtualFS {
     return hit;
   }
 
+  move(from, destDir) {
+    const src = this.normalize(from);
+    const destParent = this.normalize(destDir);
+    if (!src) throw new Error('empty path');
+    if (src.split('/').includes('..') || destParent.split('/').includes('..')) {
+      throw new Error('invalid path');
+    }
+    if (destParent === src || (destParent && destParent.startsWith(src + '/'))) {
+      throw new Error('cannot move into itself');
+    }
+    const dest = destParent ? destParent + '/' + this.basename(src) : this.basename(src);
+    if (dest === src) return dest;
+    if (this.has(dest)) throw new Error(dest + ' already exists');
+
+    if (this.files.has(src)) {
+      this.write(dest, this.files.get(src));
+      this.files.delete(src);
+      return dest;
+    }
+    if (!this.isDir(src)) throw new Error(src + ' not found');
+
+    this.mkdir(dest);
+    const prefix = src + '/';
+    const remap = (old) => dest + old.slice(src.length);
+    for (const d of [...this.dirs]) {
+      if (d.startsWith(prefix)) this.dirs.add(remap(d));
+    }
+    for (const [f, data] of [...this.files]) {
+      if (f.startsWith(prefix)) this.write(remap(f), data);
+    }
+    this.remove(src);
+    return dest;
+  }
+
   readText(path) {
     const bytes = this.read(path);
     if (!bytes) return '';

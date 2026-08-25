@@ -34,9 +34,11 @@ const vfs = new VirtualFS();
 let monacoApi;
 let editor;
 let currentPath = 'hello.prg';
+let selectedPath = 'hello.prg';
 let editorLocked = false;
 let term;
 let fit;
+const collapsed = new Set();
 
 const filesEl = document.getElementById('files');
 const editorTitle = document.getElementById('editor-title');
@@ -106,10 +108,18 @@ function extOf(path) {
 }
 
 function fileBasename(path) {
-  return path.replace(/\\/g, '/').split('/').pop() || path;
+  return vfs.basename(path);
+}
+
+function targetDir() {
+  const sel = selectedPath || currentPath;
+  if (sel && vfs.isDir(sel)) return vfs.normalize(sel);
+  if (sel) return vfs.parent(sel);
+  return '';
 }
 
 function downloadFile(path) {
+  if (vfs.isDir(path)) return;
   if (path === currentPath) flushEditor();
   const data = vfs.read(path);
   if (!data) return;
@@ -122,30 +132,76 @@ function downloadFile(path) {
   URL.revokeObjectURL(url);
 }
 
+function expandTo(path) {
+  let dir = vfs.parent(path);
+  while (dir) {
+    collapsed.delete(dir);
+    dir = vfs.parent(dir);
+  }
+}
+
 function renderExplorer() {
   filesEl.replaceChildren();
-  for (const path of vfs.list()) {
-    const row = document.createElement('div');
-    row.className = 'file ' + extOf(path);
-    if (path === currentPath) row.classList.add('active');
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'file-open';
-    btn.textContent = path;
-    btn.onclick = () => openFile(path);
+  const highlight = selectedPath || currentPath;
+  const walk = (node, depth) => {
+    for (const child of node.children || []) {
+      filesEl.appendChild(rowFor(child, depth, highlight));
+      if (child.kind === 'dir' && !collapsed.has(child.path)) walk(child, depth + 1);
+    }
+  };
+  walk(vfs.tree(), 0);
+}
+
+function rowFor(node, depth, highlight) {
+  const row = document.createElement('div');
+  row.className = 'file ' + (node.kind === 'dir' ? 'dir' : extOf(node.path));
+  if (node.path === highlight) row.classList.add('active');
+  row.style.paddingLeft = 4 + depth * 12 + 'px';
+
+  const twist = document.createElement('button');
+  twist.type = 'button';
+  twist.className = 'file-twist';
+  if (node.kind === 'dir') {
+    twist.textContent = collapsed.has(node.path) ? '▸' : '▾';
+    twist.title = collapsed.has(node.path) ? 'Expand' : 'Collapse';
+    twist.onclick = (e) => {
+      e.stopPropagation();
+      if (collapsed.has(node.path)) collapsed.delete(node.path);
+      else collapsed.add(node.path);
+      renderExplorer();
+    };
+  } else {
+    twist.textContent = '';
+    twist.tabIndex = -1;
+    twist.disabled = true;
+  }
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'file-open';
+  btn.textContent = node.name;
+  btn.title = node.path;
+  btn.onclick = () => {
+    selectedPath = node.path;
+    if (node.kind === 'dir') renderExplorer();
+    else openFile(node.path);
+  };
+
+  row.append(twist, btn);
+  if (node.kind === 'file') {
     const ext = document.createElement('span');
     ext.className = 'ext';
-    ext.textContent = extOf(path) || 'file';
+    ext.textContent = extOf(node.path) || 'file';
     const dl = document.createElement('button');
     dl.type = 'button';
     dl.className = 'file-dl';
-    dl.title = 'Download ' + path;
-    dl.setAttribute('aria-label', 'Download ' + path);
+    dl.title = 'Download ' + node.path;
+    dl.setAttribute('aria-label', 'Download ' + node.path);
     dl.textContent = '↓';
-    dl.onclick = () => downloadFile(path);
-    row.append(btn, ext, dl);
-    filesEl.appendChild(row);
+    dl.onclick = () => downloadFile(node.path);
+    row.append(ext, dl);
   }
+  return row;
 }
 
 function languageFor(path) {
@@ -155,8 +211,15 @@ function languageFor(path) {
 }
 
 function openFile(path) {
+  if (vfs.isDir(path)) {
+    selectedPath = path;
+    renderExplorer();
+    return;
+  }
   if (path !== currentPath) flushEditor();
   currentPath = path;
+  selectedPath = path;
+  expandTo(path);
   editorTitle.textContent = path;
   const binary = !vfs.isText(path);
   editorLocked = binary;
@@ -377,29 +440,89 @@ function bindUi() {
   document.getElementById('btn-run').onclick = () => compileAndRun();
   document.getElementById('btn-stop').onclick = () => stopGame();
   document.getElementById('btn-new').onclick = () => {
-    const name = prompt('New file name', 'game.prg');
+    let name;
+    try {
+      name = prompt('New file path', vfs.join(targetDir(), 'game.prg'));
+    } catch (err) {
+      log(err.message, true);
+      return;
+    }
     if (!name) return;
-    if (!vfs.has(name)) vfs.write(name, /\.prg$/i.test(name) ? 'PROCESS Main()\nBEGIN\n    FRAME;\nEND\n' : '');
-    openFile(name);
+    const path = vfs.normalize(name);
+    if (!path) return;
+    if (vfs.isDir(path)) return log(path + ' is a directory', true);
+    if (!vfs.has(path)) {
+      try {
+        vfs.write(path, /\.prg$/i.test(path) ? 'PROCESS Main()\nBEGIN\n    FRAME;\nEND\n' : '');
+      } catch (err) {
+        log(err.message, true);
+        return;
+      }
+    }
+    expandTo(path);
+    openFile(path);
+  };
+  document.getElementById('btn-mkdir').onclick = () => {
+    let name;
+    try {
+      name = prompt('New folder path', vfs.join(targetDir(), 'lib'));
+    } catch (err) {
+      log(err.message, true);
+      return;
+    }
+    if (!name) return;
+    try {
+      vfs.mkdir(name);
+    } catch (err) {
+      log(err.message, true);
+      return;
+    }
+    selectedPath = vfs.normalize(name);
+    expandTo(selectedPath);
+    renderExplorer();
   };
   document.getElementById('btn-delete').onclick = () => {
-    if (!currentPath) return;
-    if (!confirm('Delete ' + currentPath + '?')) return;
-    vfs.remove(currentPath);
-    const next = vfs.list()[0];
-    if (next) openFile(next);
-    else {
-      vfs.write('hello.prg', FALLBACK_HELLO);
-      openFile('hello.prg');
+    const victim = selectedPath || currentPath;
+    if (!victim) return;
+    const folder = vfs.isDir(victim);
+    if (!confirm(folder ? 'Delete folder ' + victim + ' and its files?' : 'Delete ' + victim + '?')) return;
+    const lostOpen = currentPath === victim || (folder && currentPath.startsWith(victim + '/'));
+    vfs.remove(victim);
+    selectedPath = '';
+    if (lostOpen || !vfs.has(currentPath)) {
+      const next = vfs.list()[0];
+      if (next) openFile(next);
+      else {
+        vfs.write('hello.prg', FALLBACK_HELLO);
+        openFile('hello.prg');
+      }
+    } else {
+      renderExplorer();
     }
   };
-  document.getElementById('btn-upload').onclick = () => document.getElementById('pick-files').click();
-  document.getElementById('pick-files').onchange = async (e) => {
-    for (const file of [...e.target.files]) {
-      vfs.write(file.name, new Uint8Array(await file.arrayBuffer()));
+  document.getElementById('btn-upload').onclick = (e) => {
+    document.getElementById(e.shiftKey ? 'pick-folder' : 'pick-files').click();
+  };
+  document.getElementById('btn-upload').title = 'Upload files. Shift+click to upload a folder.';
+  const ingestUploads = async (list) => {
+    for (const file of [...list]) {
+      const key = vfs.normalize(file.webkitRelativePath || file.name);
+      try {
+        vfs.write(key, new Uint8Array(await file.arrayBuffer()));
+        expandTo(key);
+      } catch (err) {
+        log((key || file.name) + ': ' + err.message, true);
+      }
     }
-    e.target.value = '';
     renderExplorer();
+  };
+  document.getElementById('pick-files').onchange = async (e) => {
+    await ingestUploads(e.target.files);
+    e.target.value = '';
+  };
+  document.getElementById('pick-folder').onchange = async (e) => {
+    await ingestUploads(e.target.files);
+    e.target.value = '';
   };
   sampleSelect.onchange = (e) => {
     if (e.target.value) loadSample(e.target.value);

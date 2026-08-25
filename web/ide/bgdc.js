@@ -108,6 +108,9 @@ export async function compileWithBgdc(files, sourcePath, onLine) {
 }
 
 export function dcbNameFor(sourcePath) {
-  const base = sourcePath.replace(/\\/g, '/').split('/').pop() || 'out.prg';
-  return base.replace(/\.[^.]+$/, '') + '.dcb';
+  const norm = sourcePath.replace(/\\/g, '/');
+  const slash = norm.lastIndexOf('/');
+  const dir = slash >= 0 ? norm.slice(0, slash + 1) : '';
+  const base = (slash >= 0 ? norm.slice(slash + 1) : norm) || 'out.prg';
+  return dir + base.replace(/\.[^.]+$/, '') + '.dcb';
 }

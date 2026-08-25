@@ -133,14 +133,25 @@ button:focus-visible, select:focus-visible {
 .file {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   width: 100%;
   border-radius: 6px;
-  padding: 2px 4px 2px 2px;
-  margin: 0 0 2px;
+  padding: 1px 4px 1px 0;
+  margin: 0 0 1px;
 }
 .file:hover { background: #243049; }
 .file.active { background: #1d2a44; outline: 1px solid var(--accent); }
+.file-twist {
+  flex: 0 0 16px;
+  width: 16px;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  font-size: 10px;
+  line-height: 1;
+}
+.file-twist:hover { background: transparent; color: var(--text); }
 .file-open {
   flex: 1;
   min-width: 0;
@@ -150,11 +161,12 @@ button:focus-visible, select:focus-visible {
   font-weight: 500;
   border: 0;
   border-radius: 4px;
-  padding: 6px 8px;
+  padding: 4px 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.file.dir .file-open { font-weight: 650; }
 .file-open:hover { background: transparent; }
 .file .ext {
   color: var(--muted);

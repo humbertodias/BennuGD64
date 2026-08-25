@@ -105,21 +105,46 @@ function extOf(path) {
   return m ? m[1] : '';
 }
 
+function fileBasename(path) {
+  return path.replace(/\\/g, '/').split('/').pop() || path;
+}
+
+function downloadFile(path) {
+  if (path === currentPath) flushEditor();
+  const data = vfs.read(path);
+  if (!data) return;
+  const blob = new Blob([data], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileBasename(path);
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function renderExplorer() {
   filesEl.replaceChildren();
   for (const path of vfs.list()) {
+    const row = document.createElement('div');
+    row.className = 'file ' + extOf(path);
+    if (path === currentPath) row.classList.add('active');
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'file ' + extOf(path);
-    if (path === currentPath) btn.classList.add('active');
-    const name = document.createElement('span');
-    name.textContent = path;
+    btn.className = 'file-open';
+    btn.textContent = path;
+    btn.onclick = () => openFile(path);
     const ext = document.createElement('span');
     ext.className = 'ext';
     ext.textContent = extOf(path) || 'file';
-    btn.append(name, ext);
-    btn.onclick = () => openFile(path);
-    filesEl.appendChild(btn);
+    const dl = document.createElement('button');
+    dl.type = 'button';
+    dl.className = 'file-dl';
+    dl.title = 'Download ' + path;
+    dl.setAttribute('aria-label', 'Download ' + path);
+    dl.textContent = '↓';
+    dl.onclick = () => downloadFile(path);
+    row.append(btn, ext, dl);
+    filesEl.appendChild(row);
   }
 }
 
@@ -291,6 +316,62 @@ async function loadSample(name) {
   openFile(path);
 }
 
+function registerIdeCommands(monaco, ed) {
+  ed.addAction({
+    id: 'bennu.compile',
+    label: 'Bennu: Compile',
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyB],
+    contextMenuGroupId: 'bennu',
+    contextMenuOrder: 1,
+    run: () => compile()
+  });
+  ed.addAction({
+    id: 'bennu.run',
+    label: 'Bennu: Run',
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+    contextMenuGroupId: 'bennu',
+    contextMenuOrder: 2,
+    run: () => compileAndRun()
+  });
+}
+
+const EXPLORER_WIDTH_KEY = 'bennugd-ide-explorer-width';
+
+function applyExplorerWidth(px) {
+  const work = document.getElementById('work');
+  const min = 140;
+  const max = Math.max(min, Math.min(480, Math.floor(work.clientWidth * 0.5)));
+  const width = Math.max(min, Math.min(max, Math.round(px)));
+  work.style.setProperty('--explorer-width', width + 'px');
+  return width;
+}
+
+function bindExplorerResize() {
+  const split = document.getElementById('explorer-split');
+  const work = document.getElementById('work');
+  const saved = parseInt(localStorage.getItem(EXPLORER_WIDTH_KEY), 10);
+  if (saved) applyExplorerWidth(saved);
+
+  split.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    split.classList.add('dragging');
+    document.body.classList.add('resizing');
+    split.setPointerCapture(e.pointerId);
+    const onMove = (ev) => {
+      const width = applyExplorerWidth(ev.clientX - work.getBoundingClientRect().left);
+      localStorage.setItem(EXPLORER_WIDTH_KEY, String(width));
+    };
+    const onUp = () => {
+      split.classList.remove('dragging');
+      document.body.classList.remove('resizing');
+      split.removeEventListener('pointermove', onMove);
+      split.removeEventListener('pointerup', onUp);
+    };
+    split.addEventListener('pointermove', onMove);
+    split.addEventListener('pointerup', onUp);
+  });
+}
+
 function bindUi() {
   document.getElementById('btn-compile').onclick = () => compile();
   document.getElementById('btn-run').onclick = () => compileAndRun();
@@ -325,12 +406,7 @@ function bindUi() {
     e.target.value = '';
   };
   window.addEventListener('message', onParentMessage);
-  window.addEventListener('keydown', (e) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-      e.preventDefault();
-      compileAndRun();
-    }
-  });
+  bindExplorerResize();
 }
 
 async function main() {
@@ -348,7 +424,7 @@ async function main() {
 
   log('BennuGD Web IDE');
   log('Virtual FS → bgdc.wasm → DCB detector → bgdi → canvas');
-  log('Ctrl/Cmd+Enter compiles and runs.');
+  log('Ctrl/Cmd+Shift+B compiles. Ctrl/Cmd+Enter runs. F1 opens the command palette.');
 
   monacoApi = await loadMonaco();
   registerBennu(monacoApi);
@@ -361,6 +437,7 @@ async function main() {
     fontSize: 13,
     tabSize: 4
   });
+  registerIdeCommands(monacoApi, editor);
 
   await loadSamples();
   openFile('hello.prg');

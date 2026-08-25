@@ -92,7 +92,7 @@ button:focus-visible, select:focus-visible {
 #work {
   flex: 1;
   display: grid;
-  grid-template-columns: 220px minmax(280px, 1fr) minmax(280px, 1fr);
+  grid-template-columns: var(--explorer-width, 220px) 6px minmax(280px, 1fr) minmax(280px, 1fr);
   grid-template-rows: 1fr;
   min-height: 0;
 }
@@ -135,24 +135,61 @@ button:focus-visible, select:focus-visible {
   align-items: center;
   gap: 6px;
   width: 100%;
-  text-align: left;
-  background: transparent;
-  color: var(--text);
-  font-weight: 500;
   border-radius: 6px;
-  padding: 6px 8px;
+  padding: 2px 4px 2px 2px;
   margin: 0 0 2px;
 }
 .file:hover { background: #243049; }
 .file.active { background: #1d2a44; outline: 1px solid var(--accent); }
+.file-open {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+  font-weight: 500;
+  border: 0;
+  border-radius: 4px;
+  padding: 6px 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.file-open:hover { background: transparent; }
 .file .ext {
-  margin-left: auto;
   color: var(--muted);
   font-size: 10px;
   font-weight: 700;
 }
 .file.dcb .ext { color: var(--ok); }
 .file.prg .ext { color: var(--accent); }
+.file-dl {
+  flex: 0 0 auto;
+  margin-left: 2px;
+  padding: 2px 6px;
+  font-size: 12px;
+  line-height: 1;
+  background: transparent;
+  color: var(--muted);
+  border: 0;
+  border-radius: 4px;
+}
+.file-dl:hover { background: #2c3548; color: var(--text); }
+
+#explorer-split {
+  cursor: col-resize;
+  background: var(--line);
+  touch-action: none;
+}
+#explorer-split:hover,
+#explorer-split.dragging {
+  background: var(--accent);
+}
+body.resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+body.resizing iframe { pointer-events: none; }
 
 #editor, #player {
   flex: 1;
@@ -195,6 +232,9 @@ button:focus-visible, select:focus-visible {
 }
 
 @media (max-width: 960px) {
-  #work { grid-template-columns: 180px 1fr; grid-template-rows: 1fr 280px; }
+  #work {
+    grid-template-columns: var(--explorer-width, 180px) 6px 1fr;
+    grid-template-rows: 1fr 280px;
+  }
   #player-pane { grid-column: 1 / -1; }
 }

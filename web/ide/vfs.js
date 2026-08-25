@@ -204,4 +204,19 @@ export class VirtualFS {
     sortNode(root);
     return root;
   }
+
+  subtree(path) {
+    const key = this.normalize(path);
+    const prefix = key ? key + '/' : '';
+    const files = {};
+    const dirs = [];
+    if (key && this.isDir(key)) dirs.push(key);
+    for (const d of this.dirs) {
+      if (!key || d === key || d.startsWith(prefix)) dirs.push(d);
+    }
+    for (const [f, data] of this.files) {
+      if (!key || f === key || f.startsWith(prefix)) files[f] = data;
+    }
+    return { files, dirs: [...new Set(dirs)] };
+  }
 }

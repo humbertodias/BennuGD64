@@ -3,6 +3,7 @@ import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+
 import { VirtualFS } from './vfs.js';
 import { detectDcb, formatDcb } from './dcb.js';
 import { compileWithBgdc, dcbNameFor, loadBgdc } from './bgdc.js';
+import { zipStore } from './zip.js';
 
 const SAMPLE_NAMES = [
   'hello', 'fire', 'firework', 'rain', 'starfield', 'keyboard', 'joystick', 'wpad'
@@ -118,18 +119,48 @@ function targetDir() {
   return '';
 }
 
-function downloadFile(path) {
-  if (vfs.isDir(path)) return;
-  if (path === currentPath) flushEditor();
-  const data = vfs.read(path);
-  if (!data) return;
+function saveBlob(name, data) {
   const blob = new Blob([data], { type: 'application/octet-stream' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = fileBasename(path);
+  a.download = name;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function downloadPath(path) {
+  if (path === currentPath || (vfs.isDir(path) && currentPath.startsWith(path + '/'))) {
+    flushEditor();
+  }
+  if (!vfs.isDir(path)) {
+    const data = vfs.read(path);
+    if (!data) return;
+    saveBlob(fileBasename(path), data);
+    return;
+  }
+  const { files, dirs } = vfs.subtree(path);
+  const parent = vfs.parent(path);
+  const strip = parent ? parent + '/' : '';
+  const rel = (full) => (strip && full.startsWith(strip) ? full.slice(strip.length) : full);
+  const entries = [];
+  const seen = new Set();
+  for (const dir of dirs.sort()) {
+    const name = rel(dir).replace(/\/?$/, '/') ;
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    entries.push({ name, data: new Uint8Array() });
+  }
+  for (const [file, data] of Object.entries(files)) {
+    const name = rel(file);
+    if (!name || seen.has(name)) continue;
+    seen.add(name);
+    entries.push({ name, data });
+  }
+  if (!entries.length) {
+    entries.push({ name: fileBasename(path) + '/', data: new Uint8Array() });
+  }
+  saveBlob(fileBasename(path) + '.zip', zipStore(entries));
 }
 
 function expandTo(path) {
@@ -200,20 +231,18 @@ function rowFor(node, depth, highlight) {
   };
 
   row.append(twist, btn);
-  if (node.kind === 'file') {
-    const ext = document.createElement('span');
-    ext.className = 'ext';
-    ext.textContent = extOf(node.path) || 'file';
-    const dl = document.createElement('button');
-    dl.type = 'button';
-    dl.className = 'file-dl';
-    dl.title = 'Download ' + node.path;
-    dl.setAttribute('aria-label', 'Download ' + node.path);
-    dl.textContent = '↓';
-    dl.onclick = () => downloadFile(node.path);
-    dl.draggable = false;
-    row.append(ext, dl);
-  }
+  const ext = document.createElement('span');
+  ext.className = 'ext';
+  ext.textContent = node.kind === 'dir' ? 'dir' : (extOf(node.path) || 'file');
+  const dl = document.createElement('button');
+  dl.type = 'button';
+  dl.className = 'file-dl';
+  dl.title = 'Download ' + node.path + (node.kind === 'dir' ? ' as zip' : '');
+  dl.setAttribute('aria-label', 'Download ' + node.path);
+  dl.textContent = '↓';
+  dl.onclick = () => downloadPath(node.path);
+  dl.draggable = false;
+  row.append(ext, dl);
   return row;
 }
 

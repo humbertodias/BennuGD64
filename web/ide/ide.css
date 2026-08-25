@@ -175,6 +175,7 @@ button:focus-visible, select:focus-visible {
 }
 .file.dcb .ext { color: var(--ok); }
 .file.prg .ext { color: var(--accent); }
+.file.dir .ext { color: var(--warn); }
 .file-dl {
   flex: 0 0 auto;
   margin-left: 2px;

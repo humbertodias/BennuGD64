@@ -199,6 +199,40 @@ button:focus-visible, select:focus-visible {
   min-height: 48px;
 }
 
+#ctx-menu {
+  position: fixed;
+  z-index: 80;
+  min-width: 188px;
+  padding: 4px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.45);
+}
+#ctx-menu[hidden] { display: none; }
+.ctx-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: var(--text);
+  font-weight: 500;
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+.ctx-item:hover,
+.ctx-item:focus-visible {
+  background: #243049;
+  outline: none;
+}
+.ctx-item.danger { color: var(--err); }
+.ctx-sep {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 6px;
+}
+
 #explorer-split {
   cursor: col-resize;
   background: var(--line);

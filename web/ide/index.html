@@ -40,7 +40,7 @@
             <button type="button" class="secondary" id="btn-upload">Upload</button>
           </div>
         </div>
-        <div id="files" title="Drop files or folders here. Drag items to a folder to move them."></div>
+        <div id="files" title="Right-click for actions. Drop files or folders here. Drag items to a folder to move them."></div>
       </section>
       <div id="explorer-split" role="separator" aria-orientation="vertical" aria-label="Resize explorer"></div>
 
@@ -67,6 +67,7 @@
       <div id="term"></div>
     </section>
 
+    <div id="ctx-menu" hidden role="menu" aria-label="Explorer"></div>
     <input id="pick-files" type="file" multiple hidden>
     <input id="pick-folder" type="file" webkitdirectory multiple hidden>
     <script type="module" src="ide.js"></script>

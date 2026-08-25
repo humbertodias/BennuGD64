@@ -622,6 +622,201 @@ function selectDir(path) {
   renderExplorer();
 }
 
+function createFile(dir) {
+  let name;
+  try {
+    name = prompt('New file path', vfs.join(dir != null ? dir : targetDir(), 'game.prg'));
+  } catch (err) {
+    log(err.message, true);
+    return;
+  }
+  if (!name) return;
+  const path = vfs.normalize(name);
+  if (!path) return;
+  if (vfs.isDir(path) && !vfs.files.has(path)) return log(path + ' is a directory', true);
+  if (!vfs.has(path)) {
+    try {
+      vfs.write(path, /\.prg$/i.test(path) ? 'PROCESS Main()\nBEGIN\n    FRAME;\nEND\n' : '');
+    } catch (err) {
+      log(err.message, true);
+      return;
+    }
+  }
+  expandTo(path);
+  openFile(path);
+}
+
+function createFolder(dir) {
+  let name;
+  try {
+    name = prompt('New folder path', vfs.join(dir != null ? dir : targetDir(), 'lib'));
+  } catch (err) {
+    log(err.message, true);
+    return;
+  }
+  if (!name) return;
+  try {
+    vfs.mkdir(name);
+  } catch (err) {
+    log(err.message, true);
+    return;
+  }
+  selectedPath = vfs.normalize(name);
+  expandTo(selectedPath);
+  renderExplorer();
+}
+
+function deleteItem(path) {
+  const victim = path || selectedPath || currentPath;
+  if (!victim) return;
+  const folder = vfs.isDir(victim) && !vfs.files.has(victim);
+  if (!confirm(folder ? 'Delete folder ' + victim + ' and its files?' : 'Delete ' + victim + '?')) return;
+  try {
+    removePath(victim, folder);
+  } catch (err) {
+    log(err.message, true);
+  }
+}
+
+function renameItem(path) {
+  if (!path) return;
+  let name;
+  try {
+    name = prompt('Rename to', path);
+  } catch (err) {
+    log(err.message, true);
+    return;
+  }
+  if (!name) return;
+  const dest = vfs.normalize(name);
+  if (!dest || dest === path) return;
+  try {
+    movePath(path, dest);
+  } catch (err) {
+    log(err.message, true);
+  }
+}
+
+async function copyPath(path) {
+  try {
+    await navigator.clipboard.writeText(path);
+    log('copied ' + path);
+  } catch (err) {
+    log('could not copy path', true);
+  }
+}
+
+function hideCtxMenu() {
+  const menu = document.getElementById('ctx-menu');
+  if (!menu || menu.hidden) return;
+  menu.hidden = true;
+  menu.replaceChildren();
+}
+
+function ctxItem(label, action, opts = {}) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.setAttribute('role', 'menuitem');
+  btn.className = 'ctx-item' + (opts.danger ? ' danger' : '');
+  btn.textContent = label;
+  btn.onclick = () => {
+    hideCtxMenu();
+    action();
+  };
+  return btn;
+}
+
+function ctxSep() {
+  const el = document.createElement('div');
+  el.className = 'ctx-sep';
+  el.setAttribute('role', 'separator');
+  return el;
+}
+
+function showCtxMenu(ev, node) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  const menu = document.getElementById('ctx-menu');
+  const items = [];
+  if (!node) {
+    items.push(
+      ctxItem('New File', () => createFile()),
+      ctxItem('New Folder', () => createFolder()),
+      ctxSep(),
+      ctxItem('Upload Files', () => document.getElementById('pick-files').click()),
+      ctxItem('Upload Folder', () => document.getElementById('pick-folder').click())
+    );
+  } else {
+    selectedPath = node.path;
+    renderExplorer();
+    if (node.kind === 'dir') {
+      items.push(
+        ctxItem('New File', () => createFile(node.path)),
+        ctxItem('New Folder', () => createFolder(node.path)),
+        ctxItem(collapsed.has(node.path) ? 'Expand' : 'Collapse', () => {
+          if (collapsed.has(node.path)) collapsed.delete(node.path);
+          else collapsed.add(node.path);
+          renderExplorer();
+        }),
+        ctxSep()
+      );
+    } else {
+      items.push(ctxItem('Open', () => openFile(node.path)));
+      if (/\.prg$/i.test(node.path)) {
+        items.push(
+          ctxItem('Compile', () => compile(node.path)),
+          ctxItem('Run', () => runFromShell(node.path))
+        );
+      } else if (/\.dcb$/i.test(node.path)) {
+        items.push(ctxItem('Run', () => runFromShell(node.path)));
+      }
+      items.push(ctxSep());
+    }
+    items.push(
+      ctxItem('Rename', () => renameItem(node.path)),
+      ctxItem('Download' + (node.kind === 'dir' ? ' Zip' : ''), () => downloadPath(node.path)),
+      ctxItem('Copy Path', () => copyPath(node.path)),
+      ctxSep(),
+      ctxItem('Delete', () => deleteItem(node.path), { danger: true })
+    );
+  }
+  menu.replaceChildren(...items);
+  menu.hidden = false;
+  const pad = 8;
+  const rect = menu.getBoundingClientRect();
+  let x = ev.clientX;
+  let y = ev.clientY;
+  if (x + rect.width > window.innerWidth - pad) x = window.innerWidth - rect.width - pad;
+  if (y + rect.height > window.innerHeight - pad) y = window.innerHeight - rect.height - pad;
+  menu.style.left = Math.max(pad, x) + 'px';
+  menu.style.top = Math.max(pad, y) + 'px';
+}
+
+function bindExplorerMenu() {
+  const menu = document.getElementById('ctx-menu');
+  filesEl.addEventListener('contextmenu', (e) => {
+    const row = e.target.closest('.file');
+    if (row) {
+      showCtxMenu(e, {
+        path: row.dataset.path,
+        kind: row.dataset.kind
+      });
+      return;
+    }
+    showCtxMenu(e, null);
+  });
+  document.addEventListener('pointerdown', (e) => {
+    if (menu.hidden || e.button === 2 || menu.contains(e.target)) return;
+    hideCtxMenu();
+  }, true);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideCtxMenu();
+  });
+  filesEl.addEventListener('scroll', hideCtxMenu);
+  window.addEventListener('resize', hideCtxMenu);
+  menu.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
 function onParentMessage(ev) {
   const msg = ev.data;
   if (!msg || typeof msg !== 'object') return;
@@ -780,59 +975,9 @@ function bindUi() {
   document.getElementById('btn-compile').onclick = () => compile();
   document.getElementById('btn-run').onclick = () => compileAndRun();
   document.getElementById('btn-stop').onclick = () => stopGame();
-  document.getElementById('btn-new').onclick = () => {
-    let name;
-    try {
-      name = prompt('New file path', vfs.join(targetDir(), 'game.prg'));
-    } catch (err) {
-      log(err.message, true);
-      return;
-    }
-    if (!name) return;
-    const path = vfs.normalize(name);
-    if (!path) return;
-    if (vfs.isDir(path)) return log(path + ' is a directory', true);
-    if (!vfs.has(path)) {
-      try {
-        vfs.write(path, /\.prg$/i.test(path) ? 'PROCESS Main()\nBEGIN\n    FRAME;\nEND\n' : '');
-      } catch (err) {
-        log(err.message, true);
-        return;
-      }
-    }
-    expandTo(path);
-    openFile(path);
-  };
-  document.getElementById('btn-mkdir').onclick = () => {
-    let name;
-    try {
-      name = prompt('New folder path', vfs.join(targetDir(), 'lib'));
-    } catch (err) {
-      log(err.message, true);
-      return;
-    }
-    if (!name) return;
-    try {
-      vfs.mkdir(name);
-    } catch (err) {
-      log(err.message, true);
-      return;
-    }
-    selectedPath = vfs.normalize(name);
-    expandTo(selectedPath);
-    renderExplorer();
-  };
-  document.getElementById('btn-delete').onclick = () => {
-    const victim = selectedPath || currentPath;
-    if (!victim) return;
-    const folder = vfs.isDir(victim);
-    if (!confirm(folder ? 'Delete folder ' + victim + ' and its files?' : 'Delete ' + victim + '?')) return;
-    try {
-      removePath(victim, folder);
-    } catch (err) {
-      log(err.message, true);
-    }
-  };
+  document.getElementById('btn-new').onclick = () => createFile();
+  document.getElementById('btn-mkdir').onclick = () => createFolder();
+  document.getElementById('btn-delete').onclick = () => deleteItem();
   document.getElementById('btn-upload').onclick = (e) => {
     document.getElementById(e.shiftKey ? 'pick-folder' : 'pick-files').click();
   };
@@ -865,6 +1010,7 @@ function bindUi() {
   bindExplorerResize();
   bindTermResize();
   bindExplorerDrop();
+  bindExplorerMenu();
 }
 
 async function main() {

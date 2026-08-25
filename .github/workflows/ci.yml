@@ -202,6 +202,8 @@ jobs:
         with:
           path: |
             build-host/_deps/*-src
+            .deps/wasi-sdk-${{ env.WASI_SDK_VERSION_FULL }}-x86_64-linux
+            build-wasi/_deps
           key: fetch-wasm-src-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.linux') }}
           restore-keys: |
             fetch-wasm-
@@ -722,7 +724,7 @@ jobs:
             Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared>.tar.gz` (`.zip` on Windows, wasm, Android, Switch, Dreamcast, PSP, Pandora, and Wii):
             - **static** — modules linked into `bgdi`
             - **shared** — modules as `.so`/`.dll`/`.dylib` under `modules/`
-            - **web-wasm32-static** — browser interpreter (`index.html`, `bgdi.js`, `bgdi.wasm`, `bgdi.data`); serve the folder over HTTP
+            - **web-wasm32-static** — browser interpreter (`index.html`, `bgdi.js`, `bgdi.wasm`, `bgdi.data`) plus Web IDE (`ide/`, `bgdc.wasm`, `samples/`); serve the folder over HTTP
             - **wasi-wasm32-static** — WASI compiler (`bgdc.wasm`); run with `wasmtime --dir=. ./bgdc.wasm -- -o out.dcb in.prg`
             - **android-arm64-static** — debug APK (`bennugd64.apk`) plus `libmain.so` / `libSDL3.so`; install the APK (arm64-v8a, API 28+)
             - **switch-aarch64-static** — homebrew NRO (`bennugd64.nro`); copy to `sdmc:/switch/` or send with `nxlink`

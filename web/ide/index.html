@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BennuGD Web IDE</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/editor/editor.main.min.css">
+    <link rel="stylesheet" href="ide.css">
+  </head>
+  <body>
+    <header id="top">
+      <h1>BennuGD Web IDE</h1>
+      <div id="pipeline">
+        Explorer / Monaco / xterm → <b>Virtual FS</b> → <b>bgdc.wasm</b>
+        → DCB → detector → <b>bgdi</b> → canvas
+      </div>
+      <div id="status-pills">
+        <span class="pill" id="pill-bgdc">bgdc</span>
+        <span class="pill" id="pill-dcb">dcb</span>
+        <span class="pill" id="pill-bgdi">bgdi</span>
+      </div>
+      <div id="actions">
+        <button type="button" id="btn-compile">Compile</button>
+        <button type="button" id="btn-run">Run</button>
+        <button type="button" class="secondary" id="btn-stop">Stop</button>
+        <a class="hint" href="../">Player</a>
+      </div>
+    </header>
+
+    <main id="work">
+      <section class="pane" id="explorer-pane">
+        <div class="pane-h" title="Explorer">
+          <div class="row">
+            <select id="sample-select" aria-label="Load sample">
+              <option value="">Sample…</option>
+            </select>
+            <button type="button" class="secondary" id="btn-new">New</button>
+            <button type="button" class="secondary" id="btn-upload">Upload</button>
+          </div>
+        </div>
+        <div id="files"></div>
+      </section>
+
+      <section class="pane" id="editor-pane">
+        <div class="pane-h">
+          <span id="editor-title">Monaco</span>
+          <button type="button" class="secondary" id="btn-delete">Delete</button>
+        </div>
+        <div id="editor"></div>
+      </section>
+
+      <section class="pane" id="player-pane">
+        <div class="pane-h">Canvas (bgdi)</div>
+        <div id="player">
+          <div id="player-empty">Compile a .prg, then Run to start bgdi.</div>
+          <iframe id="canvas-frame" hidden title="BennuGD interpreter"></iframe>
+        </div>
+      </section>
+    </main>
+
+    <section id="term-wrap">
+      <div class="pane-h">xterm.js</div>
+      <div id="term"></div>
+    </section>
+
+    <input id="pick-files" type="file" multiple hidden>
+    <script type="module" src="ide.js"></script>
+  </body>
+</html>

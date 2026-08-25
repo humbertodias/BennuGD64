@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>bgdi</title>
+    <style>
+      html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+      canvas.emscripten {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #000;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="0"></canvas>
+    <script>
+      const canvasEl = document.getElementById('canvas');
+      let ready = false;
+      let pending = null;
+
+      function mkdirp(path) {
+        const parts = path.split('/').filter(Boolean);
+        let acc = '';
+        for (const part of parts) {
+          acc += '/' + part;
+          try { FS.mkdir(acc); } catch (e) { /* exists */ }
+        }
+      }
+
+      function writeFile(path, data) {
+        const norm = path.replace(/\\/g, '/').replace(/^\/+/, '');
+        const slash = norm.lastIndexOf('/');
+        if (slash >= 0) mkdirp(norm.slice(0, slash));
+        FS.writeFile('/' + norm, data);
+      }
+
+      function start(msg) {
+        const files = msg.files || {};
+        const entry = (msg.entry || 'main.dcb').replace(/^\/+/, '');
+        for (const [path, data] of Object.entries(files)) {
+          writeFile(path, data instanceof Uint8Array ? data : new Uint8Array(data));
+        }
+        const slash = entry.lastIndexOf('/');
+        const dir = slash > 0 ? '/' + entry.slice(0, slash) : '/';
+        const name = slash >= 0 ? entry.slice(slash + 1) : entry;
+        try { FS.chdir(dir); } catch (e) { FS.chdir('/'); }
+        canvasEl.focus();
+        parent.postMessage({ type: 'bgdi-start', entry: name }, '*');
+        Module.callMain([name]);
+      }
+
+      function onMessage(ev) {
+        const data = ev.data;
+        if (!data || data.type !== 'run') return;
+        if (ready) start(data);
+        else pending = data;
+      }
+
+      window.addEventListener('message', onMessage);
+
+      var Module = {
+        canvas: canvasEl,
+        noInitialRun: true,
+        locateFile(path) {
+          return new URL('../' + path, window.location.href).href;
+        },
+        print: (...args) => parent.postMessage({ type: 'bgdi-print', text: args.join(' ') }, '*'),
+        printErr: (...args) => parent.postMessage({ type: 'bgdi-print', text: args.join(' '), err: true }, '*'),
+        onRuntimeInitialized() {
+          ready = true;
+          parent.postMessage({ type: 'bgdi-ready' }, '*');
+          if (pending) {
+            const msg = pending;
+            pending = null;
+            start(msg);
+          }
+        },
+        onExit(code) {
+          parent.postMessage({ type: 'bgdi-exit', code }, '*');
+        }
+      };
+
+      window.addEventListener('keydown', (e) => {
+        const k = e.key;
+        if (k === 'Enter' || k === ' ' || k === 'Tab' || k.startsWith('Arrow') ||
+            k === 'Backspace' || k === 'Escape')
+          e.preventDefault();
+      });
+      canvasEl.addEventListener('pointerdown', () => canvasEl.focus());
+    </script>
+    <script src="../bgdi.js"></script>
+  </body>
+</html>

@@ -187,7 +187,7 @@ prefetch_github_archive() {
 
 if [[ "${PLATFORM}" == "wasm" ]]; then
   echo "image: ${IMAGE}"
-  echo "preset: wasm-host + emcmake"
+  echo "preset: wasm-host + emcmake + wasi"
   echo "version: ${BENNUGD_VERSION}"
   scrub_fetchcontent "${ROOT}/build-host/_deps"
   docker run --rm \
@@ -201,6 +201,8 @@ if [[ "${PLATFORM}" == "wasm" ]]; then
     -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
     -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
     -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    -e WASI_SDK_VERSION="${WASI_SDK_VERSION:-33}" \
+    -e WASI_SDK_VERSION_FULL="${WASI_SDK_VERSION_FULL:-33.0}" \
     "${IMAGE}" \
     bash -c 'set -euo pipefail
       set +eu
@@ -244,10 +246,24 @@ if [[ "${PLATFORM}" == "wasm" ]]; then
         -DFETCHCONTENT_SOURCE_DIR_SDL3="${FETCH_DIR}/sdl3-src" \
         -DFETCHCONTENT_SOURCE_DIR_SDL3_MIXER="${FETCH_DIR}/sdl3_mixer-src"
       cmake --build "${WASM_BUILD}" --target bgdi
+      unset CC CXX CFLAGS CXXFLAGS CMAKE_TOOLCHAIN_FILE
+      # Drop a failed/wrong-arch cache (e.g. x86_64 wasi-sdk on arm64 OrbStack).
+      rm -f /src/build-wasi/CMakeCache.txt
+      rm -rf /src/build-wasi/CMakeFiles
+      cmake --preset wasi \
+        "${COMMON[@]}" \
+        -DBENNUGD_WASI_SDK_VERSION="${WASI_SDK_VERSION:-33}" \
+        -DBENNUGD_WASI_SDK_VERSION_FULL="${WASI_SDK_VERSION_FULL:-33.0}" \
+        -DFETCHCONTENT_BASE_DIR=/src/build-wasi/_deps \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
+      cmake --build --preset wasi
       SRC="${WASM_BUILD}/core/bgdi/src"
-      mkdir -p "${STAGE}"
+      mkdir -p "${STAGE}/ide" "${STAGE}/samples"
       cp "${SRC}/bgdi.html" "${STAGE}/index.html"
       cp "${SRC}/bgdi.html" "${SRC}/bgdi.js" "${SRC}/bgdi.wasm" "${SRC}/bgdi.data" "${STAGE}/"
+      cp /src/build-wasi/core/bgdc/src/bgdc.wasm "${STAGE}/bgdc.wasm"
+      cp -a /src/web/ide/. "${STAGE}/ide/"
+      cp /src/web/demo/*.prg "${STAGE}/samples/"
       cp /src/README.md "${STAGE}/"
       cp "${WASM_BUILD}/BUILD_INFO.txt" "${STAGE}/"
       cp "${SRC}/bgdi.wasm.map" "${STAGE}/" 2>/dev/null || true
@@ -257,6 +273,9 @@ if [[ "${PLATFORM}" == "wasm" ]]; then
       test -s "${STAGE}/bgdi.js"
       test -s "${STAGE}/bgdi.wasm"
       test -s "${STAGE}/bgdi.data"
+      test -s "${STAGE}/bgdc.wasm"
+      test -s "${STAGE}/ide/index.html"
+      test -s "${STAGE}/samples/hello.prg"
     '
   exit 0
 fi

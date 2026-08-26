@@ -16,7 +16,7 @@ const HELP = [
   'rm [-r] <path>         delete a file (or folder with -r)',
   'mv <src> <dst>         rename, or move into a folder',
   'compile [file.prg]     run bgdc.wasm',
-  'run [file.prg|.dcb]    compile if needed, then bgdi',
+  'run [file.prg|.dcb]    compile if needed, then bgdi (DCB magic, any name)',
   'stop                   stop the player',
   'download <path>        save a file or zip a folder',
   'clear                  clear the terminal',

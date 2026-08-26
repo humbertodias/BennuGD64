@@ -1,7 +1,7 @@
 import { Terminal } from 'https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/+esm';
 import { FitAddon } from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/+esm';
 import { VirtualFS } from './vfs.js';
-import { detectDcb, formatDcb } from './dcb.js';
+import { detectDcb, formatDcb, isDcbBytes } from './dcb.js';
 import { compileWithBgdc, dcbNameFor, loadBgdc } from './bgdc.js';
 import { zipStore } from './zip.js';
 import { Shell } from './shell.js';
@@ -89,6 +89,11 @@ function extOf(path) {
   return m ? m[1] : '';
 }
 
+function isRunnableDcb(path) {
+  if (!path || vfs.isDir(path)) return false;
+  return isDcbBytes(vfs.read(path));
+}
+
 function fileBasename(path) {
   return vfs.basename(path);
 }
@@ -171,6 +176,7 @@ function rowFor(node, depth, highlight) {
   row.dataset.kind = node.kind;
   row.draggable = true;
   if (node.path === highlight) row.classList.add('active');
+  if (node.kind !== 'dir' && isRunnableDcb(node.path)) row.classList.add('dcb');
   row.style.paddingLeft = 4 + depth * 12 + 'px';
   row.addEventListener('dragstart', (e) => {
     if (e.target.closest('.file-dl, .file-twist')) {
@@ -500,7 +506,7 @@ function runGame(dcbPath) {
 }
 
 async function runTarget(path) {
-  if (path && /\.dcb$/i.test(path)) {
+  if (path && isRunnableDcb(path)) {
     flushEditor();
     const bytes = vfs.read(path);
     if (!bytes) {
@@ -737,7 +743,7 @@ function showCtxMenu(ev, node) {
           ctxItem('Compile', () => compile(node.path)),
           ctxItem('Run', () => runFromShell(node.path))
         );
-      } else if (/\.dcb$/i.test(node.path)) {
+      } else if (isRunnableDcb(node.path)) {
         items.push(ctxItem('Run', () => runFromShell(node.path)));
       }
       items.push(ctxSep());

@@ -56,3 +56,8 @@ export function formatDcb(info) {
     `  library requires >= 0x0710: ${info.libOk ? 'yes' : 'no'}`
   ].join('\n');
 }
+
+/** Runnable game bytecode (not a .dcl library). Ignores the filename. */
+export function isDcbBytes(bytes) {
+  return detectDcb(bytes).kind === 'DCB';
+}

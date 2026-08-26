@@ -235,7 +235,7 @@
       }
 
       function demoLabel(path) {
-        return path.split('/').pop().replace(/\.dcb$/i, '');
+        return path.split('/').pop().replace(/\.(dcb|dat|bin)$/i, '');
       }
 
       function listBundledDemos() {
@@ -286,9 +286,22 @@
         }
       }
 
+      function hasDcbMagic(path) {
+        try {
+          const data = FS.readFile('/' + path.replace(/^\/+/, ''), { encoding: 'binary' });
+          const b = data instanceof Uint8Array ? data : new Uint8Array(data);
+          return b.length >= 8
+            && b[0] === 0x64 && b[1] === 0x63 && b[2] === 0x62
+            && b[3] === 0x0d && b[4] === 0x0a && b[5] === 0x1f
+            && b[6] === 0x00 && b[7] === 0x00;
+        } catch (e) {
+          return false;
+        }
+      }
+
       function listLaunchers(paths) {
-        const dcbs = paths.filter((p) => /\.dcb$/i.test(p)).sort();
-        if (dcbs.length) return dcbs;
+        const byMagic = paths.filter((p) => hasDcbMagic(p)).sort();
+        if (byMagic.length) return byMagic;
         return paths.filter((p) => DCB_RE.test(p)).sort();
       }
 
@@ -322,7 +335,7 @@
         }
 
         const launchers = listLaunchers(paths);
-        if (!launchers.length) return setStatus('No .dcb (or .dat/.bin) found.', true);
+        if (!launchers.length) return setStatus('No DCB found (any name with dcb magic).', true);
         if (launchers.length === 1) return startGame('/' + launchers[0]);
         showChooser(launchers);
       }

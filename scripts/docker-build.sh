@@ -58,10 +58,9 @@ IMAGE="bennugd64-${PLATFORM}"
 if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
   if [[ "${PLATFORM}" == "wasm" ]]; then
     docker build \
-      --target wasm \
       --build-arg EMSCRIPTEN_VERSION="${EMSCRIPTEN_VERSION:-6.0.6}" \
       -t bennugd64-wasm \
-      -f docker/Dockerfile.linux \
+      -f docker/Dockerfile.wasm \
       docker/
   elif [[ "${PLATFORM}" == "linux" ]]; then
     docker build --target linux -t bennugd64-linux -f docker/Dockerfile.linux docker/
@@ -233,6 +232,9 @@ if [[ "${PLATFORM}" == "wasm" ]]; then
         "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
         test -s "${dcb}"
       done
+      # Drop a cache from a previous EMSDK layout (/opt/emsdk vs /emsdk).
+      rm -f "${WASM_BUILD}/CMakeCache.txt"
+      rm -rf "${WASM_BUILD}/CMakeFiles"
       emcmake cmake -S /src -B "${WASM_BUILD}" -G Ninja \
         -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
         -DUSE_LIBDES=ON \
@@ -241,10 +243,7 @@ if [[ "${PLATFORM}" == "wasm" ]]; then
         -DINTERPRETER_ONLY=ON \
         "${COMMON[@]}" \
         -DFETCHCONTENT_BASE_DIR="${WASM_BUILD}/_deps" \
-        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src" \
-        -DFETCHCONTENT_SOURCE_DIR_LIBPNG="${FETCH_DIR}/libpng-src" \
-        -DFETCHCONTENT_SOURCE_DIR_SDL3="${FETCH_DIR}/sdl3-src" \
-        -DFETCHCONTENT_SOURCE_DIR_SDL3_MIXER="${FETCH_DIR}/sdl3_mixer-src"
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
       cmake --build "${WASM_BUILD}" --target bgdi
       unset CC CXX CFLAGS CXXFLAGS CMAKE_TOOLCHAIN_FILE
       # Drop a failed/wrong-arch cache (e.g. x86_64 wasi-sdk on arm64 OrbStack).

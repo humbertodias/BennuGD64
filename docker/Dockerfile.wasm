@@ -1,0 +1,19 @@
+# Emscripten web player toolchain.
+#   docker build --build-arg EMSCRIPTEN_VERSION=6.0.6 \
+#     -t bennugd64-wasm -f docker/Dockerfile.wasm docker/
+
+ARG EMSCRIPTEN_VERSION=6.0.6
+FROM emscripten/emsdk:${EMSCRIPTEN_VERSION}
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=wasm
+
+# gcc, cmake, git, python3, zip: already in emscripten/emsdk. ninja is not.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ninja-build \
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*'
+
+WORKDIR /src
+CMD ["bash"]

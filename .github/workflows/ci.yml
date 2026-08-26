@@ -204,7 +204,7 @@ jobs:
             build-host/_deps/*-src
             .deps/wasi-sdk-${{ env.WASI_SDK_VERSION_FULL }}-x86_64-linux
             build-wasi/_deps
-          key: fetch-wasm-src-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.linux') }}
+          key: fetch-wasm-src-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.wasm') }}
           restore-keys: |
             fetch-wasm-
 
@@ -215,16 +215,13 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: docker
-          file: docker/Dockerfile.linux
-          target: wasm
+          file: docker/Dockerfile.wasm
           tags: bennugd64-wasm
           load: true
           provenance: false
           build-args: |
             EMSCRIPTEN_VERSION=${{ env.EMSCRIPTEN_VERSION }}
-          cache-from: |
-            type=gha,scope=bennugd-linux
-            type=gha,scope=bennugd-wasm
+          cache-from: type=gha,scope=bennugd-wasm
           cache-to: type=gha,mode=max,scope=bennugd-wasm
 
       - name: Build
@@ -734,7 +731,7 @@ jobs:
             - **wii-powerpc-static** — homebrew DOL (`apps/bennugd64/boot.dol`); copy the folder to the SD card and launch from the Homebrew Channel
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-            Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, Pandora, and Wii CI images come from `docker/Dockerfile.linux` (`--target linux` / `--target wasm`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), and `docker/Dockerfile.wii` (`devkitpro/devkitppc`).
+            Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, Pandora, and Wii CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), and `docker/Dockerfile.wii` (`devkitpro/devkitppc`).
             OS graphics/audio libraries may still be required at runtime.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

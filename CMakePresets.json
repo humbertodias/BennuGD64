@@ -63,7 +63,10 @@
       "name": "wasm-host",
       "inherits": "static",
       "displayName": "Native bgdc used to compile wasm demos",
-      "binaryDir": "${sourceDir}/build-host"
+      "binaryDir": "${sourceDir}/build-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
     },
     {
       "name": "android-host",

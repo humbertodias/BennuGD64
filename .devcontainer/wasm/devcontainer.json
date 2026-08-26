@@ -1,9 +1,8 @@
 {
   "name": "BennuGD64 Web (Emscripten)",
   "build": {
-    "dockerfile": "../../docker/Dockerfile.linux",
+    "dockerfile": "../../docker/Dockerfile.wasm",
     "context": "../../docker",
-    "target": "wasm",
     "args": {
       "EMSCRIPTEN_VERSION": "6.0.6"
     }
@@ -12,9 +11,9 @@
   "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
   "remoteUser": "root",
   "containerEnv": {
-    "EMSDK": "/opt/emsdk"
+    "EMSDK": "/emsdk"
   },
-  "postCreateCommand": "grep -q emsdk_env.sh ~/.bashrc 2>/dev/null || echo 'source /opt/emsdk/emsdk_env.sh' >> ~/.bashrc",
+  "postCreateCommand": "grep -q emsdk_env.sh ~/.bashrc 2>/dev/null || echo 'source /emsdk/emsdk_env.sh' >> ~/.bashrc",
   "forwardPorts": [8080],
   "customizations": {
     "vscode": {

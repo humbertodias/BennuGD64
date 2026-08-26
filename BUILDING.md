@@ -21,7 +21,7 @@ bash scripts/docker-build.sh windows shared
 | Command | Image | Output |
 |---------|-------|--------|
 | `linux` / `linux shared` | `docker/Dockerfile.linux` (`--target linux`) | `dist/linux-{static,shared}/` |
-| `wasm` | `docker/Dockerfile.linux` (`--target wasm`) | `dist/web-wasm32-static/` |
+| `wasm` | `docker/Dockerfile.wasm` | `dist/web-wasm32-static/` |
 | `android` | `docker/Dockerfile.android` | `dist/android-arm64-static/` (`bennugd64.apk`) |
 | `switch` | `docker/Dockerfile.switch` | `dist/switch-aarch64-static/` (`bennugd64.nro`) |
 | `dreamcast` | `docker/Dockerfile.dreamcast` | `dist/dreamcast-sh4-static/` (`bennugd64.cdi`) |
@@ -30,7 +30,7 @@ bash scripts/docker-build.sh windows shared
 | `wii` | `docker/Dockerfile.wii` | `dist/wii-powerpc-static/` (`apps/bennugd64/boot.dol`) |
 | `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
 
-The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). The wasm stage is `FROM linux` in `Dockerfile.linux` (Emscripten SDK on the native toolchain).
+The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
 
 ```shell
 bash scripts/docker-build.sh linux shell
@@ -190,7 +190,7 @@ cmake -B build-wasi \
 
 ### Emscripten interpreter (`bgdi`)
 
-Needs Docker. `Dockerfile.linux` `--target wasm` installs the [Emscripten SDK](https://emscripten.org/) on the Linux stage (native `bgdc` + `emcmake` for `bgdi`):
+Needs Docker. `docker/Dockerfile.wasm` extends [`emscripten/emsdk`](https://hub.docker.com/r/emscripten/emsdk) with ninja (native `bgdc` is compiler-only; `emcmake` builds `bgdi`):
 
 ```shell
 bash scripts/docker-build.sh wasm
@@ -350,7 +350,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 
 - Linux x86_64 and Windows x86_64 — one toolchain image per OS, then static + shared (`scripts/docker-build.sh`)
 - macOS arm64 — native runner (static + shared in one job)
-- Web (Emscripten) — `scripts/docker-build.sh wasm` (`Dockerfile.linux --target wasm`) → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
+- Web (Emscripten) — `scripts/docker-build.sh wasm` (`Dockerfile.wasm`) → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
 - Android arm64 — `scripts/docker-build.sh android` (`Dockerfile.android`) → `bennugd64-<tag>-android-arm64-static.zip` (`bennugd64.apk`)
 - Nintendo Switch — `scripts/docker-build.sh switch` (`Dockerfile.switch`) → `bennugd64-<tag>-switch-aarch64-static.zip` (`bennugd64.nro`)
 - Sega Dreamcast — `scripts/docker-build.sh dreamcast` (`Dockerfile.dreamcast`) → `bennugd64-<tag>-dreamcast-sh4-static.zip` (`bennugd64.cdi`)

@@ -169,6 +169,13 @@ int debug = 0;  /* 1 if running in debug mode      */
 #define _OS_ID          OS_PANDORA
 #endif
 
+#ifdef TARGET_PS2
+#ifdef _OS_ID
+#undef _OS_ID
+#endif
+#define _OS_ID          OS_PS2
+#endif
+
 #ifdef TARGET_IOS
 #ifdef _OS_ID
 #undef _OS_ID

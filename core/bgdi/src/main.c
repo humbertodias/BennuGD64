@@ -63,6 +63,12 @@
 #ifdef TARGET_PSP
 #include "main_psp.h"
 #endif
+#ifdef TARGET_PS2
+#include "main_ps2.h"
+#include <SDL3/SDL_main.h>
+/* Keep PCSX2 HostFS (host:) across SDL_RunApp; IOP reset drops it. */
+SDL_PS2_SKIP_IOP_RESET();
+#endif
 #ifdef TARGET_PANDORA
 #include "main_pandora.h"
 #endif
@@ -135,6 +141,23 @@ int main( int argc, char *argv[] )
         char * psp_dcb = bgdi_psp_startup( argc, argv, &standalone );
         if ( psp_dcb )
             filename = psp_dcb;
+    }
+#endif
+
+#ifdef TARGET_PS2
+    {
+        static char * ps2_argv[2] = { "bgdi", NULL };
+        char * ps2_dcb;
+
+        if ( argc < 1 || !argv || !argv[0] )
+        {
+            argc = 1;
+            argv = ps2_argv;
+        }
+
+        ps2_dcb = bgdi_ps2_startup( argc, argv, &standalone );
+        if ( ps2_dcb )
+            filename = ps2_dcb;
     }
 #endif
 

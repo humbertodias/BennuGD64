@@ -44,6 +44,9 @@
 #ifdef TARGET_PSP
 #include "g_video_psp.h"
 #endif
+#ifdef TARGET_PS2
+#include "g_video_ps2.h"
+#endif
 #ifdef TARGET_SWITCH
 #include "g_video_switch.h"
 #endif
@@ -195,12 +198,20 @@ static void gr_destroy_present_renderer( void )
 int gr_video_present_via_renderer( SDL_Surface * src )
 {
     SDL_Surface * converted;
+#ifdef TARGET_PS2
+    const SDL_PixelFormat fmt = SDL_PIXELFORMAT_ABGR8888;
+#else
     const SDL_PixelFormat fmt = SDL_PIXELFORMAT_XRGB8888;
+#endif
 
     if ( !present_renderer )
     {
 #ifdef TARGET_WII
         present_renderer = SDL_CreateRenderer( window, "OGC EFB" );
+        if ( !present_renderer )
+#endif
+#ifdef TARGET_PS2
+        present_renderer = SDL_CreateRenderer( window, "PS2 gsKit" );
         if ( !present_renderer )
 #endif
         present_renderer = SDL_CreateRenderer( window, NULL );
@@ -251,6 +262,10 @@ void gr_video_present( SDL_Surface * src )
     gr_video_psp_present( src );
     return;
 #endif
+#ifdef TARGET_PS2
+    gr_video_ps2_present( src );
+    return;
+#endif
 #ifdef TARGET_DC
     gr_video_dc_present( src );
     return;
@@ -290,6 +305,10 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_present_rects( src, rects, count );
+    return;
+#endif
+#ifdef TARGET_PS2
+    gr_video_ps2_present_rects( src, rects, count );
     return;
 #endif
 #ifdef TARGET_WII
@@ -363,6 +382,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_adjust_window( &width, &height, &window_flags );
+#endif
+#ifdef TARGET_PS2
+    gr_video_ps2_adjust_window( &width, &height, &window_flags );
 #endif
 #ifdef TARGET_PANDORA
     gr_video_pandora_adjust_window( &width, &height, &window_flags );
@@ -498,6 +520,9 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_apply_mode();
+#endif
+#ifdef TARGET_PS2
+    gr_video_ps2_apply_mode();
 #endif
 #ifdef TARGET_PANDORA
     gr_video_pandora_apply_mode();
@@ -862,6 +887,8 @@ void __bgdexport( libvideo, module_initialize )()
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_module_initialize();
+#elif defined(TARGET_PS2)
+    gr_video_ps2_module_initialize();
 #elif defined(TARGET_PANDORA)
     gr_video_pandora_module_initialize();
 #else

@@ -1,0 +1,29 @@
+{
+  "name": "BennuGD64 PS2 (ps2dev)",
+  "build": {
+    "dockerfile": "../../docker/Dockerfile.ps2",
+    "context": "../../docker",
+    "options": ["--platform=linux/amd64"]
+  },
+  "runArgs": ["--platform=linux/amd64"],
+  "workspaceFolder": "/src",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
+  "remoteUser": "root",
+  "containerEnv": {
+    "PS2DEV": "/usr/local/ps2dev",
+    "PS2SDK": "/usr/local/ps2dev/ps2sdk",
+    "GSKIT": "/usr/local/ps2dev/gsKit"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+      ]
+    },
+    "zed": {
+      "extensions": ["dockerfile", "make"]
+    }
+  }
+}

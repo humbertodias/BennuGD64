@@ -132,6 +132,26 @@
       }
     },
     {
+      "name": "ps2-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile PS2 demo DCBs",
+      "binaryDir": "${sourceDir}/build-ps2-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "ps2-mips",
+      "inherits": "base",
+      "displayName": "PlayStation 2 interpreter (bgdi.elf)",
+      "binaryDir": "${sourceDir}/build-ps2-mips",
+      "toolchainFile": "${sourceDir}/cmake/ps2dev.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
       "name": "psp-host",
       "inherits": "static",
       "displayName": "Native bgdc used to compile PSP demo DCBs",
@@ -205,6 +225,8 @@
     { "name": "switch-aarch64", "configurePreset": "switch-aarch64", "targets": ["bgdi"] },
     { "name": "dreamcast-host", "configurePreset": "dreamcast-host", "targets": ["bgdc"] },
     { "name": "dreamcast-sh4", "configurePreset": "dreamcast-sh4", "targets": ["bgdi"] },
+    { "name": "ps2-host", "configurePreset": "ps2-host", "targets": ["bgdc"] },
+    { "name": "ps2-mips", "configurePreset": "ps2-mips", "targets": ["bgdi"] },
     { "name": "psp-host", "configurePreset": "psp-host", "targets": ["bgdc"] },
     { "name": "psp-mips", "configurePreset": "psp-mips", "targets": ["bgdi"] },
     { "name": "pandora-host", "configurePreset": "pandora-host", "targets": ["bgdc"] },

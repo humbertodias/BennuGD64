@@ -869,6 +869,10 @@ char * getfullpath( char *rel_path )
     if ( !rel_path || !*rel_path ) return NULL;
 #ifdef _WIN32
     GetFullPathName( rel_path, sizeof( fullpath ), fullpath, NULL );
+#elif defined(TARGET_PS2)
+    /* ps2sdk newlib has no realpath (mass:/ host:/ cdrom0: are not POSIX). */
+    strncpy( fullpath, rel_path, sizeof( fullpath ) - 1 );
+    fullpath[ sizeof( fullpath ) - 1 ] = '\0';
 #else
     if ( !realpath( rel_path, fullpath ) || !*fullpath )
     {

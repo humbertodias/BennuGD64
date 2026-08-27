@@ -144,6 +144,8 @@ static const char * modsys_running_os_name( void )
     return "Dreamcast";
 #elif defined(TARGET_PSP)
     return "PSP";
+#elif defined(TARGET_PS2)
+    return "PS2";
 #elif defined(TARGET_PANDORA)
     return "Pandora";
 #elif defined(TARGET_SWITCH)

@@ -6,10 +6,14 @@
  * does not pass cdrom0: in argv[0]; treating that as USB reset kills CDVD
  * and hangs on mass: — black screen. Disc boot must not load USB IRXs.
  *
- * PCSX2 File→Open with Host Filesystem keeps host: only if IOP is not reset.
- * Search host:main.dcb next to the ELF. ISO/cdrom boot keeps CDVD (no reset,
- * no SDL/cdfs before the DCB). Homebrew mkisofs images are CDs — do not force
- * DVD mode or fopen(cdrom0:\\MAIN.DCB;1) misses. USB boot still resets.
+ * Boot tries HostFS, then ISO, then USB. IOP reset unmounts CDVD and host:,
+ * so those two are probed first. USB (FAT32 .img) is last: reset, load
+ * usbd, mass:/main.dcb. host: in cwd is not exclusive — PCSX2 HostFS leaves
+ * cwd as host: even when the DCB is on the USB image.
+ *
+ * File→Open of a PC ELF skips the leftover-ISO probe so a disc in the tray
+ * does not steal USB. Disc boot is SYSTEM.CNF / cdrom0: / File→Open .iso.
+ * Homebrew mkisofs images are CDs — do not force DVD mode.
  */
 
 #include <stdio.h>
@@ -250,6 +254,17 @@ static int ps2_is_host_boot( const char * path )
     return ps2_is_win_path( path );
 }
 
+/* File→Open from the PC (not mass:, not cdrom0:, not host:). */
+static int ps2_file_open_elf( const char * path )
+{
+    if ( !ps2_is_elf_name( path ) )
+        return 0;
+    if ( ps2_is_disc_path( path ) || ps2_is_usb_path( path ) ||
+         ps2_is_host_device( path ) )
+        return 0;
+    return 1;
+}
+
 static int ps2_probe_disc( void )
 {
     int type;
@@ -424,25 +439,26 @@ static int ps2_take_dcb( const char * path, char * found, size_t found_sz,
     return 1;
 }
 
+static const char * const host_dcb_names[] = {
+    "host:main.dcb",
+    "host:/main.dcb",
+    "host:MAIN.DCB",
+    "host:/MAIN.DCB",
+    "host0:main.dcb",
+    "host0:/main.dcb",
+    "host0:MAIN.DCB",
+    "host1:main.dcb",
+    "host1:/main.dcb",
+    NULL
+};
+
 static int ps2_find_host_dcb( char * found, size_t found_sz, int argc, char * argv[] )
 {
-    static const char * host[] = {
-        "host:main.dcb",
-        "host:/main.dcb",
-        "host:MAIN.DCB",
-        "host:/MAIN.DCB",
-        "host0:main.dcb",
-        "host0:/main.dcb",
-        "host0:MAIN.DCB",
-        "host1:main.dcb",
-        "host1:/main.dcb",
-        NULL
-    };
     int i;
 
-    for ( i = 0 ; host[i] ; i++ )
+    for ( i = 0 ; host_dcb_names[ i ] ; i++ )
     {
-        if ( ps2_take_dcb( host[i], found, found_sz, argc, argv ) )
+        if ( ps2_take_dcb( host_dcb_names[ i ], found, found_sz, argc, argv ) )
             return 1;
     }
     return 0;
@@ -585,12 +601,40 @@ static int ps2_try_host_beside( const char * path, char * found, size_t found_sz
     return ps2_try_host_dir( copy, found, found_sz, argc, argv );
 }
 
+static int ps2_try_host_boot( char * found, size_t found_sz, int argc, char * argv[],
+                              const char * arg0, const char * cwd )
+{
+    if ( argc >= 2 && argv[1] && strstr( argv[1], ".dcb" ) &&
+         ps2_is_host_device( argv[1] ) )
+    {
+        if ( ps2_take_dcb( argv[1], found, found_sz, argc, argv ) )
+            return 1;
+    }
+    if ( ps2_try_host_dir( cwd, found, found_sz, argc, argv ) )
+        return 1;
+    if ( ps2_try_host_beside( arg0, found, found_sz, argc, argv ) )
+        return 1;
+    return ps2_find_host_dcb( found, found_sz, argc, argv );
+}
+
+static int ps2_try_disc_boot( char * found, size_t found_sz, int argc, char * argv[] )
+{
+    if ( argc >= 2 && argv[1] && strstr( argv[1], ".dcb" ) &&
+         ps2_is_disc_path( argv[1] ) )
+    {
+        if ( ps2_take_dcb( argv[1], found, found_sz, argc, argv ) )
+            return 1;
+    }
+    return ps2_find_disc_dcb( found, found_sz, argc, argv );
+}
+
 char * bgdi_ps2_startup( int argc, char * argv[], int * standalone )
 {
     static char found[ 256 ];
     char cwd[ 256 ];
-    int disc;
-    int host;
+    int explicit_disc;
+    int explicit_usb;
+    int file_open;
     const char * arg0;
 
     if ( standalone )
@@ -601,70 +645,47 @@ char * bgdi_ps2_startup( int argc, char * argv[], int * standalone )
     SDL_SetMainReady();
     SifInitRpc( 0 );
     __fdman_init();
+    ps2_patches();
 
-    disc = 0;
-    host = 0;
     cwd[0] = '\0';
-    /* getcwd(cdrom0:) hangs. Skip it when File→Open already named the ISO/ELF on disc. */
+    /* getcwd(cdrom0:) hangs. Skip it when argv already named the disc. */
     if ( !ps2_is_disc_path( arg0 ) && !ps2_is_iso_name( arg0 ) )
         getcwd( cwd, sizeof( cwd ) );
-    if ( ps2_is_disc_path( arg0 ) || ps2_is_disc_path( cwd ) ||
-         ps2_is_iso_name( arg0 ) || ps2_is_iso_name( cwd ) )
-        disc = 1;
-    else if ( ps2_is_host_device( arg0 ) ||
-              ( ps2_is_host_boot( arg0 ) && ps2_is_elf_name( arg0 ) ) )
-        host = 1;
-    else if ( !ps2_is_usb_path( arg0 ) && !ps2_is_usb_path( cwd ) )
-        disc = ps2_probe_disc();
-    if ( !disc && !host && ( ps2_is_host_boot( arg0 ) || ps2_is_host_boot( cwd ) ) )
-        host = 1;
 
-    if ( disc )
+    explicit_disc = ps2_is_disc_path( arg0 ) || ps2_is_iso_name( arg0 ) ||
+                    ps2_is_disc_path( cwd ) || ps2_is_iso_name( cwd );
+    explicit_usb = ps2_is_usb_path( arg0 ) || ps2_is_usb_path( cwd );
+    file_open = ps2_file_open_elf( arg0 );
+
+    /* ISO first when argv says so — IOP reset would unmount CDVD. */
+    if ( explicit_disc && !explicit_usb )
     {
-        /* No SDL / cdfs / memcard until MAIN.DCB opens — those unmount CDVD. */
-        ps2_patches();
         ps2_cdvd_setup( 1 );
-
-        if ( argc >= 2 && argv[1] && strstr( argv[1], ".dcb" ) )
-        {
-            if ( ps2_take_dcb( argv[1], found, sizeof( found ), argc, argv ) )
-            {
-                init_memcard_driver( 1 );
-                return found;
-            }
-        }
-        if ( ps2_find_disc_dcb( found, sizeof( found ), argc, argv ) )
+        if ( ps2_try_disc_boot( found, sizeof( found ), argc, argv ) )
         {
             init_memcard_driver( 1 );
             return found;
         }
-        ps2_add_search_paths( "cdrom0:/", argc, argv );
-        ps2_missing_dcb( cwd[0] ? cwd : NULL, arg0 );
-        return NULL;
     }
 
-    if ( host )
+    /* HostFS next. cwd is often host: even when the DCB is on the USB .img. */
+    if ( !explicit_usb &&
+         ps2_try_host_boot( found, sizeof( found ), argc, argv, arg0, cwd ) )
     {
-        /* Keep IOP so PCSX2 HostFS stays mounted. USB drivers would replace it. */
-        ps2_patches();
-        ps2_splash( "BennuGD64: HostFS boot", arg0[0] ? arg0 : cwd );
         init_memcard_driver( 1 );
+        return found;
+    }
 
-        if ( argc >= 2 && argv[1] && strstr( argv[1], ".dcb" ) )
+    /* SYSTEM.CNF / unknown argv: probe the tray. File→Open ELF skips this
+     * so a leftover ISO does not beat the USB image. */
+    if ( !explicit_disc && !explicit_usb && !file_open && ps2_probe_disc() )
+    {
+        ps2_cdvd_setup( 1 );
+        if ( ps2_try_disc_boot( found, sizeof( found ), argc, argv ) )
         {
-            if ( ps2_take_dcb( argv[1], found, sizeof( found ), argc, argv ) )
-                return found;
+            init_memcard_driver( 1 );
+            return found;
         }
-        if ( ps2_try_host_dir( cwd, found, sizeof( found ), argc, argv ) )
-            return found;
-        if ( ps2_try_host_beside( arg0, found, sizeof( found ), argc, argv ) )
-            return found;
-        if ( ps2_find_host_dcb( found, sizeof( found ), argc, argv ) )
-            return found;
-
-        ps2_add_search_paths( "host:/", argc, argv );
-        ps2_missing_dcb( cwd[0] ? cwd : NULL, arg0 );
-        return NULL;
     }
 
     ps2_reset_iop();
@@ -673,7 +694,7 @@ char * bgdi_ps2_startup( int argc, char * argv[], int * standalone )
     waitUntilDeviceIsReady( ( char * ) "mass:" );
 
     if ( argc >= 2 && argv[1] && strstr( argv[1], ".dcb" ) &&
-         !ps2_is_host_boot( argv[1] ) )
+         !ps2_is_host_boot( argv[1] ) && !ps2_is_disc_path( argv[1] ) )
     {
         if ( ps2_take_dcb( argv[1], found, sizeof( found ), argc, argv ) )
             return found;
@@ -682,6 +703,6 @@ char * bgdi_ps2_startup( int argc, char * argv[], int * standalone )
         return found;
 
     ps2_add_search_paths( NULL, argc, argv );
-    ps2_missing_dcb( NULL, arg0 );
+    ps2_missing_dcb( cwd[0] ? cwd : NULL, arg0 );
     return NULL;
 }

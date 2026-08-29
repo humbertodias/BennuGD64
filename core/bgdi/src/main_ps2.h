@@ -1,8 +1,8 @@
 /*
  * PlayStation 2 interpreter bootstrap. Compiled only into the ps2-mips build.
  * Include this from main.c so SDL_MAIN_HANDLED applies: argv is visible
- * before IOP reset. ISO and HostFS boot must not reset (CD / host: unmount).
- * USB boot must reset so usbd/usbhdfsd load.
+ * before IOP reset. Probe host: and cdrom0: first (reset unmounts both), then
+ * USB so File→Open + FAT32 .img still works when PCSX2 HostFS is enabled.
  */
 
 #ifndef __MAIN_PS2_H

@@ -4,8 +4,9 @@
  * USB (mass:), ISO (cdfs: / cdrom0:) and PCSX2 HostFS (host:) support fseek.
  * host: is only used when the DCB was found there — after IOP reset HostFS is
  * gone and fopen("host:...") hangs. Skip gzopen: SoRR's 305 MB DCB as gzip
- * hangs before FRAME. Rewrite PRELOAD / BORDERLESS_SYNC so boot fits 32 MiB.
- * After the DCB is found, fopen() stays on that device.
+ * hangs before FRAME. Rewrite PRELOAD→REALTIME (even 128 MiB EE cannot
+ * hold SoRR's PRELOAD working set plus slurped audio) and BORDERLESS_SYNC
+ * to AUTO. After the DCB is found, fopen() stays on that device.
  */
 
 #include <stdio.h>

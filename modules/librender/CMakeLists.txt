@@ -14,6 +14,7 @@ add_library (
   librender.c
   g_fade.c
   g_frame.c
+  g_stats.c
   g_instance.c
   g_object.c
   g_rects.c

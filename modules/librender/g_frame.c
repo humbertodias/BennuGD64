@@ -39,6 +39,7 @@
 #ifdef TARGET_PS2
 #include "g_frame_ps2.h"
 #endif
+#include "g_stats.h"
 #ifdef TARGET_WII
 #include "g_frame_wii.h"
 #endif
@@ -330,6 +331,8 @@ void gr_draw_frame()
     /* Dibuja la pantalla */
 
     gr_draw_screen( scrbitmap, GLODWORD( librender, RESTORETYPE ), GLODWORD( librender, DUMPTYPE ) );
+
+    gr_stats_draw( scrbitmap );
 
     /* Fading */
 

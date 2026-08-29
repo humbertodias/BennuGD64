@@ -8,6 +8,8 @@
 
 #include "libkey_ps2.h"
 
+void gr_stats_toggle( void ) __attribute__((weak));
+
 extern const bool * keystate;
 
 #define PAD_DIGITAL_IDLE  0x00
@@ -98,7 +100,18 @@ void libkey_ps2_after_events( void )
         if ( lx > PAD_THRESH_HI ) paddata |= PAD_RIGHT;
     }
 
+    /* Select+L1+R1: FPS/mem overlay (F12 on keyboard does the same).
+     * Strip the combo so Select does not become Escape in the game. */
+    if ( ( paddata & ( PAD_SELECT | PAD_L1 | PAD_R1 ) ) == ( PAD_SELECT | PAD_L1 | PAD_R1 ) )
+    {
+        if ( gr_stats_toggle &&
+             ( last_paddata & ( PAD_SELECT | PAD_L1 | PAD_R1 ) ) != ( PAD_SELECT | PAD_L1 | PAD_R1 ) )
+            gr_stats_toggle();
+    }
+
     last_paddata = (int) paddata;
+    if ( ( paddata & ( PAD_SELECT | PAD_L1 | PAD_R1 ) ) == ( PAD_SELECT | PAD_L1 | PAD_R1 ) )
+        paddata &= ~( PAD_SELECT | PAD_L1 | PAD_R1 );
     apply_pad( paddata );
 }
 

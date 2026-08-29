@@ -36,6 +36,7 @@
 #include "dlvaracc.h"
 
 #include "librender.h"
+#include "g_stats.h"
 
 /* --------------------------------------------------------------------------- */
 /* Son las variables que se desea acceder.                           */
@@ -116,6 +117,8 @@ HOOK __bgdexport( librender, handler_hooks )[] =
 {
     { 9500, gr_wait_frame },
     { 9000, gr_draw_frame },
+    /* After PumpEvents (5000) and libkey (4900). */
+    { 4800, gr_stats_poll },
     {    0, NULL          }
 } ;
 

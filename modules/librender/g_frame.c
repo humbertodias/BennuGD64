@@ -36,6 +36,9 @@
 #ifdef TARGET_PSP
 #include "g_frame_psp.h"
 #endif
+#ifdef TARGET_PS2
+#include "g_frame_ps2.h"
+#endif
 #ifdef TARGET_WII
 #include "g_frame_wii.h"
 #endif
@@ -86,6 +89,9 @@ void gr_set_fps( int fps, int skip )
 {
 #ifdef TARGET_PSP
     skip = gr_frame_psp_adjust_skip( skip );
+#endif
+#ifdef TARGET_PS2
+    skip = gr_frame_ps2_adjust_skip( skip );
 #endif
 
     if ( fps == fps_value && skip == max_jump ) return ;
@@ -141,6 +147,10 @@ static void bennu_delay_ms( int delay )
 
 void gr_wait_frame()
 {
+#ifdef TARGET_PS2
+    if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
+        return;
+#endif
     int frame_ticks ;
 
     frame_count++ ;
@@ -301,6 +311,10 @@ void gr_refresh_palette()
 
 void gr_draw_frame()
 {
+#ifdef TARGET_PS2
+    if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
+        return;
+#endif
     if ( jump ) return ;
 
     /* Actualiza paleta */

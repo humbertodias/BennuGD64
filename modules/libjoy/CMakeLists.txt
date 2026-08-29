@@ -15,6 +15,9 @@ endif ()
 
 if (NINTENDO_WII OR PLATFORM_WII)
   target_sources (joy PRIVATE libjoy_wii.c)
+endif ()
+if (PLATFORM_PS2 OR PS2)
+  target_sources (joy PRIVATE libjoy_ps2.c)
 endif () 
 
 target_link_libraries (

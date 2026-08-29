@@ -57,8 +57,25 @@
 #include "libjoy_emscripten.h"
 #endif
 
-#ifdef TARGET_WII
+#if defined(TARGET_WII)
 #include "libjoy_wii.h"
+#endif
+#if defined(TARGET_PS2)
+#include "libjoy_ps2.h"
+#endif
+
+#if defined(TARGET_WII)
+#define libjoy_plat_num          libjoy_wii_num
+#define libjoy_plat_name         libjoy_wii_name
+#define libjoy_plat_buttons      libjoy_wii_buttons
+#define libjoy_plat_axes         libjoy_wii_axes
+#define libjoy_plat_hats         libjoy_wii_hats
+#define libjoy_plat_get_button   libjoy_wii_get_button
+#define libjoy_plat_get_position libjoy_wii_get_position
+#define libjoy_plat_get_hat      libjoy_wii_get_hat
+#define libjoy_plat_get_accel    libjoy_wii_get_accel
+#define libjoy_plat_initialize   libjoy_wii_module_initialize
+#define libjoy_plat_finalize     libjoy_wii_module_finalize
 #endif
 
 /* --------------------------------------------------------------------------- */
@@ -108,7 +125,7 @@ void libjoy_remember_name( int slot )
 int libjoy_num( void )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_num();
+    return libjoy_plat_num();
 #else
     return _max_joys ;
 #endif
@@ -123,7 +140,7 @@ int libjoy_name( int joy )
 {
     int result;
 #ifdef TARGET_WII
-    result = string_new( libjoy_wii_name( joy ) );
+    result = string_new( libjoy_plat_name( joy ) );
     string_use( result );
     return result;
 #else
@@ -165,7 +182,7 @@ int libjoy_select( int joy )
 int libjoy_buttons( void )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_buttons( _selected_joystick );
+    return libjoy_plat_buttons( _selected_joystick );
 #else
     if ( libjoy_valid( _selected_joystick ) )
     {
@@ -186,7 +203,7 @@ int libjoy_buttons( void )
 int libjoy_axes( void )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_axes( _selected_joystick );
+    return libjoy_plat_axes( _selected_joystick );
 #else
     if ( libjoy_valid( _selected_joystick ) )
     {
@@ -204,7 +221,7 @@ int libjoy_axes( void )
 int libjoy_get_button( int button )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_get_button( _selected_joystick, button );
+    return libjoy_plat_get_button( _selected_joystick, button );
 #else
     if ( libjoy_valid( _selected_joystick ) )
     {
@@ -255,7 +272,7 @@ int libjoy_get_button( int button )
 int libjoy_get_position( int axis )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_get_position( _selected_joystick, axis );
+    return libjoy_plat_get_position( _selected_joystick, axis );
 #else
     if ( libjoy_valid( _selected_joystick ) )
     {
@@ -273,7 +290,7 @@ int libjoy_get_position( int axis )
 int libjoy_hats( void )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_hats( _selected_joystick );
+    return libjoy_plat_hats( _selected_joystick );
 #else
     if ( libjoy_valid( _selected_joystick ) )
     {
@@ -309,7 +326,7 @@ int libjoy_balls( void )
 int libjoy_get_hat( int hat )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_get_hat( _selected_joystick, hat );
+    return libjoy_plat_get_hat( _selected_joystick, hat );
 #else
     if ( libjoy_valid( _selected_joystick ) )
     {
@@ -351,7 +368,7 @@ int libjoy_get_ball( int ball, int * dx, int * dy )
 int libjoy_get_accel( int * x, int * y, int * z )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_get_accel( _selected_joystick, x, y, z );
+    return libjoy_plat_get_accel( _selected_joystick, x, y, z );
 #elif defined(TARGET_CAANOO)
     if ( _selected_joystick == 0 )
     {
@@ -375,7 +392,7 @@ int libjoy_get_accel( int * x, int * y, int * z )
 int libjoy_buttons_specific( int joy )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_buttons( joy );
+    return libjoy_plat_buttons( joy );
 #else
     if ( libjoy_valid( joy ) )
     {
@@ -396,7 +413,7 @@ int libjoy_buttons_specific( int joy )
 int libjoy_axes_specific( int joy )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_axes( joy );
+    return libjoy_plat_axes( joy );
 #else
     if ( libjoy_valid( joy ) )
     {
@@ -414,7 +431,7 @@ int libjoy_axes_specific( int joy )
 int libjoy_get_button_specific( int joy, int button )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_get_button( joy, button );
+    return libjoy_plat_get_button( joy, button );
 #else
     if ( libjoy_valid( joy ) )
     {
@@ -472,7 +489,7 @@ int libjoy_get_button_specific( int joy, int button )
 int libjoy_get_position_specific( int joy, int axis )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_get_position( joy, axis );
+    return libjoy_plat_get_position( joy, axis );
 #else
     if ( libjoy_valid( joy ) )
     {
@@ -496,7 +513,7 @@ int libjoy_get_position_specific( int joy, int axis )
 int libjoy_hats_specific( int joy )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_hats( joy );
+    return libjoy_plat_hats( joy );
 #else
     if ( libjoy_valid( joy ) )
     {
@@ -533,7 +550,7 @@ int libjoy_balls_specific( int joy )
 int libjoy_get_hat_specific( int joy, int hat )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_get_hat( joy, hat );
+    return libjoy_plat_get_hat( joy, hat );
 #else
     if ( libjoy_valid( joy ) )
     {
@@ -576,7 +593,7 @@ int libjoy_get_ball_specific( int joy, int ball, int * dx, int * dy )
 int libjoy_get_accel_specific( int joy, int * x, int * y, int * z )
 {
 #ifdef TARGET_WII
-    return libjoy_wii_get_accel( joy, x, y, z );
+    return libjoy_plat_get_accel( joy, x, y, z );
 #elif defined(TARGET_CAANOO)
     if ( joy == 0 )
     {
@@ -590,9 +607,10 @@ int libjoy_get_accel_specific( int joy, int * x, int * y, int * z )
 void  __bgdexport( libjoy, module_initialize )()
 {
 #ifdef TARGET_WII
-    /* Do not SDL_OpenJoystick: SDL3-libogc2 deadlocks Dolphin. WPAD/PAD
-     * are polled directly with the bennugd-wii button/axis/hat map. */
-    libjoy_wii_module_initialize();
+    libjoy_plat_initialize();
+    return;
+#elif defined(TARGET_PS2)
+    libjoy_ps2_module_initialize();
     return;
 #else
     int i;
@@ -657,7 +675,7 @@ void  __bgdexport( libjoy, module_initialize )()
 void  __bgdexport( libjoy, module_finalize )()
 {
 #ifdef TARGET_WII
-    libjoy_wii_module_finalize();
+    libjoy_plat_finalize();
     return;
 #else
     int i;
@@ -678,7 +696,7 @@ HOOK __bgdexport( libjoy, handler_hooks )[] =
 #ifdef TARGET_EMSCRIPTEN
     { 4900, libjoy_emscripten_refresh },
 #endif
-#ifdef TARGET_WII
+#if defined(TARGET_WII)
     { 4900, libjoy_wii_pump },
 #endif
     {    0, NULL           }

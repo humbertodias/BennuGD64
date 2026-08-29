@@ -90,6 +90,28 @@ int glob( const char * pattern, int flags, int ( * errfunc )( const char * epath
         }
     }
 
+#ifdef TARGET_PS2
+    if ( !strchr( dir, ':' ) )
+    {
+        char * mass;
+        size_t n = strlen( dir ) + 8;
+        const char * rel = dir;
+
+        if ( rel[0] == '.' && ( rel[1] == '\0' || rel[1] == '/' ) )
+            rel += ( rel[1] == '/' ) ? 2 : 1;
+        mass = malloc( n );
+        if ( !mass )
+        {
+            free( dir );
+            globfree( pglob );
+            return GLOB_NOSPACE;
+        }
+        snprintf( mass, n, "mass:/%s", rel );
+        free( dir );
+        dir = mass;
+    }
+#endif
+
     dp = opendir( dir );
     if ( !dp )
     {

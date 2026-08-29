@@ -45,6 +45,10 @@
 #include "typedef_st.h"
 #include "interpreter_p.h"
 
+#ifdef TARGET_PS2
+#include "misc_ps2.h"
+#endif
+
 /* ---------------------------------------------------------------------- */
 /* Interpreter's main module                                              */
 /* ---------------------------------------------------------------------- */
@@ -228,8 +232,16 @@ int instance_go_one_turn( void )
 
             /* Hook */
             if ( handler_hook_count )
+            {
+#ifdef TARGET_PS2
+                /* First turn returns no instance (priority iterator). Hooks
+                 * would SDL_GetTicks / draw before SET_MODE and hang. */
+                if ( !bgdrtm_ps2_video_ready() )
+                    return 1;
+#endif
                 for ( n = 0; n < handler_hook_count; n++ )
                     handler_hook_list[n].hook();
+            }
             /* Hook */
 
             return 1 ;

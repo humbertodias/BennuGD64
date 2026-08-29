@@ -80,6 +80,10 @@ DLVARFIXUP  __bgdexport( libwm, globals_fixup )[] =
 
 static void wm_events()
 {
+#ifdef TARGET_PS2
+    if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
+        return;
+#endif
     SDL_Event e ;
 
     /* Procesa los eventos de ventana pendientes */

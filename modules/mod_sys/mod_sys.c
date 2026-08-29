@@ -120,6 +120,13 @@ static int modsys_getenv( INSTANCE * my, intptr_t * params )
     char *e ;
     int str ;
 
+#ifdef TARGET_PS2
+    ( void ) e;
+    string_discard( params[0] ) ;
+    str = string_new( "" ) ;
+    string_use( str ) ;
+    return str ;
+#else
     if (( e = getenv( string_get( params[0] ) ) ) )
     {
         str = string_new( e ) ;
@@ -132,6 +139,7 @@ static int modsys_getenv( INSTANCE * my, intptr_t * params )
     string_discard( params[0] ) ;
     string_use( str ) ;
     return str ;
+#endif
 }
 
 /* ---------------------------------------------------------------------- */

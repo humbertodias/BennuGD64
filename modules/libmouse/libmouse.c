@@ -126,6 +126,10 @@ DLVARFIXUP __bgdexport( libmouse, globals_fixup )[] =
 
 static void do_mouse_events()
 {
+#ifdef TARGET_PS2
+    if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
+        return;
+#endif
     SDL_Event e ;
     static int last_mouse_x = -1, last_mouse_y = -1 ;
 

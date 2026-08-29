@@ -35,6 +35,9 @@
 #ifdef TARGET_WII
 #include "libsdlhandler_wii.h"
 #endif
+#ifdef TARGET_PS2
+#include "libsdlhandler_ps2.h"
+#endif
 
 /* ----------------------------------------------------------------- */
 /* Public functions                                                  */
@@ -43,6 +46,8 @@ static void  dump_new_events( void )
 {
 #ifdef TARGET_EMSCRIPTEN
     libsdlhandler_emscripten_pump();
+#elif defined(TARGET_PS2)
+    libsdlhandler_ps2_pump();
 #else
     SDL_Event event;
     /* Remove all pendings events */

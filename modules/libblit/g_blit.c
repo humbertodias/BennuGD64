@@ -35,6 +35,9 @@
 #include <math.h>
 
 #include "libblit.h"
+#ifdef TARGET_PS2
+#include "g_blit_ps2.h"
+#endif
 
 /* --------------------------------------------------------------------------- */
 
@@ -2021,6 +2024,9 @@ void gr_rotated_blit( GRAPH * dest, REGION * clip, int scrx, int scry, int flags
 
     if ( !dest ) dest = scrbitmap;
 
+#ifdef TARGET_PS2
+    if ( gr_blit_ps2_empty( dest, clip, gr ) ) return;
+#endif
     if ( !dest->data || !gr->data ) return;
     if ( scalex <= 0 || scaley <= 0 ) return;
 
@@ -2601,6 +2607,9 @@ void gr_blit( GRAPH * dest, REGION * clip, int scrx, int scry, int flags, GRAPH 
     DRAW_HSPAN  * draw_hspan = ( DRAW_HSPAN * )NULL;
 
     if ( !dest ) dest = scrbitmap ;
+#ifdef TARGET_PS2
+    if ( gr_blit_ps2_empty( dest, clip, gr ) ) return;
+#endif
     if ( !dest->data || !gr->data ) return;
 
     /* Calculate the clipping coordinates */

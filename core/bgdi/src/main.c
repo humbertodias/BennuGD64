@@ -65,9 +65,6 @@
 #endif
 #ifdef TARGET_PS2
 #include "main_ps2.h"
-#include <SDL3/SDL_main.h>
-/* Keep PCSX2 HostFS (host:) across SDL_RunApp; IOP reset drops it. */
-SDL_PS2_SKIP_IOP_RESET();
 #endif
 #ifdef TARGET_PANDORA
 #include "main_pandora.h"
@@ -110,7 +107,9 @@ int main( int argc, char *argv[] )
     dcb_signature dcb_signature;
 
     /* disable stdout buffering */
+#ifndef TARGET_PS2
     setvbuf( stdout, NULL, _IONBF, BUFSIZ );
+#endif
 
 #ifdef TARGET_ANDROID
     {
@@ -158,6 +157,8 @@ int main( int argc, char *argv[] )
         ps2_dcb = bgdi_ps2_startup( argc, argv, &standalone );
         if ( ps2_dcb )
             filename = ps2_dcb;
+        if ( filename && argv && argv[0] )
+            bgdi_ps2_use_device_argv0( filename, argv );
     }
 #endif
 

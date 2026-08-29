@@ -45,7 +45,9 @@ set (CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 set (PLATFORM_PS2 TRUE CACHE BOOL "Build PlayStation 2 homebrew" FORCE)
 set (PS2 TRUE CACHE BOOL "Build PlayStation 2 homebrew" FORCE)
 
-string (APPEND CMAKE_C_FLAGS_INIT " -D_GNU_SOURCE=1")
-string (APPEND CMAKE_CXX_FLAGS_INIT " -D_GNU_SOURCE=1 -fno-rtti -fno-exceptions")
+# ps2dev gcc does not define PS2/__PS2__/_EE; SDL_PLATFORM_PS2 and DIntr
+# spinlocks depend on them.
+string (APPEND CMAKE_C_FLAGS_INIT " -D_GNU_SOURCE=1 -DPS2 -D__PS2__ -D_EE")
+string (APPEND CMAKE_CXX_FLAGS_INIT " -D_GNU_SOURCE=1 -DPS2 -D__PS2__ -D_EE -fno-rtti -fno-exceptions")
 string (APPEND CMAKE_C_FLAGS_RELEASE " -O3 -ffast-math")
 string (APPEND CMAKE_CXX_FLAGS_RELEASE " -O3 -ffast-math")

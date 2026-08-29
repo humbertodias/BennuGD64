@@ -263,6 +263,12 @@ if (NOT sdl3_POPULATED)
 endif ()
 
 if (PLATFORM_PS2 OR PS2)
+  # ps2dev gcc defines _MIPS_ARCH_R5900, not PS2/__PS2__/_EE. Without those,
+  # SDL_PLATFORM_PS2 is off, gcc __atomic_* builtins stay on, and spinlocks
+  # fall through to CreateMutex-from-TryLock ("Terrible terrible damage").
+  if (TARGET SDL3-static)
+    target_compile_definitions (SDL3-static PRIVATE PS2=1 __PS2__=1 _EE=1)
+  endif ()
   # GCC 15 still emits __atomic_* libcalls via HAVE_ATOMIC_LOAD_N even when
   # HAVE_GCC_ATOMICS is off. Force the EMULATE_CAS + PS2 spinlock path.
   set (_ps2_atomic "${sdl3_SOURCE_DIR}/src/atomic/SDL_atomic.c")
@@ -271,9 +277,46 @@ if (PLATFORM_PS2 OR PS2)
     if (_ps2_atomic_txt MATCHES "#if \\(defined\\(__GNUC__\\) && \\(__GNUC__ >= 5\\)\\) \\|\\| \\(defined\\(__clang__\\) && defined\\(HAVE_GCC_ATOMICS\\)\\)")
       string (REPLACE
         "#if (defined(__GNUC__) && (__GNUC__ >= 5)) || (defined(__clang__) && defined(HAVE_GCC_ATOMICS))"
-        "#if !defined(SDL_PLATFORM_PS2) && !defined(_EE) && ((defined(__GNUC__) && (__GNUC__ >= 5)) || (defined(__clang__) && defined(HAVE_GCC_ATOMICS)))"
+        "#if !defined(SDL_PLATFORM_PS2) && !defined(_EE) && !defined(_MIPS_ARCH_R5900) && ((defined(__GNUC__) && (__GNUC__ >= 5)) || (defined(__clang__) && defined(HAVE_GCC_ATOMICS)))"
         _ps2_atomic_txt "${_ps2_atomic_txt}")
       file (WRITE "${_ps2_atomic}" "${_ps2_atomic_txt}")
+    endif ()
+    file (READ "${_ps2_atomic}" _ps2_atomic_txt)
+    if (_ps2_atomic_txt MATCHES "#if SDL_HAS_BUILTIN\\(__atomic_load_n\\)")
+      string (REPLACE
+        "#if SDL_HAS_BUILTIN(__atomic_load_n)\n#define HAVE_ATOMIC_LOAD_N 1\n#endif\n#if SDL_HAS_BUILTIN(__atomic_exchange_n)\n#define HAVE_ATOMIC_EXCHANGE_N 1\n#endif"
+        "#if !defined(SDL_PLATFORM_PS2) && !defined(_EE) && !defined(_MIPS_ARCH_R5900) && SDL_HAS_BUILTIN(__atomic_load_n)\n#define HAVE_ATOMIC_LOAD_N 1\n#endif\n#if !defined(SDL_PLATFORM_PS2) && !defined(_EE) && !defined(_MIPS_ARCH_R5900) && SDL_HAS_BUILTIN(__atomic_exchange_n)\n#define HAVE_ATOMIC_EXCHANGE_N 1\n#endif"
+        _ps2_atomic_txt "${_ps2_atomic_txt}")
+      file (WRITE "${_ps2_atomic}" "${_ps2_atomic_txt}")
+    endif ()
+  endif ()
+  # R5900 has no working __sync_lock_test_and_set; that path is taken before
+  # the PS2 DIntr spinlock and livelocks inside SDL_SetHint / SDL_Init.
+  set (_ps2_spin "${sdl3_SOURCE_DIR}/src/atomic/SDL_spinlock.c")
+  if (EXISTS "${_ps2_spin}")
+    file (READ "${_ps2_spin}" _ps2_spin_txt)
+    if (_ps2_spin_txt MATCHES "#if defined\\(HAVE_GCC_ATOMICS\\) \\|\\| defined\\(HAVE_GCC_SYNC_LOCK_TEST_AND_SET\\)")
+      string (REPLACE
+        "#if defined(HAVE_GCC_ATOMICS) || defined(HAVE_GCC_SYNC_LOCK_TEST_AND_SET)"
+        "#if !defined(PS2) && !defined(SDL_PLATFORM_PS2) && !defined(_EE) && !defined(_MIPS_ARCH_R5900) && !defined(__PS2__) && (defined(HAVE_GCC_ATOMICS) || defined(HAVE_GCC_SYNC_LOCK_TEST_AND_SET))"
+        _ps2_spin_txt "${_ps2_spin_txt}")
+      file (WRITE "${_ps2_spin}" "${_ps2_spin_txt}")
+    endif ()
+    file (READ "${_ps2_spin}" _ps2_spin_txt)
+    if (_ps2_spin_txt MATCHES "#elif defined\\(PS2\\)\n    uint32_t oldintr;")
+      string (REPLACE
+        "#elif defined(PS2)\n    uint32_t oldintr;"
+        "#elif defined(PS2) || defined(SDL_PLATFORM_PS2) || defined(__PS2__) || defined(_EE) || defined(_MIPS_ARCH_R5900)\n    uint32_t oldintr;"
+        _ps2_spin_txt "${_ps2_spin_txt}")
+      file (WRITE "${_ps2_spin}" "${_ps2_spin_txt}")
+    endif ()
+    file (READ "${_ps2_spin}" _ps2_spin_txt)
+    if (_ps2_spin_txt MATCHES "#ifdef PS2\n#include <kernel.h>")
+      string (REPLACE
+        "#ifdef PS2\n#include <kernel.h>"
+        "#if defined(PS2) || defined(SDL_PLATFORM_PS2) || defined(__PS2__) || defined(_EE) || defined(_MIPS_ARCH_R5900)\n#include <kernel.h>"
+        _ps2_spin_txt "${_ps2_spin_txt}")
+      file (WRITE "${_ps2_spin}" "${_ps2_spin_txt}")
     endif ()
   endif ()
 endif ()

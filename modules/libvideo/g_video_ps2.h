@@ -10,6 +10,8 @@
 void gr_video_ps2_module_initialize( void );
 void gr_video_ps2_adjust_window( int * width, int * height, Uint32 * window_flags );
 void gr_video_ps2_apply_mode( void );
+void gr_video_ps2_before_window( void );
+void gr_video_ps2_after_window( void );
 int  gr_video_ps2_present( SDL_Surface * src );
 int  gr_video_ps2_present_rects( SDL_Surface * src, const SDL_Rect * rects, int count );
 

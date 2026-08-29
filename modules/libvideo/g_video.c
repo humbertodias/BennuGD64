@@ -199,7 +199,7 @@ int gr_video_present_via_renderer( SDL_Surface * src )
 {
     SDL_Surface * converted;
 #ifdef TARGET_PS2
-    const SDL_PixelFormat fmt = SDL_PIXELFORMAT_ABGR8888;
+    const SDL_PixelFormat fmt = SDL_PIXELFORMAT_ABGR1555;
 #else
     const SDL_PixelFormat fmt = SDL_PIXELFORMAT_XRGB8888;
 #endif
@@ -385,6 +385,7 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 #endif
 #ifdef TARGET_PS2
     gr_video_ps2_adjust_window( &width, &height, &window_flags );
+    gr_video_ps2_before_window();
 #endif
 #ifdef TARGET_PANDORA
     gr_video_pandora_adjust_window( &width, &height, &window_flags );
@@ -425,6 +426,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
             window = NULL;
         }
         window = SDL_CreateWindow( gr_caption_for_window( apptitle, caption_buf, sizeof( caption_buf ) ), width, height, window_flags );
+#ifdef TARGET_PS2
+        gr_video_ps2_after_window();
+#endif
         if ( !window ) return -1;
     }
     else
@@ -523,6 +527,10 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_PS2
     gr_video_ps2_apply_mode();
+    GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
+    GLODWORD( libvideo, GRAPH_MODE ) = MODE_16BITS | MODE_FULLSCREEN;
+    depth = 16;
+    enable_scale = 0;
 #endif
 #ifdef TARGET_PANDORA
     gr_video_pandora_apply_mode();
@@ -536,11 +544,12 @@ int gr_set_mode( int width, int height, int depth )
     if ( GLOEXISTS( libvideo, SCALE_RESOLUTION_ASPECTRATIO ) ) scale_resolution_aspectratio = GLODWORD( libvideo, SCALE_RESOLUTION_ASPECTRATIO );
     if ( GLOEXISTS( libvideo, SCALE_RESOLUTION_ORIENTATION ) ) scale_resolution_orientation = GLODWORD( libvideo, SCALE_RESOLUTION_ORIENTATION );
 
+#ifndef TARGET_PS2
     /* Overwrite all params */
-
     if ( ( e = getenv( "SCALE_RESOLUTION"             ) ) ) scale_resolution = atol( e );
     if ( ( e = getenv( "SCALE_RESOLUTION_ASPECTRATIO" ) ) ) scale_resolution_aspectratio = atol( e );
     if ( ( e = getenv( "SCALE_RESOLUTION_ORIENTATION" ) ) ) scale_resolution_orientation = atol( e );
+#endif
 
     if ( scale_resolution_orientation < 0 || scale_resolution_orientation > 4 ) scale_resolution_orientation = 0;
 
@@ -869,6 +878,11 @@ int gr_init( int width, int height )
 
 void __bgdexport( libvideo, module_initialize )()
 {
+#ifdef TARGET_PS2
+    /* SET_MODE opens gsKit. Do not touch SDL or GRAPH globals here. */
+    apptitle = appname;
+    return;
+#endif
     char * e;
 
     GLODWORD( libvideo, SCALE_RESOLUTION ) = -1; // hack for backward compatibility
@@ -887,8 +901,6 @@ void __bgdexport( libvideo, module_initialize )()
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_module_initialize();
-#elif defined(TARGET_PS2)
-    gr_video_ps2_module_initialize();
 #elif defined(TARGET_PANDORA)
     gr_video_pandora_module_initialize();
 #else

@@ -176,7 +176,9 @@ if (PLATFORM_PS2 OR PS2)
     dmakit
     patches
     pad
+    audsrv
     cdvd
+    -ldebug
     ps2_drivers
     m
     "-Wl,--end-group"

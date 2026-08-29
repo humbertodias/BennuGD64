@@ -9,10 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(_WIN32)
-#include <unistd.h>
-#endif
-
 #include <SDL3/SDL.h>
 
 #include "librender.h"
@@ -25,8 +21,6 @@
 #include <malloc.h>
 #elif defined(__APPLE__)
 #include <malloc/malloc.h>
-#elif defined(_WIN32)
-#include <windows.h>
 #endif
 
 #define STATS_SCALE  2
@@ -94,13 +88,6 @@ static uint32_t mem_used( void )
     memset( &t, 0, sizeof( t ) );
     malloc_zone_statistics( NULL, &t );
     return ( uint32_t ) t.size_in_use;
-#elif defined(_WIN32)
-    MEMORYSTATUS mem;
-    mem.dwLength = sizeof( mem );
-    GlobalMemoryStatus( &mem );
-    if ( mem.dwTotalPhys < mem.dwAvailPhys )
-        return 0;
-    return ( uint32_t )( mem.dwTotalPhys - mem.dwAvailPhys );
 #else
     return 0;
 #endif
@@ -119,17 +106,12 @@ static uint32_t mem_total( void )
     return 32u * 1024u * 1024u;
 #elif defined(TARGET_WII)
     return 24u * 1024u * 1024u;
-#elif defined(_WIN32)
-    MEMORYSTATUS mem;
-    mem.dwLength = sizeof( mem );
-    GlobalMemoryStatus( &mem );
-    return ( uint32_t ) mem.dwTotalPhys;
 #else
+    /* SDL, not windows.h: Win32 OBJECTID collides with librender.h. */
     {
-        long pages = sysconf( _SC_PHYS_PAGES );
-        long size = sysconf( _SC_PAGE_SIZE );
-        if ( pages > 0 && size > 0 )
-            return ( uint32_t )( ( unsigned long ) pages * ( unsigned long ) size );
+        int mb = SDL_GetSystemRAM();
+        if ( mb > 0 )
+            return ( uint32_t ) mb * 1024u * 1024u;
     }
     return 0;
 #endif

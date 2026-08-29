@@ -54,7 +54,7 @@ Zed and VS Code can attach to the same images via [Dev Containers](https://conta
 
 The first `macos` image build downloads a macOS SDK (Xcode license) and compiles [osxcross](https://github.com/tpoechtrager/osxcross); later runs reuse `bennugd64-macos`. SDL3 is built from FetchContent (not `osxcross-macports` / SDL2). SDK 10.10 is too old for SDL3; the image uses MacOSX 14.5 with deployment target 11.0.
 
-Native CI still uses a Mac (`macos-latest`) for `dist/macos-arm64-*`. Docker osxcross is the Linux → Mach-O path (`dist/macos-x86_64-*` or `dist/macos-arm64-*`).
+Native CI still uses a Mac (`macos-latest`) for `dist/macos-arm64-*`. Docker osxcross is the Linux → Mach-O path (`dist/macos-x86_64-*` or `dist/macos-arm64-*`). After `cmake --install`, `scripts/docker-build.sh` ad-hoc-signs Mach-O files with `osxcross-codesign` (`codesign_allocate` + signature; osxcross `install_name_tool` does not re-sign). Downloaded macOS archives are quarantined; once per folder: `xattr -cr .`. On a copy that still fails: `codesign --force --sign - ./bgdi ./bgdc ./*.dylib ./modules/*.dylib`.
 
 Pinned dependency versions live in `versions.env`. Native Linux packages are listed in `docker/Dockerfile.linux`.
 

@@ -85,5 +85,21 @@ RUN arch="$(uname -m)" \
     && ln -sfn /opt/cmake-${CMAKE_VERSION}-linux-${carch}/bin/* /usr/local/bin/ \
     && cmake --version
 
+# Ad-hoc signer for Mach-O after install_name_tool (osxcross cctools do not re-sign).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        libplist-dev \
+        pkg-config \
+    && rm -rf /var/lib/apt/lists/* \
+    && git clone --depth 1 https://github.com/thefloweringash/sigtool.git /tmp/sigtool \
+    && cmake -S /tmp/sigtool -B /tmp/sigtool/build \
+         -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
+    && cmake --build /tmp/sigtool/build --parallel \
+    && install -m755 /tmp/sigtool/build/sigtool /usr/local/bin/sigtool \
+    && install -m755 /tmp/sigtool/build/codesign /usr/local/bin/osxcross-codesign \
+    && rm -rf /tmp/sigtool \
+    && ca="$(echo /opt/osxcross/target/bin/*-codesign_allocate | awk '{print $1}')" \
+    && test -x "${ca}" \
+    && ln -sfn "${ca}" /usr/local/bin/codesign_allocate
+
 WORKDIR /src
 CMD ["bash"]

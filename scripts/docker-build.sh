@@ -1006,6 +1006,22 @@ if [[ "${PLATFORM}" == "macos" ]]; then
         -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
       cmake --build --preset "${PRESET}"
       cmake --install "${BUILD_DIR}" --prefix "${STAGE}"
+      # osxcross install_name_tool does not re-sign; dyld rejects stale ad-hoc blobs.
+      shopt -s nullglob
+      if ! command -v codesign_allocate >/dev/null; then
+        echo "osxcross: codesign_allocate not found" >&2
+        exit 1
+      fi
+      for f in "${STAGE}/bgdi" "${STAGE}/bgdc" "${STAGE}"/*.dylib "${STAGE}/modules"/*.dylib; do
+        [[ -f "${f}" ]] || continue
+        magic="$(od -An -tx4 -N4 "${f}" | tr -d " \n")"
+        case "${magic}" in
+          feedfacf|cffaedfe|cafebabe|bebafeca) ;;
+          *) continue ;;
+        esac
+        echo "osxcross ad-hoc sign: ${f}"
+        osxcross-codesign -s - -f "${f}"
+      done
     '
   exit 0
 fi

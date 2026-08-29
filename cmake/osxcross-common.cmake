@@ -73,6 +73,18 @@ set (CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 # Mach-O try_compile executables cannot run on the Linux build host.
 set (CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 
+set (BENNUGD_OSXCROSS ON CACHE BOOL "Cross-compiling Darwin with osxcross")
+
+# ld64 embeds an ad-hoc signature; osxcross install_name_tool does not
+# regenerate it, so dyld rejects @rpath dylibs:
+#   code signature not valid for use in process / library load disallowed
+set (CMAKE_EXE_LINKER_FLAGS
+  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-headerpad_max_install_names -Wl,-no_adhoc_codesign")
+set (CMAKE_SHARED_LINKER_FLAGS
+  "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-headerpad_max_install_names -Wl,-no_adhoc_codesign")
+set (CMAKE_MODULE_LINKER_FLAGS
+  "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-headerpad_max_install_names -Wl,-no_adhoc_codesign")
+
 # Darwin compiler-rt builtins (__isPlatformVersionAtLeast) if osxcross built them.
 file (GLOB _osxcross_rt
   "${_osxcross_bin}/../lib/clang/*/lib/darwin/libclang_rt.osx.a"

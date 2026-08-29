@@ -220,7 +220,3 @@ endif ()
 if (EMSCRIPTEN)
   bennugd_emscripten_link (bgdi)
 endif ()
-
-if (TARGET bennugd_osxcross_rt)
-  target_link_libraries (bgdi bennugd_osxcross_rt)
-endif ()

@@ -1,8 +1,8 @@
 /*
  * PlayStation 2 interpreter bootstrap. Compiled only into the ps2-mips build.
  * Include this from main.c so SDL_MAIN_HANDLED applies: argv is visible
- * before IOP reset. ISO boot must not reset (CD unmounts). USB boot must
- * reset so usbd/usbhdfsd load.
+ * before IOP reset. ISO and HostFS boot must not reset (CD / host: unmount).
+ * USB boot must reset so usbd/usbhdfsd load.
  */
 
 #ifndef __MAIN_PS2_H

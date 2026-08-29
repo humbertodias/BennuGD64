@@ -1,10 +1,11 @@
 /*
  * PlayStation 2 file I/O. Linked instead of files_native.c.
  *
- * USB (mass:) and ISO (cdfs: / cdrom0:) support fseek. Do not prefix host:
- * (PCSX2 HostFS hangs on multi-MB seeks). Skip gzopen: SoRR's 305 MB DCB as
- * gzip hangs before FRAME. Rewrite PRELOAD / BORDERLESS_SYNC so boot fits
- * 32 MiB. After the DCB is found, fopen() stays on that device.
+ * USB (mass:), ISO (cdfs: / cdrom0:) and PCSX2 HostFS (host:) support fseek.
+ * host: is only used when the DCB was found there — after IOP reset HostFS is
+ * gone and fopen("host:...") hangs. Skip gzopen: SoRR's 305 MB DCB as gzip
+ * hangs before FRAME. Rewrite PRELOAD / BORDERLESS_SYNC so boot fits 32 MiB.
+ * After the DCB is found, fopen() stays on that device.
  */
 
 #include <stdio.h>
@@ -15,10 +16,21 @@
 #include "files_st.h"
 
 static char fs_prefix[ 16 ];
+static int fs_host_ok;
 
 static const char * const fs_prefixes[] = {
     "mass:/",
     "mass:",
+    NULL
+};
+
+static const char * const fs_host_prefixes[] = {
+    "host:/",
+    "host:",
+    "host0:/",
+    "host0:",
+    "host1:/",
+    "host1:",
     NULL
 };
 
@@ -99,6 +111,12 @@ static int starts_ci( const char * s, const char * pfx )
     return 1;
 }
 
+static int is_host_device( const char * path )
+{
+    return starts_ci( path, "host:" ) || starts_ci( path, "host0:" ) ||
+           starts_ci( path, "host1:" );
+}
+
 static FILE * fopen_writable( const char * name, const char * mode )
 {
     char path[ 512 ];
@@ -106,6 +124,15 @@ static FILE * fopen_writable( const char * name, const char * mode )
     int disc;
 
     disc = starts_ci( fs_prefix, "cdrom0:" ) || starts_ci( fs_prefix, "cdfs:" );
+    if ( is_host_device( fs_prefix ) )
+    {
+        snprintf( path, sizeof( path ), "%s%s", fs_prefix, name );
+        fp = fopen( path, mode );
+        if ( fp )
+            return fp;
+        snprintf( path, sizeof( path ), "mc0:/%s", name );
+        return fopen( path, mode );
+    }
     if ( starts_ci( fs_prefix, "mass:" ) )
     {
         snprintf( path, sizeof( path ), "mass:/%s", name );
@@ -125,6 +152,7 @@ static FILE * fopen_writable( const char * name, const char * mode )
 
 void file_ps2_bind_root( const char * dcb_path )
 {
+    fs_host_ok = 0;
     if ( !dcb_path || !dcb_path[0] )
         return;
     if ( starts_ci( dcb_path, "cdrom0:" ) )
@@ -133,6 +161,21 @@ void file_ps2_bind_root( const char * dcb_path )
         snprintf( fs_prefix, sizeof( fs_prefix ), "cdfs:/" );
     else if ( starts_ci( dcb_path, "mass:" ) )
         snprintf( fs_prefix, sizeof( fs_prefix ), "mass:/" );
+    else if ( starts_ci( dcb_path, "host0:" ) )
+    {
+        snprintf( fs_prefix, sizeof( fs_prefix ), "host0:/" );
+        fs_host_ok = 1;
+    }
+    else if ( starts_ci( dcb_path, "host1:" ) )
+    {
+        snprintf( fs_prefix, sizeof( fs_prefix ), "host1:/" );
+        fs_host_ok = 1;
+    }
+    else if ( starts_ci( dcb_path, "host:" ) )
+    {
+        snprintf( fs_prefix, sizeof( fs_prefix ), "host:/" );
+        fs_host_ok = 1;
+    }
 }
 
 static void upper_slash( char * dst, size_t cap, const char * src, char slash )
@@ -272,7 +315,7 @@ static FILE * fopen_ps2( const char * filename, const char * mode )
     if ( !name || !name[0] || !mode )
         return NULL;
 
-    if ( starts_ci( name, "host:" ) )
+    if ( is_host_device( name ) && !fs_host_ok )
         return NULL;
 
     if ( is_win_drive( name ) )
@@ -306,6 +349,20 @@ static FILE * fopen_ps2( const char * filename, const char * mode )
             return fopen_cdfs( name, mode );
         snprintf( path, sizeof( path ), "%s%s", fs_prefix, name );
         return fopen( path, mode );
+    }
+
+    if ( fs_host_ok )
+    {
+        for ( i = 0 ; fs_host_prefixes[ i ] ; i++ )
+        {
+            snprintf( path, sizeof( path ), "%s%s", fs_host_prefixes[ i ], name );
+            fp = fopen( path, mode );
+            if ( fp )
+            {
+                snprintf( fs_prefix, sizeof( fs_prefix ), "%s", fs_host_prefixes[ i ] );
+                return fp;
+            }
+        }
     }
 
     for ( i = 0 ; fs_prefixes[ i ] ; i++ )

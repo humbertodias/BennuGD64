@@ -1,6 +1,6 @@
 /*
  * PlayStation 2 cwd. getcwd/chdir after IOP reset hang (cwd is still host:).
- * fopen() uses mass:/ via files_ps2; CD() only needs a string.
+ * fopen() uses the bound device via files_ps2; CD() only needs a string.
  */
 
 #include <stdlib.h>
@@ -8,15 +8,30 @@
 
 #include "dirs_ps2.h"
 
-static const char ps2_cwd[] = "mass:/";
+static char ps2_cwd[ 32 ] = "mass:/";
+
+void dirs_ps2_set_cwd( const char * dir )
+{
+    size_t n;
+
+    if ( !dir || !dir[0] )
+        return;
+    n = strlen( dir );
+    if ( n >= sizeof( ps2_cwd ) )
+        n = sizeof( ps2_cwd ) - 1;
+    memcpy( ps2_cwd, dir, n );
+    ps2_cwd[ n ] = '\0';
+}
 
 char * dirs_ps2_getcwd( char * buf, size_t size )
 {
+    size_t n = strlen( ps2_cwd ) + 1;
+
     if ( !buf )
     {
-        char * s = ( char * ) malloc( sizeof( ps2_cwd ) );
+        char * s = ( char * ) malloc( n );
         if ( s )
-            memcpy( s, ps2_cwd, sizeof( ps2_cwd ) );
+            memcpy( s, ps2_cwd, n );
         return s;
     }
     if ( size == 0 )

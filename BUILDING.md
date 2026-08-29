@@ -289,13 +289,13 @@ That configures native `bgdc` (`ps2-host`), compiles `web/demo/*.prg`, cross-com
 
 **Where `main.dcb` goes:** always in the **same folder as `bgdi.elf`**. The Docker build already copies `hello.dcb` there as `main.dcb`.
 
-PCSX2:
+PCSX2 (Host Filesystem — no USB image needed):
 
 1. Leave `bgdi.elf` and `main.dcb` together in `dist/ps2-mips-static/` (do not open a copy of the ELF from another directory).
-2. **Settings → Emulation → Enable Host Filesystem.** Without this, `host:` is empty and you get a black screen (or a message asking for `main.dcb`).
+2. **Settings → Emulation → Enable Host Filesystem.** The interpreter keeps `host:` mounted (no IOP reset) and loads `host:main.dcb`. Without HostFS, `host:` is empty and you get a message asking for `main.dcb`.
 3. **File → Open** `bgdi.elf` (boot the ELF, not an ISO).
 
-uLaunchELF on USB: copy the whole folder to the stick and run `bgdi.elf`; it looks for `mass:/MAIN.DCB`. Put your game's `main.dcb` next to the ELF.
+uLaunchELF on USB: copy the whole folder to the stick and run `bgdi.elf`; that path resets IOP and looks for `mass:/MAIN.DCB`. Put your game's `main.dcb` next to the ELF.
 
 SDL3 is the official PS2 gsKit backend (FetchContent). zlib and libpng come from ps2sdk-ports so they match the headers already on the EE include path. Modules are linked into `bgdi.elf`.
 

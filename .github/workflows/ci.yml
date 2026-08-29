@@ -183,6 +183,83 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
+  build-macos-osxcross:
+    name: macos-x86_64 (osxcross)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Load versions
+        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
+
+      - name: Cache FetchContent
+        uses: actions/cache@v6
+        with:
+          path: |
+            build-macos-x86_64-static/_deps/*-src
+            build-macos-x86_64-shared/_deps/*-src
+          key: fetch-macos-osxcross-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.macos') }}
+          restore-keys: |
+            fetch-macos-osxcross-
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build osxcross toolchain image
+        uses: docker/build-push-action@v6
+        with:
+          context: docker
+          file: docker/Dockerfile.macos
+          tags: bennugd64-macos
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          build-args: |
+            MACOSX_SDK=${{ env.MACOSX_SDK }}
+            MACOSX_SDK_SHA256=${{ env.MACOSX_SDK_SHA256 }}
+            OSX_VERSION_MIN=${{ env.OSXCROSS_OSX_VERSION_MIN }}
+            CMAKE_VERSION=${{ env.CMAKE_VERSION }}
+          cache-from: type=gha,scope=bennugd-macos
+          cache-to: type=gha,mode=max,scope=bennugd-macos
+
+      - name: Build static
+        env:
+          SKIP_DOCKER_BUILD: "1"
+        run: bash scripts/docker-build.sh macos static
+
+      - name: Build shared
+        env:
+          SKIP_DOCKER_BUILD: "1"
+        run: bash scripts/docker-build.sh macos shared
+
+      - name: Resolve version
+        id: meta
+        run: |
+          VERSION="$(tr -d '[:space:]' < build-macos-x86_64-static/generated/VERSION)"
+          [[ -n "$VERSION" ]] || VERSION="dev"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload static
+        uses: actions/upload-artifact@v7
+        with:
+          name: bennugd64-${{ steps.meta.outputs.version }}-macos-x86_64-static
+          path: dist/macos-x86_64-static/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload shared
+        uses: actions/upload-artifact@v7
+        with:
+          name: bennugd64-${{ steps.meta.outputs.version }}-macos-x86_64-shared
+          path: dist/macos-x86_64-shared/
+          if-no-files-found: error
+          retention-days: 14
+
   build-wasm:
     name: web-wasm32-static
     runs-on: ubuntu-22.04
@@ -726,7 +803,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [build, build-macos, build-wasm, build-wasi, build-android, build-switch, build-dreamcast, build-psp, build-ps2, build-pandora, build-wii]
+    needs: [build, build-macos, build-macos-osxcross, build-wasm, build-wasi, build-android, build-switch, build-dreamcast, build-psp, build-ps2, build-pandora, build-wii]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -791,7 +868,7 @@ jobs:
             - **wii-powerpc-static** — homebrew DOL (`apps/bennugd64/boot.dol`); copy the folder to the SD card and launch from the Homebrew Channel
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-            Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, PS2, Pandora, and Wii CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), and `docker/Dockerfile.wii` (`devkitpro/devkitppc`).
+            Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, PS2, Pandora, Wii, and macOS x86_64 CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), `docker/Dockerfile.wii` (`devkitpro/devkitppc`), and `docker/Dockerfile.macos` (osxcross). Native `macos-arm64` still builds on `macos-latest`.
             OS graphics/audio libraries may still be required at runtime.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

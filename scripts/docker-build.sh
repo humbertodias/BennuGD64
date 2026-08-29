@@ -12,6 +12,8 @@
 #   bash scripts/docker-build.sh ps2
 #   bash scripts/docker-build.sh pandora
 #   bash scripts/docker-build.sh wii
+#   bash scripts/docker-build.sh macos
+#   bash scripts/docker-build.sh macos arm64
 #   bash scripts/docker-build.sh linux shell
 set -euo pipefail
 
@@ -26,7 +28,8 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 psp [shell]
        $0 ps2 [shell]
        $0 pandora [shell]
-       $0 wii [shell]"
+       $0 wii [shell]
+       $0 macos [static|shared|arm64|shell]"
 
 if [[ -f "${ROOT}/versions.env" ]]; then
   set -a
@@ -48,7 +51,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|ps2|pandora|wii) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|ps2|pandora|wii|macos) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -113,6 +116,15 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
       -t bennugd64-wii \
       -f docker/Dockerfile.wii \
       docker/
+  elif [[ "${PLATFORM}" == "macos" ]]; then
+    docker build \
+      --build-arg MACOSX_SDK="${MACOSX_SDK:-15.5}" \
+      --build-arg MACOSX_SDK_SHA256="${MACOSX_SDK_SHA256:-c15cf0f3f17d714d1aa5a642da8e118db53d79429eb015771ba816aa7c6c1cbd}" \
+      --build-arg OSX_VERSION_MIN="${OSXCROSS_OSX_VERSION_MIN:-11.0}" \
+      --build-arg CMAKE_VERSION="${CMAKE_VERSION:-3.28.6}" \
+      -t bennugd64-macos \
+      -f docker/Dockerfile.macos \
+      docker/
   else
     docker build -t "${IMAGE}" -f "docker/Dockerfile.${PLATFORM}" docker/
   fi
@@ -162,6 +174,8 @@ reuse_fetchcontent_src() {
     "${ROOT}/build-linux-shared/_deps/${name}" \
     "${ROOT}/build-windows-static/_deps/${name}" \
     "${ROOT}/build-windows-shared/_deps/${name}" \
+    "${ROOT}/build-macos-x86_64-static/_deps/${name}" \
+    "${ROOT}/build-macos-arm64-static/_deps/${name}" \
     "${ROOT}/build-android-arm64/_deps/${name}" \
     "${ROOT}/build-host/_deps/${name}" \
     "${ROOT}/build-psp-host/_deps/${name}" \
@@ -940,6 +954,58 @@ if [[ "${PLATFORM}" == "wii" ]]; then
       test -s "${STAGE}/apps/bennugd64/boot.dol"
       test -s "${STAGE}/apps/bennugd64/main.dcb"
       test -s "${STAGE}/bgdi.elf"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "macos" ]]; then
+  MACOS_ARCH="${MACOS_ARCH:-x86_64}"
+  LINKAGE="static"
+  case "${SECOND}" in
+    static|shared) LINKAGE="${SECOND}" ;;
+    arm64|aarch64) MACOS_ARCH="arm64" ;;
+    x86_64|amd64) MACOS_ARCH="x86_64" ;;
+    *)
+      echo "${USAGE}" >&2
+      exit 1
+      ;;
+  esac
+  PRESET="macos-${MACOS_ARCH}-${LINKAGE}"
+  BUILD_DIR="/src/build-macos-${MACOS_ARCH}-${LINKAGE}"
+  STAGE="/src/dist/macos-${MACOS_ARCH}-${LINKAGE}"
+  echo "image: ${IMAGE}"
+  echo "preset: ${PRESET}"
+  echo "version: ${BENNUGD_VERSION}"
+  # Failed configure leaves Darwin binutils unset in the cache.
+  rm -f "${ROOT}/${BUILD_DIR#/src/}/CMakeCache.txt"
+  rm -rf "${ROOT}/${BUILD_DIR#/src/}/CMakeFiles"
+  scrub_fetchcontent "${ROOT}/${BUILD_DIR#/src/}/_deps"
+  docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    -e PRESET="${PRESET}" \
+    -e BUILD_DIR="${BUILD_DIR}" \
+    -e STAGE="${STAGE}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      if command -v osxcross-conf >/dev/null; then
+        eval "$(osxcross-conf)"
+      fi
+      cmake --preset "${PRESET}" \
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}" \
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
+        -DBENNUGD_SDL3_REF="${SDL3_REF}" \
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      cmake --build --preset "${PRESET}"
+      cmake --install "${BUILD_DIR}" --prefix "${STAGE}"
     '
   exit 0
 fi

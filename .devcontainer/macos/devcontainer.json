@@ -1,0 +1,22 @@
+{
+  "name": "BennuGD64 macOS (osxcross)",
+  "build": {
+    "dockerfile": "../../docker/Dockerfile.macos",
+    "context": "../../docker"
+  },
+  "workspaceFolder": "/src",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+      ]
+    },
+    "zed": {
+      "extensions": ["dockerfile", "make"]
+    }
+  }
+}

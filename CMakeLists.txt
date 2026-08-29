@@ -39,6 +39,12 @@ elseif (MSVC)
   add_compile_options(/utf-8)
 endif()
 
+# osxcross: SDL @available needs compiler-rt. Do not link_libraries() globally —
+# SDL3's export(SDL3-static) would then require this target in an export set.
+if (APPLE AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND NOT BENNUGD_OSXCROSS_COMPILER_RT)
+  add_library (bennugd_osxcross_rt STATIC cmake/osxcross_isplatformversion.c)
+endif ()
+
 option (STATIC_MODULES "Build modules as static libraries linked into bgdi" ON)
 option (INTERPRETER_ONLY "Generate only the bgdi executable" OFF)
 option (COMPILER_ONLY "Generate only the bgdc executable" OFF)

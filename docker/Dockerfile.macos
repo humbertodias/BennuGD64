@@ -1,0 +1,89 @@
+# osxcross → Darwin (Intel / Apple Silicon). Linux host only.
+# Apple’s SDK is not in this repo: the image build downloads MacOSX*.sdk.tar.xz
+# (Xcode license: https://www.apple.com/legal/sla/docs/xcode.pdf).
+#
+#   bash scripts/docker-build.sh macos
+#   bash scripts/docker-build.sh macos arm64
+#
+# SDL3 is FetchContent (not osxcross-macports libsdl2).
+# MacOSX 15.x libc++ needs Clang 16+; Ubuntu 22.04’s Clang 14 fails with
+#   bad_alloc : public exception
+
+FROM ubuntu:24.04
+
+ARG MACOSX_SDK=15.5
+ARG MACOSX_SDK_SHA256=c15cf0f3f17d714d1aa5a642da8e118db53d79429eb015771ba816aa7c6c1cbd
+ARG OSX_VERSION_MIN=11.0
+ARG CMAKE_VERSION=3.28.6
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=macos \
+    OSXCROSS_ROOT=/opt/osxcross \
+    OSX_VERSION_MIN=${OSX_VERSION_MIN} \
+    MACOSX_DEPLOYMENT_TARGET=${OSX_VERSION_MIN} \
+    CC=clang-18 \
+    CXX=clang++-18 \
+    PATH=/usr/lib/llvm-18/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        clang-18 \
+        cmake \
+        cpio \
+        curl \
+        g++ \
+        git \
+        libbz2-dev \
+        libssl-dev \
+        libxml2-dev \
+        liblzma-dev \
+        lld-18 \
+        llvm-18 \
+        make \
+        ninja-build \
+        patch \
+        pkg-config \
+        python3 \
+        uuid-dev \
+        wget \
+        xz-utils \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -sfn /usr/bin/clang-18 /usr/local/bin/clang \
+    && ln -sfn /usr/bin/clang++-18 /usr/local/bin/clang++ \
+    && git config --system --add safe.directory '*'
+
+WORKDIR /opt
+RUN git clone --depth 1 https://github.com/tpoechtrager/osxcross.git osxcross \
+    && mkdir -p /opt/osxcross/tarballs \
+    && curl -fsSL -o /opt/osxcross/tarballs/MacOSX${MACOSX_SDK}.sdk.tar.xz \
+         "https://github.com/joseluisq/macosx-sdks/releases/download/${MACOSX_SDK}/MacOSX${MACOSX_SDK}.sdk.tar.xz" \
+    && echo "${MACOSX_SDK_SHA256}  /opt/osxcross/tarballs/MacOSX${MACOSX_SDK}.sdk.tar.xz" | sha256sum -c - \
+    && cd /opt/osxcross \
+    && UNATTENDED=1 OSX_VERSION_MIN="${OSX_VERSION_MIN}" \
+         CC=clang-18 CXX=clang++-18 ./build.sh \
+    && rm -rf /opt/osxcross/build /opt/osxcross/tarballs /opt/osxcross/.git \
+    && SDK_DIR="$(echo /opt/osxcross/target/SDK/MacOSX*.sdk | awk '{print $1}')" \
+    && test -d "${SDK_DIR}" \
+    && ln -sfn "${SDK_DIR}" /opt/osxcross/target/SDK/MacOSX.sdk
+
+ENV SDKROOT=/opt/osxcross/target/SDK/MacOSX.sdk \
+    PATH=/opt/osxcross/target/bin:/usr/lib/llvm-18/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# SDL3 3.4 needs CMake 3.24+; keep a current Kitware binary.
+ARG CMAKE_VERSION
+RUN arch="$(uname -m)" \
+    && case "${arch}" in \
+         x86_64) carch=x86_64 ;; \
+         aarch64|arm64) carch=aarch64 ;; \
+         *) echo "unsupported cmake host arch: ${arch}" >&2; exit 1 ;; \
+       esac \
+    && curl -fsSL -o /tmp/cmake.tgz \
+         "https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-linux-${carch}.tar.gz" \
+    && tar -xzf /tmp/cmake.tgz -C /opt \
+    && rm /tmp/cmake.tgz \
+    && ln -sfn /opt/cmake-${CMAKE_VERSION}-linux-${carch}/bin/* /usr/local/bin/ \
+    && cmake --version
+
+WORKDIR /src
+CMD ["bash"]

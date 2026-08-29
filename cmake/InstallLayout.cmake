@@ -127,7 +127,7 @@ set (BENNUGD_PACKAGE_NAME
 
 if (APPLE)
   set (BENNUGD_PACKAGE_NOTE
-    "Downloads: ./run-bgdi or xattr -cr . then ./bgdi.  ${BENNUGD_PACKAGE_NOTE}")
+    "Downloads: xattr -cr . then ./bgdi.  ${BENNUGD_PACKAGE_NOTE}")
 endif ()
 
 configure_file (
@@ -185,12 +185,6 @@ install (FILES
   ${CMAKE_BINARY_DIR}/BUILD_INFO.txt
   DESTINATION .
 )
-
-if (APPLE AND TARGET bgdi)
-  install (PROGRAMS ${CMAKE_SOURCE_DIR}/cmake/macos-run-bgdi.sh
-    DESTINATION .
-    RENAME run-bgdi)
-endif ()
 
 if (MINGW)
   install (CODE [[

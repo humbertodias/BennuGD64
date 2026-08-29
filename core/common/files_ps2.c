@@ -229,9 +229,24 @@ static FILE * fopen_cdrom0( const char * name, const char * mode )
         fp = fopen( path, mode );
         if ( fp )
             return fp;
+        snprintf( path, sizeof( path ), "cdrom0:\\\\%s;1", body );
+        fp = fopen( path, mode );
+        if ( fp )
+            return fp;
+        snprintf( path, sizeof( path ), "cdrom0:%s;1", body );
+        fp = fopen( path, mode );
+        if ( fp )
+            return fp;
     }
     snprintf( path, sizeof( path ), "cdrom0:\\%s", body );
-    return fopen( path, mode );
+    fp = fopen( path, mode );
+    if ( fp )
+        return fp;
+    snprintf( path, sizeof( path ), "cdrom0:\\\\%s", body );
+    fp = fopen( path, mode );
+    if ( fp )
+        return fp;
+    return fopen_cdfs( name, mode );
 }
 
 static size_t patch_sorr_system( const char * in, size_t in_len, char * out, size_t out_cap )

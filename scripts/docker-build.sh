@@ -733,9 +733,43 @@ if [[ "${PLATFORM}" == "ps2" ]]; then
       cp /src/web/demo/*.dcb "${STAGE}/"
       cp /src/web/demo/hello.dcb "${STAGE}/main.dcb"
       cp /src/ps2/SYSTEM.CNF "${STAGE}/"
+      ISODIR=/src/build-ps2-iso
+      rm -rf "${ISODIR}"
+      mkdir -p "${ISODIR}"
+      cp "${STAGE}/SYSTEM.CNF" "${ISODIR}/SYSTEM.CNF"
+      cp "${STAGE}/bgdi.elf" "${ISODIR}/BGDI.ELF"
+      cp "${STAGE}/main.dcb" "${ISODIR}/MAIN.DCB"
+      MKISO=""
+      for cand in xorrisofs mkisofs genisoimage; do
+        if command -v "${cand}" >/dev/null 2>&1; then
+          MKISO="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${MKISO}" ]] && command -v xorriso >/dev/null 2>&1; then
+        MKISO="xorriso -as mkisofs"
+      fi
+      test -n "${MKISO}"
+      # ISO 9660 level 1 + XA: SYSTEM.CNF / BGDI.ELF / MAIN.DCB. PCSX2 File→Open the .iso.
+      if ! ${MKISO} -o "${STAGE}/bennugd64.iso" \
+        -iso-level 1 \
+        -xa \
+        -sysid PLAYSTATION \
+        -V BENNUGD64 \
+        -A BennuGD64 \
+        "${ISODIR}"
+      then
+        ${MKISO} -o "${STAGE}/bennugd64.iso" \
+          -iso-level 1 \
+          -sysid PLAYSTATION \
+          -V BENNUGD64 \
+          -A BennuGD64 \
+          "${ISODIR}"
+      fi
       test -s "${STAGE}/bgdi.elf"
       test -s "${STAGE}/main.dcb"
       test -s "${STAGE}/SYSTEM.CNF"
+      test -s "${STAGE}/bennugd64.iso"
     '
   exit 0
 fi

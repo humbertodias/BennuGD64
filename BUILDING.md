@@ -27,7 +27,7 @@ bash scripts/docker-build.sh windows shared
 | `switch` | `docker/Dockerfile.switch` | `dist/switch-aarch64-static/` (`bennugd64.nro`) |
 | `dreamcast` | `docker/Dockerfile.dreamcast` | `dist/dreamcast-sh4-static/` (`bennugd64.cdi`) |
 | `psp` | `docker/Dockerfile.psp` | `dist/psp-mips-static/` (`EBOOT.PBP`) |
-| `ps2` | `docker/Dockerfile.ps2` | `dist/ps2-mips-static/` (`bgdi.elf`) |
+| `ps2` | `docker/Dockerfile.ps2` | `dist/ps2-mips-static/` (`bgdi.elf`, `bennugd64.iso`) |
 | `pandora` | `docker/Dockerfile.pandora` | `dist/pandora-arm-static/` (`bennugd64.pnd`) |
 | `wii` | `docker/Dockerfile.wii` | `dist/wii-powerpc-static/` (`apps/bennugd64/boot.dol`) |
 | `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
@@ -285,15 +285,20 @@ The toolchain image is [`ps2dev/ps2dev`](https://hub.docker.com/r/ps2dev/ps2dev)
 bash scripts/docker-build.sh ps2
 ```
 
-That configures native `bgdc` (`ps2-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi.elf` with ps2dev (`ps2-mips`), and stages `dist/ps2-mips-static/` (`bgdi.elf`, `main.dcb`, `SYSTEM.CNF`).
+That configures native `bgdc` (`ps2-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi.elf` with ps2dev (`ps2-mips`), and stages `dist/ps2-mips-static/` (`bgdi.elf`, `main.dcb`, `SYSTEM.CNF`, `bennugd64.iso`).
 
-**Where `main.dcb` goes:** always in the **same folder as `bgdi.elf`**. The Docker build already copies `hello.dcb` there as `main.dcb`.
+**Where `main.dcb` goes:** always in the **same folder as `bgdi.elf`**. The Docker build already copies `hello.dcb` there as `main.dcb`. The ISO has the same files as ISO 9660 `MAIN.DCB` / `BGDI.ELF`.
+
+PCSX2 (ISO / cdrom):
+
+1. **File → Open** `dist/ps2-mips-static/bennugd64.iso` (or put the ISO in the disc tray and boot it).
+2. The interpreter keeps CDVD mounted (no IOP reset), loads `cdfs:` and reads `cdrom0:\MAIN.DCB;1`.
 
 PCSX2 (Host Filesystem — no USB image needed):
 
 1. Leave `bgdi.elf` and `main.dcb` together in `dist/ps2-mips-static/` (do not open a copy of the ELF from another directory).
 2. **Settings → Emulation → Enable Host Filesystem.** The interpreter keeps `host:` mounted (no IOP reset) and loads `host:main.dcb`. Without HostFS, `host:` is empty and you get a message asking for `main.dcb`.
-3. **File → Open** `bgdi.elf` (boot the ELF, not an ISO).
+3. **File → Open** `bgdi.elf` (not the ISO).
 
 uLaunchELF on USB: copy the whole folder to the stick and run `bgdi.elf`; that path resets IOP and looks for `mass:/MAIN.DCB`. Put your game's `main.dcb` next to the ELF.
 
@@ -384,7 +389,7 @@ GitHub Actions (`.github/workflows/ci.yml`):
 - Nintendo Switch — `scripts/docker-build.sh switch` (`Dockerfile.switch`) → `bennugd64-<tag>-switch-aarch64-static.zip` (`bennugd64.nro`)
 - Sega Dreamcast — `scripts/docker-build.sh dreamcast` (`Dockerfile.dreamcast`) → `bennugd64-<tag>-dreamcast-sh4-static.zip` (`bennugd64.cdi`)
 - PlayStation Portable — `scripts/docker-build.sh psp` (`Dockerfile.psp`) → `bennugd64-<tag>-psp-mips-static.zip` (`EBOOT.PBP`)
-- PlayStation 2 — `scripts/docker-build.sh ps2` (`Dockerfile.ps2`) → `bennugd64-<tag>-ps2-mips-static.zip` (`bgdi.elf`)
+- PlayStation 2 — `scripts/docker-build.sh ps2` (`Dockerfile.ps2`) → `bennugd64-<tag>-ps2-mips-static.zip` (`bgdi.elf`, `bennugd64.iso`)
 - OpenPandora — `scripts/docker-build.sh pandora` (`Dockerfile.pandora`) → `bennugd64-<tag>-pandora-arm-static.zip` (`bennugd64.pnd`)
 - Nintendo Wii — `scripts/docker-build.sh wii` (`Dockerfile.wii`) → `bennugd64-<tag>-wii-powerpc-static.zip` (`apps/bennugd64/boot.dol`)
 - WASI — `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`

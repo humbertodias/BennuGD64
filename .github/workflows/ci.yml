@@ -786,7 +786,7 @@ jobs:
             - **switch-aarch64-static** — homebrew NRO (`bennugd64.nro`); copy to `sdmc:/switch/` or send with `nxlink`
             - **dreamcast-sh4-static** — homebrew CDI (`bennugd64.cdi`); burn or emulate, or send `bgdi.elf` with `dc-tool`
             - **psp-mips-static** — homebrew PBP (`EBOOT.PBP`); copy the folder to `ms0:/PSP/GAME/bennugd64/`
-            - **ps2-mips-static** — homebrew ELF (`bgdi.elf`); copy with `main.dcb` to USB (`mass:/`) or burn with `SYSTEM.CNF`
+            - **ps2-mips-static** — homebrew ELF (`bgdi.elf`) and ISO (`bennugd64.iso`); PCSX2 File→Open the ISO, USB `mass:/`, or HostFS File→Open ELF
             - **pandora-arm-static** — homebrew PND (`bennugd64.pnd`); copy to the Pandora SD card, or run `./bgdi` next to `main.dcb`
             - **wii-powerpc-static** — homebrew DOL (`apps/bennugd64/boot.dol`); copy the folder to the SD card and launch from the Homebrew Channel
 

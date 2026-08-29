@@ -7,7 +7,9 @@
  * and hangs on mass: — black screen. Disc boot must not load USB IRXs.
  *
  * PCSX2 File→Open with Host Filesystem keeps host: only if IOP is not reset.
- * Search host:main.dcb next to the ELF. USB boot still resets and uses mass:.
+ * Search host:main.dcb next to the ELF. ISO/cdrom boot keeps CDVD (no reset,
+ * no SDL/cdfs before the DCB). Homebrew mkisofs images are CDs — do not force
+ * DVD mode or fopen(cdrom0:\\MAIN.DCB;1) misses. USB boot still resets.
  */
 
 #include <stdio.h>
@@ -100,20 +102,62 @@ void bgdi_ps2_use_device_argv0( const char * dcb, char ** argv )
         argv[0] = host_elf;
 }
 
-static const char * const disc_dcbs[] = {
-    "cdrom0:\\MAIN.DCB;1",
-    "cdrom0:\\\\MAIN.DCB;1",
-    "cdrom0:MAIN.DCB;1",
-    "cdrom0:\\MAIN.DCB",
-    "cdrom0:/MAIN.DCB;1",
-    "cdfs:/MAIN.DCB",
-    "cdfs:/main.dcb",
+static const char * const disc_dcb_names[] = {
+    "MAIN.DCB",
+    "main.dcb",
+    "MAIN.DAT",
+    "HELLO.DCB",
     NULL
 };
+
+static const char * const disc_dcb_fmts[] = {
+    "cdrom0:\\%s;1",
+    "cdrom0:\\\\%s;1",
+    "cdrom0:%s;1",
+    "cdrom0:\\%s",
+    "cdrom0:/%s;1",
+    "cdrom:%s;1",
+    "cdfs:/%s",
+    "cdfs:%s",
+    NULL
+};
+
+static int ps2_ends_ci( const char * s, const char * suf )
+{
+    size_t n, m, i;
+    unsigned char a, b;
+
+    if ( !s || !suf )
+        return 0;
+    n = strlen( s );
+    m = strlen( suf );
+    if ( n < m )
+        return 0;
+    for ( i = 0 ; i < m ; i++ )
+    {
+        a = ( unsigned char ) s[ n - m + i ];
+        b = ( unsigned char ) suf[ i ];
+        if ( a >= 'A' && a <= 'Z' ) a = ( unsigned char )( a + 32 );
+        if ( b >= 'A' && b <= 'Z' ) b = ( unsigned char )( b + 32 );
+        if ( a != b )
+            return 0;
+    }
+    return 1;
+}
 
 static int ps2_is_disc_path( const char * path )
 {
     return path && ( strstr( path, "cdrom" ) || strstr( path, "cdfs" ) );
+}
+
+static int ps2_is_iso_name( const char * path )
+{
+    return ps2_ends_ci( path, ".iso" );
+}
+
+static int ps2_is_elf_name( const char * path )
+{
+    return ps2_ends_ci( path, ".elf" ) || ps2_ends_ci( path, ".elf;1" );
 }
 
 static int ps2_fopen_ok( const char * path )
@@ -127,6 +171,42 @@ static int ps2_fopen_ok( const char * path )
         return 0;
     fclose( fp );
     return 1;
+}
+
+static int ps2_disc_fopen_any( void )
+{
+    char path[ 256 ];
+    int i, j;
+
+    for ( i = 0 ; disc_dcb_names[ i ] ; i++ )
+    {
+        for ( j = 0 ; disc_dcb_fmts[ j ] ; j++ )
+        {
+            snprintf( path, sizeof( path ), disc_dcb_fmts[ j ], disc_dcb_names[ i ] );
+            if ( ps2_fopen_ok( path ) )
+                return 1;
+        }
+    }
+    return 0;
+}
+
+static void ps2_cdvd_mmode( int dvd )
+{
+    if ( dvd )
+        sceCdMmode( SCECdPS2DVD );
+    else
+        sceCdMmode( SCECdPS2CD );
+}
+
+static void ps2_cdvd_setup( int wait )
+{
+    int type;
+
+    sceCdInit( SCECdINoD );
+    type = sceCdGetDiskType();
+    /* A mkisofs homebrew ISO is a CD. Forcing DVD here makes fopen(cdrom0:) miss MAIN.DCB. */
+    ps2_cdvd_mmode( type == SCECdPS2DVD );
+    sceCdDiskReady( wait ? 0 : 1 );
 }
 
 static int ps2_is_usb_path( const char * path )
@@ -172,23 +252,21 @@ static int ps2_is_host_boot( const char * path )
 
 static int ps2_probe_disc( void )
 {
-    int i;
-    int ready;
     int type;
 
-    sceCdInit( SCECdINoD );
-    sceCdMmode( SCECdPS2DVD );
-    /* mode 1 = non-blocking. mode 0 waits forever when no disc (USB hang). */
-    ready = sceCdDiskReady( 1 );
+    ps2_cdvd_setup( 0 );
     type = sceCdGetDiskType();
     if ( type < 0x10 )
         return 0;
-    for ( i = 0 ; disc_dcbs[ i ] ; i++ )
-    {
-        if ( ps2_fopen_ok( disc_dcbs[ i ] ) )
-            return 1;
-    }
-    return 0;
+    if ( ps2_disc_fopen_any() )
+        return 1;
+    ps2_cdvd_mmode( 1 );
+    sceCdDiskReady( 1 );
+    if ( ps2_disc_fopen_any() )
+        return 1;
+    ps2_cdvd_mmode( 0 );
+    sceCdDiskReady( 1 );
+    return ps2_disc_fopen_any();
 }
 
 static void ps2_patches( void )
@@ -390,12 +468,26 @@ static int ps2_find_usb_dcb( char * found, size_t found_sz, int argc, char * arg
 
 static int ps2_find_disc_dcb( char * found, size_t found_sz, int argc, char * argv[] )
 {
-    int i;
+    char path[ 256 ];
+    int pass, i, j, n;
 
-    for ( i = 0 ; disc_dcbs[ i ] ; i++ )
+    for ( pass = 0 ; pass < 2 ; pass++ )
     {
-        if ( ps2_take_dcb( disc_dcbs[ i ], found, found_sz, argc, argv ) )
-            return 1;
+        ps2_cdvd_mmode( pass == 1 );
+        sceCdDiskReady( 0 );
+        for ( n = 0 ; n < 16 ; n++ )
+        {
+            for ( i = 0 ; disc_dcb_names[ i ] ; i++ )
+            {
+                for ( j = 0 ; disc_dcb_fmts[ j ] ; j++ )
+                {
+                    snprintf( path, sizeof( path ), disc_dcb_fmts[ j ], disc_dcb_names[ i ] );
+                    if ( ps2_take_dcb( path, found, found_sz, argc, argv ) )
+                        return 1;
+                }
+            }
+            sceCdSync( 0 );
+        }
     }
     return 0;
 }
@@ -497,7 +589,6 @@ char * bgdi_ps2_startup( int argc, char * argv[], int * standalone )
 {
     static char found[ 256 ];
     char cwd[ 256 ];
-    char extra[ 256 ];
     int disc;
     int host;
     const char * arg0;
@@ -506,7 +597,6 @@ char * bgdi_ps2_startup( int argc, char * argv[], int * standalone )
         *standalone = 1;
 
     arg0 = ( argc > 0 && argv && argv[0] ) ? argv[0] : "";
-    cwd[0] = '\0';
 
     SDL_SetMainReady();
     SifInitRpc( 0 );
@@ -514,39 +604,41 @@ char * bgdi_ps2_startup( int argc, char * argv[], int * standalone )
 
     disc = 0;
     host = 0;
-    getcwd( cwd, sizeof( cwd ) );
-    if ( ps2_is_disc_path( arg0 ) || ps2_is_disc_path( cwd ) )
+    cwd[0] = '\0';
+    /* getcwd(cdrom0:) hangs. Skip it when File→Open already named the ISO/ELF on disc. */
+    if ( !ps2_is_disc_path( arg0 ) && !ps2_is_iso_name( arg0 ) )
+        getcwd( cwd, sizeof( cwd ) );
+    if ( ps2_is_disc_path( arg0 ) || ps2_is_disc_path( cwd ) ||
+         ps2_is_iso_name( arg0 ) || ps2_is_iso_name( cwd ) )
         disc = 1;
-    else if ( ps2_is_host_boot( arg0 ) || ps2_is_host_boot( cwd ) )
+    else if ( ps2_is_host_device( arg0 ) ||
+              ( ps2_is_host_boot( arg0 ) && ps2_is_elf_name( arg0 ) ) )
         host = 1;
     else if ( !ps2_is_usb_path( arg0 ) && !ps2_is_usb_path( cwd ) )
         disc = ps2_probe_disc();
+    if ( !disc && !host && ( ps2_is_host_boot( arg0 ) || ps2_is_host_boot( cwd ) ) )
+        host = 1;
 
     if ( disc )
     {
+        /* No SDL / cdfs / memcard until MAIN.DCB opens — those unmount CDVD. */
         ps2_patches();
-        sceCdInit( SCECdINoD );
-        sceCdMmode( SCECdPS2DVD );
-        sceCdDiskReady( 0 );
-        ps2_splash( "BennuGD64: ISO boot", arg0[0] ? arg0 : cwd );
-        init_memcard_driver( 1 );
+        ps2_cdvd_setup( 1 );
 
-        if ( argc >= 2 )
+        if ( argc >= 2 && argv[1] && strstr( argv[1], ".dcb" ) )
         {
-            file_ps2_bind_root( argv[1] );
-            ps2_set_cwd_from( argv[1] );
-            ps2_add_search_paths( argv[1], argc, argv );
-            return NULL;
-        }
-        if ( cwd[0] )
-        {
-            ps2_join( extra, sizeof( extra ), cwd, "MAIN.DCB;1" );
-            if ( ps2_take_dcb( extra, found, sizeof( found ), argc, argv ) )
+            if ( ps2_take_dcb( argv[1], found, sizeof( found ), argc, argv ) )
+            {
+                init_memcard_driver( 1 );
                 return found;
+            }
         }
         if ( ps2_find_disc_dcb( found, sizeof( found ), argc, argv ) )
+        {
+            init_memcard_driver( 1 );
             return found;
-        ps2_add_search_paths( NULL, argc, argv );
+        }
+        ps2_add_search_paths( "cdrom0:/", argc, argv );
         ps2_missing_dcb( cwd[0] ? cwd : NULL, arg0 );
         return NULL;
     }

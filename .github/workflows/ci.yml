@@ -197,81 +197,6 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  build-macos:
-    name: macos-arm64
-    runs-on: macos-latest
-    timeout-minutes: 90
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Install macOS build dependencies
-        run: |
-          brew update
-          brew install cmake ninja pkg-config || true
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-static/_deps
-            build-shared/_deps
-          key: fetch-macos-${{ hashFiles('versions.env', 'CMakePresets.json') }}
-          restore-keys: |
-            fetch-macos-
-
-      - name: Build static
-        run: |
-          cmake --preset static \
-            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
-            -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
-            -DBENNUGD_SDL3_REF="${SDL3_REF}" \
-            -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
-          cmake --build --preset static
-          cmake --install build-static --prefix dist/macos-arm64-static
-          ctest --preset static --output-on-failure
-
-      - name: Build shared
-        run: |
-          cmake --preset shared \
-            -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}" \
-            -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}" \
-            -DBENNUGD_SDL3_REF="${SDL3_REF}" \
-            -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
-          cmake --build --preset shared
-          cmake --install build-shared --prefix dist/macos-arm64-shared
-          bash scripts/macos-codesign-dist.sh dist/macos-arm64-shared
-          ctest --preset shared --output-on-failure
-
-      - name: Resolve version
-        id: meta
-        run: |
-          VERSION="$(tr -d '[:space:]' < build-static/generated/VERSION)"
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload static
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-macos-arm64-static
-          path: dist/macos-arm64-static/
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload shared
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-macos-arm64-shared
-          path: dist/macos-arm64-shared/
-          if-no-files-found: error
-          retention-days: 14
-
   build-wasi:
     name: wasi-wasm32-static
     runs-on: ubuntu-22.04
@@ -334,7 +259,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [build, build-macos, build-wasi]
+    needs: [build, build-wasi]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:

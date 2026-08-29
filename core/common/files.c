@@ -537,8 +537,13 @@ int file_write( file * fp, void * buffer, int len )
 int file_size( file * fp )
 {
     long pos, size ;
+    int known ;
 
     if ( fp->type == F_XFILE ) return x_file[fp->n].size ;
+
+    known = file_native_size( fp );
+    if ( known >= 0 )
+        return known ;
 
     pos = file_pos( fp );
 #ifndef NO_ZLIB
@@ -612,7 +617,7 @@ int file_seek( file * fp, int pos, int where )
 #endif
 
     assert( fp->fp );
-    return fseek( fp->fp, pos, where ) ;
+    return file_native_seek( fp, pos, where ) ;
 }
 
 void file_rewind( file * fp )
@@ -869,6 +874,10 @@ char * getfullpath( char *rel_path )
     if ( !rel_path || !*rel_path ) return NULL;
 #ifdef _WIN32
     GetFullPathName( rel_path, sizeof( fullpath ), fullpath, NULL );
+#elif defined(TARGET_PS2)
+    /* ps2sdk newlib has no realpath (mass:/ host:/ cdrom0: are not POSIX). */
+    strncpy( fullpath, rel_path, sizeof( fullpath ) - 1 );
+    fullpath[ sizeof( fullpath ) - 1 ] = '\0';
 #else
     if ( !realpath( rel_path, fullpath ) || !*fullpath )
     {

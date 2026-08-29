@@ -30,8 +30,8 @@ if (NINTENDO_WII OR PLATFORM_WII)
 endif ()
 
 # Static archives must be PIC so they can later link into .so/.dylib modules.
-# Switch/Dreamcast/PSP/Pandora/Wii homebrew uses the toolchain PIE/KOS/pspdev/libogc flags instead.
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
+# Switch/Dreamcast/PSP/PS2/Pandora/Wii homebrew uses the toolchain PIE/KOS/pspdev/libogc flags instead.
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -53,6 +53,41 @@ set (SKIP_INSTALL_HEADERS ON CACHE BOOL "" FORCE)
 set (SKIP_INSTALL_FILES ON CACHE BOOL "" FORCE)
 
 # --- zlib ---
+if (PLATFORM_PS2 OR PS2)
+  # ps2sdk-ports already has zlib/libpng on the EE include path. FetchContent
+  # 1.3.1 plus ports zlib.h makes libpng error ZLIB_VERNUM != PNG_ZLIB_VERNUM.
+  set (_ps2_ports "")
+  if (DEFINED ENV{PS2SDK} AND IS_DIRECTORY "$ENV{PS2SDK}/ports")
+    set (_ps2_ports "$ENV{PS2SDK}/ports")
+  elseif (DEFINED PS2DEV AND IS_DIRECTORY "${PS2DEV}/ps2sdk/ports")
+    set (_ps2_ports "${PS2DEV}/ps2sdk/ports")
+  endif ()
+  if (_ps2_ports STREQUAL "")
+    message (FATAL_ERROR "ps2sdk ports (zlib/libpng) not found; set PS2SDK")
+  endif ()
+  find_path (ZLIB_INCLUDE_DIR zlib.h HINTS "${_ps2_ports}/include" NO_DEFAULT_PATH REQUIRED)
+  find_library (ZLIB_LIBRARY z HINTS "${_ps2_ports}/lib" NO_DEFAULT_PATH REQUIRED)
+  find_path (PNG_PNG_INCLUDE_DIR png.h HINTS "${_ps2_ports}/include" NO_DEFAULT_PATH REQUIRED)
+  find_library (PNG_LIBRARY png HINTS "${_ps2_ports}/lib" NO_DEFAULT_PATH REQUIRED)
+  if (NOT TARGET ZLIB::ZLIB)
+    add_library (ZLIB::ZLIB STATIC IMPORTED GLOBAL)
+    set_target_properties (ZLIB::ZLIB PROPERTIES
+      IMPORTED_LOCATION "${ZLIB_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE_DIR}"
+    )
+  endif ()
+  set (ZLIB_INCLUDE_DIRS "${ZLIB_INCLUDE_DIR}")
+  set (ZLIB_FOUND TRUE)
+  if (NOT TARGET PNG::PNG)
+    add_library (PNG::PNG STATIC IMPORTED GLOBAL)
+    set_target_properties (PNG::PNG PROPERTIES
+      IMPORTED_LOCATION "${PNG_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${PNG_PNG_INCLUDE_DIR}"
+      INTERFACE_LINK_LIBRARIES ZLIB::ZLIB
+    )
+  endif ()
+  message (STATUS "PS2: zlib/libpng from ${_ps2_ports}")
+else ()
 set (ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_Declare (
   zlib
@@ -89,6 +124,7 @@ file (WRITE "${CMAKE_BINARY_DIR}/cmake-overrides/FindZLIB.cmake"
 endif ()
 ")
 list (PREPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/cmake-overrides")
+endif ()
 
 if (COMPILER_ONLY)
   set (BUILD_SHARED_LIBS "${_bennugd_saved_shared}")
@@ -97,6 +133,7 @@ if (COMPILER_ONLY)
 endif ()
 
 # --- libpng ---
+if (NOT PLATFORM_PS2 AND NOT PS2)
 set (PNG_SHARED OFF CACHE BOOL "" FORCE)
 set (PNG_STATIC ON CACHE BOOL "" FORCE)
 set (PNG_FRAMEWORK OFF CACHE BOOL "" FORCE)
@@ -120,6 +157,7 @@ if (NOT TARGET PNG::PNG)
   else ()
     message (FATAL_ERROR "Bundled libpng did not create png_static or png")
   endif ()
+endif ()
 endif ()
 
 # --- SDL3 ---
@@ -160,6 +198,22 @@ if (PLATFORM_DREAMCAST OR DREAMCAST)
   set (SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
   set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
   set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
+endif ()
+if (PLATFORM_PS2 OR PS2)
+  set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+  set (SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
+  # try_compile is STATIC_LIBRARY (EE CRT cannot link a dummy exe), so SDL's
+  # gcc-atomic / libc checks succeed at compile and fail at bgdi link.
+  # R5900 has no __sync_* libgcc helpers; SDL has a DIntr/EIntr spinlock.
+  set (SDL_GCC_ATOMICS OFF CACHE BOOL "" FORCE)
+  set (HAVE_GCC_ATOMICS OFF CACHE BOOL "" FORCE)
+  set (HAVE_GCC_SYNC_LOCK_TEST_AND_SET OFF CACHE BOOL "" FORCE)
+  set (HAVE_FDATASYNC OFF CACHE BOOL "" FORCE)
+  set (HAVE_GETHOSTNAME OFF CACHE BOOL "" FORCE)
 endif ()
 if (PLATFORM_PANDORA OR OPENPANDORA)
   # Ångström sysroot is glibc 2.9 + X11 + ALSA; no Wayland/GLES/Pulse.
@@ -206,6 +260,65 @@ FetchContent_GetProperties (sdl3)
 if (NOT sdl3_POPULATED)
   FetchContent_Populate (sdl3)
   add_subdirectory (${sdl3_SOURCE_DIR} ${sdl3_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif ()
+
+if (PLATFORM_PS2 OR PS2)
+  # ps2dev gcc defines _MIPS_ARCH_R5900, not PS2/__PS2__/_EE. Without those,
+  # SDL_PLATFORM_PS2 is off, gcc __atomic_* builtins stay on, and spinlocks
+  # fall through to CreateMutex-from-TryLock ("Terrible terrible damage").
+  if (TARGET SDL3-static)
+    target_compile_definitions (SDL3-static PRIVATE PS2=1 __PS2__=1 _EE=1)
+  endif ()
+  # GCC 15 still emits __atomic_* libcalls via HAVE_ATOMIC_LOAD_N even when
+  # HAVE_GCC_ATOMICS is off. Force the EMULATE_CAS + PS2 spinlock path.
+  set (_ps2_atomic "${sdl3_SOURCE_DIR}/src/atomic/SDL_atomic.c")
+  if (EXISTS "${_ps2_atomic}")
+    file (READ "${_ps2_atomic}" _ps2_atomic_txt)
+    if (_ps2_atomic_txt MATCHES "#if \\(defined\\(__GNUC__\\) && \\(__GNUC__ >= 5\\)\\) \\|\\| \\(defined\\(__clang__\\) && defined\\(HAVE_GCC_ATOMICS\\)\\)")
+      string (REPLACE
+        "#if (defined(__GNUC__) && (__GNUC__ >= 5)) || (defined(__clang__) && defined(HAVE_GCC_ATOMICS))"
+        "#if !defined(SDL_PLATFORM_PS2) && !defined(_EE) && !defined(_MIPS_ARCH_R5900) && ((defined(__GNUC__) && (__GNUC__ >= 5)) || (defined(__clang__) && defined(HAVE_GCC_ATOMICS)))"
+        _ps2_atomic_txt "${_ps2_atomic_txt}")
+      file (WRITE "${_ps2_atomic}" "${_ps2_atomic_txt}")
+    endif ()
+    file (READ "${_ps2_atomic}" _ps2_atomic_txt)
+    if (_ps2_atomic_txt MATCHES "#if SDL_HAS_BUILTIN\\(__atomic_load_n\\)")
+      string (REPLACE
+        "#if SDL_HAS_BUILTIN(__atomic_load_n)\n#define HAVE_ATOMIC_LOAD_N 1\n#endif\n#if SDL_HAS_BUILTIN(__atomic_exchange_n)\n#define HAVE_ATOMIC_EXCHANGE_N 1\n#endif"
+        "#if !defined(SDL_PLATFORM_PS2) && !defined(_EE) && !defined(_MIPS_ARCH_R5900) && SDL_HAS_BUILTIN(__atomic_load_n)\n#define HAVE_ATOMIC_LOAD_N 1\n#endif\n#if !defined(SDL_PLATFORM_PS2) && !defined(_EE) && !defined(_MIPS_ARCH_R5900) && SDL_HAS_BUILTIN(__atomic_exchange_n)\n#define HAVE_ATOMIC_EXCHANGE_N 1\n#endif"
+        _ps2_atomic_txt "${_ps2_atomic_txt}")
+      file (WRITE "${_ps2_atomic}" "${_ps2_atomic_txt}")
+    endif ()
+  endif ()
+  # R5900 has no working __sync_lock_test_and_set; that path is taken before
+  # the PS2 DIntr spinlock and livelocks inside SDL_SetHint / SDL_Init.
+  set (_ps2_spin "${sdl3_SOURCE_DIR}/src/atomic/SDL_spinlock.c")
+  if (EXISTS "${_ps2_spin}")
+    file (READ "${_ps2_spin}" _ps2_spin_txt)
+    if (_ps2_spin_txt MATCHES "#if defined\\(HAVE_GCC_ATOMICS\\) \\|\\| defined\\(HAVE_GCC_SYNC_LOCK_TEST_AND_SET\\)")
+      string (REPLACE
+        "#if defined(HAVE_GCC_ATOMICS) || defined(HAVE_GCC_SYNC_LOCK_TEST_AND_SET)"
+        "#if !defined(PS2) && !defined(SDL_PLATFORM_PS2) && !defined(_EE) && !defined(_MIPS_ARCH_R5900) && !defined(__PS2__) && (defined(HAVE_GCC_ATOMICS) || defined(HAVE_GCC_SYNC_LOCK_TEST_AND_SET))"
+        _ps2_spin_txt "${_ps2_spin_txt}")
+      file (WRITE "${_ps2_spin}" "${_ps2_spin_txt}")
+    endif ()
+    file (READ "${_ps2_spin}" _ps2_spin_txt)
+    if (_ps2_spin_txt MATCHES "#elif defined\\(PS2\\)\n    uint32_t oldintr;")
+      string (REPLACE
+        "#elif defined(PS2)\n    uint32_t oldintr;"
+        "#elif defined(PS2) || defined(SDL_PLATFORM_PS2) || defined(__PS2__) || defined(_EE) || defined(_MIPS_ARCH_R5900)\n    uint32_t oldintr;"
+        _ps2_spin_txt "${_ps2_spin_txt}")
+      file (WRITE "${_ps2_spin}" "${_ps2_spin_txt}")
+    endif ()
+    file (READ "${_ps2_spin}" _ps2_spin_txt)
+    if (_ps2_spin_txt MATCHES "#ifdef PS2\n#include <kernel.h>")
+      string (REPLACE
+        "#ifdef PS2\n#include <kernel.h>"
+        "#if defined(PS2) || defined(SDL_PLATFORM_PS2) || defined(__PS2__) || defined(_EE) || defined(_MIPS_ARCH_R5900)\n#include <kernel.h>"
+        _ps2_spin_txt "${_ps2_spin_txt}")
+      file (WRITE "${_ps2_spin}" "${_ps2_spin_txt}")
+    endif ()
+  endif ()
 endif ()
 
 if (PLATFORM_DREAMCAST OR DREAMCAST)

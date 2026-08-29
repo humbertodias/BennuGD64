@@ -48,6 +48,9 @@
 #ifdef TARGET_WII
 #include "mod_sound_wii.h"
 #endif
+#ifdef TARGET_PS2
+#include "mod_sound_ps2.h"
+#endif
 
 /* --------------------------------------------------------------------------- */
 
@@ -217,6 +220,15 @@ static int sound_init()
 
     if ( audio_initialized ) return 0;
 
+#ifdef TARGET_PS2
+    if ( modsound_ps2_skip_audio() )
+    {
+        audio_initialized = 1;
+        return 0;
+    }
+    modsound_ps2_prepare();
+#endif
+
     if ( !MIX_Init() )
     {
         fprintf( stderr, "[SOUND] No se pudo inicializar el audio: %s\n", SDL_GetError() );
@@ -235,6 +247,9 @@ static int sound_init()
 
 #ifdef TARGET_WII
     modsound_wii_adjust_rate( &audio_rate );
+#endif
+#ifdef TARGET_PS2
+    modsound_ps2_adjust_rate( &audio_rate );
 #endif
 
     audio_channels = GLODWORD( mod_sound, SOUND_MODE ) + 1;
@@ -367,14 +382,24 @@ static int load_song( const char * filename )
 
     if ( !audio_initialized && sound_init() ) return ( 0 );
 
+#ifdef TARGET_PS2
+    if ( modsound_ps2_skip_song() )
+        return 1;
+#endif
+
     if ( !( fp = file_open( filename, "rb0" ) ) ) return ( 0 );
 
+#ifdef TARGET_PS2
+    io = modsound_ps2_slurp_file( fp );
+    if ( !io ) return ( 0 );
+#else
     io = SDL_IOFromBGDFP( fp );
     if ( !io )
     {
         file_close( fp );
         return ( 0 );
     }
+#endif
 
     /* closeio=true: IOStream close callback closes the Bennu file */
     if ( !( music = MIX_LoadAudio_IO( mixer, io, false, true ) ) )
@@ -385,7 +410,6 @@ static int load_song( const char * filename )
 
     sa = sound_audio_new( music );
     if ( !sa ) return ( 0 );
-
     return bgd_handle_put( sa );
 }
 
@@ -670,14 +694,24 @@ static int load_wav( const char * filename )
 
     if ( !audio_initialized && sound_init() ) return ( 0 );
 
+#ifdef TARGET_PS2
+    if ( modsound_ps2_skip_audio() )
+        return 1;
+#endif
+
     if ( !( fp = file_open( filename, "rb0" ) ) ) return ( 0 );
 
+#ifdef TARGET_PS2
+    io = modsound_ps2_slurp_file( fp );
+    if ( !io ) return ( 0 );
+#else
     io = SDL_IOFromBGDFP( fp );
     if ( !io )
     {
         file_close( fp );
         return ( 0 );
     }
+#endif
 
     if ( !( music = MIX_LoadAudio_IO( mixer, io, true, true ) ) )
     {
@@ -687,7 +721,6 @@ static int load_wav( const char * filename )
 
     sa = sound_audio_new( music );
     if ( !sa ) return ( 0 );
-
     return bgd_handle_put( sa );
 }
 
@@ -1963,7 +1996,9 @@ static int modsound_close( INSTANCE * my, intptr_t * params )
 
 void  __bgdexport( mod_sound, module_initialize )()
 {
-#ifndef TARGET_DINGUX_A320
+#ifdef TARGET_PS2
+    return;
+#elif !defined(TARGET_DINGUX_A320)
     if ( !SDL_WasInit( SDL_INIT_AUDIO ) ) SDL_InitSubSystem( SDL_INIT_AUDIO );
 #endif
 }
@@ -1972,7 +2007,9 @@ void  __bgdexport( mod_sound, module_initialize )()
 
 void __bgdexport( mod_sound, module_finalize )()
 {
-#ifndef TARGET_DINGUX_A320
+#ifdef TARGET_DINGUX_A320
+    return;
+#else
     sound_close();
     if ( SDL_WasInit( SDL_INIT_AUDIO ) ) SDL_QuitSubSystem( SDL_INIT_AUDIO );
 #endif

@@ -29,6 +29,9 @@
 /* --------------------------------------------------------------------------- */
 
 #include "mod_map.h"
+#ifdef TARGET_PS2
+#include "file_fpg_ps2.h"
+#endif
 
 /* --------------------------------------------------------------------------- */
 
@@ -98,6 +101,21 @@ static int gr_read_lib( file * fp )
 
         /* Cabecera del gráfico */
 
+#ifdef TARGET_PS2
+        if ( gr_fpg_ps2_too_big( chunk.width, chunk.height, bpp ) )
+            gr = gr_fpg_ps2_header( chunk.code, chunk.width, chunk.height, bpp ) ;
+        else
+        {
+            gr = bitmap_new( chunk.code, chunk.width, chunk.height, bpp ) ;
+            if ( !gr )
+                gr = gr_fpg_ps2_header( chunk.code, chunk.width, chunk.height, bpp ) ;
+        }
+        if ( !gr )
+        {
+            gr_fpg_ps2_skip_rest( fp, chunk.width, chunk.height, bpp, chunk.flags ) ;
+            continue ;
+        }
+#else
         gr = bitmap_new( chunk.code, chunk.width, chunk.height, bpp ) ;
         if ( !gr )
         {
@@ -105,10 +123,15 @@ static int gr_read_lib( file * fp )
             if ( bpp == 8 ) pal_destroy( pal ) ; // Elimino la instancia inicial
             return -1 ;
         }
+#endif
         memcpy( gr->name, chunk.name, 32 ) ;
         gr->name[31] = 0 ;
         gr->ncpoints = chunk.flags ;
         gr->modified = 2 ;
+#ifdef TARGET_PS2
+        if ( !gr->data )
+            gr->modified = 0 ;
+#endif
         // bitmap_analize( gr );
 
         /* Puntos de control */
@@ -118,10 +141,16 @@ static int gr_read_lib( file * fp )
             gr->cpoints = ( CPOINT * ) malloc( gr->ncpoints * sizeof( CPOINT ) ) ;
             if ( !gr->cpoints )
             {
+#ifdef TARGET_PS2
+                bitmap_destroy( gr ) ;
+                gr_fpg_ps2_skip_rest( fp, chunk.width, chunk.height, bpp, chunk.flags ) ;
+                continue ;
+#else
                 bitmap_destroy( gr ) ;
                 grlib_destroy( libid ) ;
                 if ( bpp == 8 ) pal_destroy( pal ) ;
                 return -1 ;
+#endif
             }
             for ( c = 0 ; c < gr->ncpoints ; c++ )
             {
@@ -140,6 +169,16 @@ static int gr_read_lib( file * fp )
             }
         }
         else gr->cpoints = 0 ;
+
+#ifdef TARGET_PS2
+        if ( !gr->data )
+        {
+            gr_fpg_ps2_skip_pixels( fp, chunk.width, chunk.height, bpp ) ;
+            code = grlib_add_map( libid, gr ) ;
+            if ( bpp == 8 ) pal_map_assign( libid, code, pal ) ;
+            continue ;
+        }
+#endif
 
         /* Datos del gráfico */
 
@@ -166,12 +205,21 @@ static int gr_read_lib( file * fp )
             if ( !st )
             {
                 bitmap_destroy( gr );
+#ifdef TARGET_PS2
+                gr = NULL ;
+                break ;
+#else
                 grlib_destroy( libid ) ;
                 if ( bpp == 8 ) pal_destroy( pal );
                 return -1 ;
+#endif
             }
         }
 
+#ifdef TARGET_PS2
+        if ( !gr )
+            continue ;
+#endif
         code = grlib_add_map( libid, gr ) ;
         if ( bpp == 8 ) pal_map_assign( libid, code, pal ) ;
     }

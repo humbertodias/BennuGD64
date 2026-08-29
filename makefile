@@ -62,6 +62,9 @@ docker-dreamcast:
 docker-psp:
 	bash scripts/docker-build.sh psp
 
+docker-ps2:
+	bash scripts/docker-build.sh ps2
+
 docker-pandora:
 	bash scripts/docker-build.sh pandora
 

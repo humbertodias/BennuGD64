@@ -40,6 +40,10 @@
 #include "xstrings.h"
 #include "bgd_platform.h"
 
+#ifdef TARGET_PS2
+#include "dirs_ps2.h"
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -91,7 +95,11 @@ char * dir_path_convert( const char * dir )
 
 char * dir_current( void )
 {
+#ifdef TARGET_PS2
+    return dirs_ps2_getcwd( NULL, 0 );
+#else
     return ( getcwd( NULL, 0 ) ) ;
+#endif
 }
 
 /* ------------------------------------------------------------------------------------ */
@@ -111,11 +119,15 @@ char * dir_current( void )
 
 int dir_change( const char * dir )
 {
+#ifdef TARGET_PS2
+    return dirs_ps2_chdir( dir );
+#else
     char *c = dir_path_convert( dir ) ;
     if ( !c ) return 0;
     int r = chdir( c ) ;
     free( c ) ;
     return r ;
+#endif
 }
 
 /* ------------------------------------------------------------------------------------ */
@@ -392,7 +404,12 @@ __DIR_FILEINFO_ST * dir_read( __DIR_ST * hDir )
     if ( !ptr )
     {
         strcpy ( hDir->info.filename, hDir->globd.gl_pathv[ hDir->currFile ] );
+#ifdef TARGET_PS2
+        dirs_ps2_getcwd( realpath, sizeof( realpath ) );
+        strcpy ( hDir->info.fullpath, realpath );
+#else
         strcpy ( hDir->info.fullpath, getcwd( realpath, sizeof( realpath ) ) );
+#endif
     }
     else
     {
@@ -404,7 +421,12 @@ __DIR_FILEINFO_ST * dir_read( __DIR_ST * hDir )
         }
         else
         {
+#ifdef TARGET_PS2
+            dirs_ps2_getcwd( realpath, sizeof( realpath ) );
+            strcpy ( hDir->info.fullpath, realpath );
+#else
             strcpy ( hDir->info.fullpath, getcwd( realpath, sizeof( realpath ) ) );
+#endif
             strcat ( hDir->info.fullpath, "/" );
             strcat ( hDir->info.fullpath, hDir->globd.gl_pathv[ hDir->currFile ] );
             ptr = strrchr( hDir->info.fullpath, '/' );

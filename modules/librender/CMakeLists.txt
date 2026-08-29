@@ -14,6 +14,7 @@ add_library (
   librender.c
   g_fade.c
   g_frame.c
+  g_stats.c
   g_instance.c
   g_object.c
   g_rects.c
@@ -26,6 +27,9 @@ add_library (
 
 if (PLATFORM_PSP OR PSP)
   target_sources (render PRIVATE g_frame_psp.c)
+endif ()
+if (PLATFORM_PS2 OR PS2)
+  target_sources (render PRIVATE g_frame_ps2.c)
 endif ()
 if (NINTENDO_WII OR PLATFORM_WII)
   target_sources (render PRIVATE g_frame_wii.c)

@@ -13,6 +13,9 @@ if (EMSCRIPTEN)
 endif ()
 if (NINTENDO_WII OR PLATFORM_WII)
   target_sources (sdlhandler PRIVATE libsdlhandler_wii.c)
+endif ()
+if (PLATFORM_PS2 OR PS2)
+  target_sources (sdlhandler PRIVATE libsdlhandler_ps2.c)
 endif () 
 
 target_link_libraries (

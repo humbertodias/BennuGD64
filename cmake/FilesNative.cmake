@@ -3,6 +3,8 @@
 function (bennugd_files_native target)
   if (NINTENDO_WII OR PLATFORM_WII)
     target_sources (${target} PRIVATE ${CMAKE_SOURCE_DIR}/core/common/files_wii.c)
+  elseif (PLATFORM_PS2 OR PS2)
+    target_sources (${target} PRIVATE ${CMAKE_SOURCE_DIR}/core/common/files_ps2.c)
   else ()
     target_sources (${target} PRIVATE ${CMAKE_SOURCE_DIR}/core/common/files_native.c)
   endif ()

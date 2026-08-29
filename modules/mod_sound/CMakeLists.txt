@@ -13,6 +13,9 @@ add_library (
 if (NINTENDO_WII OR PLATFORM_WII)
   target_sources (mod_sound PRIVATE mod_sound_wii.c)
 endif ()
+if (PLATFORM_PS2 OR PS2)
+  target_sources (mod_sound PRIVATE mod_sound_ps2.c)
+endif ()
 
 target_link_libraries (
   mod_sound

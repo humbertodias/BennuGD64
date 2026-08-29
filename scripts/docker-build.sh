@@ -9,6 +9,7 @@
 #   bash scripts/docker-build.sh switch
 #   bash scripts/docker-build.sh dreamcast
 #   bash scripts/docker-build.sh psp
+#   bash scripts/docker-build.sh ps2
 #   bash scripts/docker-build.sh pandora
 #   bash scripts/docker-build.sh wii
 #   bash scripts/docker-build.sh linux shell
@@ -23,6 +24,7 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 switch [shell]
        $0 dreamcast [shell]
        $0 psp [shell]
+       $0 ps2 [shell]
        $0 pandora [shell]
        $0 wii [shell]"
 
@@ -46,7 +48,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|pandora|wii) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|ps2|pandora|wii) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -93,6 +95,12 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
       -t bennugd64-psp \
       -f docker/Dockerfile.psp \
       docker/
+  elif [[ "${PLATFORM}" == "ps2" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      -t bennugd64-ps2 \
+      -f docker/Dockerfile.ps2 \
+      docker/
   elif [[ "${PLATFORM}" == "pandora" ]]; then
     docker build \
       --platform linux/amd64 \
@@ -111,7 +119,7 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
-  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
+  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
       -w /src \
@@ -650,6 +658,118 @@ if [[ "${PLATFORM}" == "psp" ]]; then
       cp "${GAMEDIR}/"* "${STAGE}/" 2>/dev/null || true
       test -s "${STAGE}/EBOOT.PBP"
       test -s "${STAGE}/bgdi.elf"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "ps2" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: ps2-host + ps2-mips"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-ps2-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-ps2-mips/_deps"
+  docker run --platform linux/amd64 --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -n "${PS2DEV:-}"
+      test -n "${PS2SDK:-}"
+      test -x "${PS2DEV}/ee/bin/mips64r5900el-ps2-elf-gcc" \
+        -o -x "${PS2DEV}/ee/bin/ee-gcc"
+      HOST_BUILD=/src/build-ps2-host
+      PS2_BUILD=/src/build-ps2-mips
+      STAGE=/src/dist/ps2-mips-static
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset ps2-host "${COMMON[@]}"
+      cmake --build --preset ps2-host
+      for prg in /src/web/demo/*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      # Drop a cache that used FetchContent zlib/libpng (conflicts with ps2sdk-ports).
+      rm -f "${PS2_BUILD}/CMakeCache.txt"
+      rm -rf "${PS2_BUILD}/CMakeFiles"
+      cmake --preset ps2-mips "${COMMON[@]}"
+      cmake --build --preset ps2-mips
+      ELF=""
+      for cand in \
+        "${PS2_BUILD}/core/bgdi/src/bgdi.elf" \
+        "${PS2_BUILD}/core/bgdi/src/bgdi"
+      do
+        if [[ -f "${cand}" ]]; then
+          ELF="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${ELF}" ]]; then
+        ELF="$(find "${PS2_BUILD}/core/bgdi" \( -type f -o -type l \) \( -name bgdi.elf -o -name bgdi \) | grep -v /CMakeFiles/ | head -n 1 || true)"
+      fi
+      test -n "${ELF}"
+      test -s "${ELF}"
+      mkdir -p "${STAGE}"
+      cmake --install "${PS2_BUILD}" --prefix "${STAGE}"
+      cp "${ELF}" "${STAGE}/bgdi.elf"
+      STRIP="${PS2DEV}/ee/bin/mips64r5900el-ps2-elf-strip"
+      if [[ -x "${STRIP}" ]]; then
+        "${STRIP}" "${STAGE}/bgdi.elf" || true
+      fi
+      cp /src/web/demo/*.dcb "${STAGE}/"
+      cp /src/web/demo/hello.dcb "${STAGE}/main.dcb"
+      cp /src/ps2/SYSTEM.CNF "${STAGE}/"
+      ISODIR=/src/build-ps2-iso
+      rm -rf "${ISODIR}"
+      mkdir -p "${ISODIR}"
+      cp "${STAGE}/SYSTEM.CNF" "${ISODIR}/SYSTEM.CNF"
+      cp "${STAGE}/bgdi.elf" "${ISODIR}/BGDI.ELF"
+      cp "${STAGE}/main.dcb" "${ISODIR}/MAIN.DCB"
+      MKISO=""
+      for cand in xorrisofs mkisofs genisoimage; do
+        if command -v "${cand}" >/dev/null 2>&1; then
+          MKISO="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${MKISO}" ]] && command -v xorriso >/dev/null 2>&1; then
+        MKISO="xorriso -as mkisofs"
+      fi
+      test -n "${MKISO}"
+      # ISO 9660 level 1 + XA: SYSTEM.CNF / BGDI.ELF / MAIN.DCB. PCSX2 File→Open the .iso.
+      if ! ${MKISO} -o "${STAGE}/bennugd64.iso" \
+        -iso-level 1 \
+        -xa \
+        -sysid PLAYSTATION \
+        -V BENNUGD64 \
+        -A BennuGD64 \
+        "${ISODIR}"
+      then
+        ${MKISO} -o "${STAGE}/bennugd64.iso" \
+          -iso-level 1 \
+          -sysid PLAYSTATION \
+          -V BENNUGD64 \
+          -A BennuGD64 \
+          "${ISODIR}"
+      fi
+      test -s "${STAGE}/bgdi.elf"
+      test -s "${STAGE}/main.dcb"
+      test -s "${STAGE}/SYSTEM.CNF"
+      test -s "${STAGE}/bennugd64.iso"
     '
   exit 0
 fi

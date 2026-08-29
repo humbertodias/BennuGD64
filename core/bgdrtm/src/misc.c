@@ -49,6 +49,9 @@
 #ifdef TARGET_PSP
 #include "misc_psp.h"
 #endif
+#ifdef TARGET_PS2
+#include "misc_ps2.h"
+#endif
 
 #if defined(TARGET_GP2X_WIZ) || defined(TARGET_CAANOO)
     #include <sys/types.h>
@@ -169,6 +172,13 @@ int debug = 0;  /* 1 if running in debug mode      */
 #define _OS_ID          OS_PANDORA
 #endif
 
+#ifdef TARGET_PS2
+#ifdef _OS_ID
+#undef _OS_ID
+#endif
+#define _OS_ID          OS_PS2
+#endif
+
 #ifdef TARGET_IOS
 #ifdef _OS_ID
 #undef _OS_ID
@@ -260,7 +270,9 @@ void bgdrtm_entry( int argc, char * argv[] )
 {
     int i;
     int * args = (int *)&GLODWORD( ARGV_TABLE );
+#ifndef TARGET_PS2
     char * os_id;
+#endif
 
     GLODWORD( ARGC ) = argc ;
 
@@ -270,6 +282,11 @@ void bgdrtm_entry( int argc, char * argv[] )
         string_use( args[i] ) ;
     }
 
+#ifdef TARGET_PS2
+    /* getenv() after IOP reset hangs (no ENV on usbhdfsd). */
+    GLODWORD( OS_ID ) = _OS_ID ;
+    bgdrtm_ps2_entry();
+#else
     if ( ( os_id = getenv( "OS_ID" ) ) )
         GLODWORD( OS_ID ) = atol( os_id ) ;
     else
@@ -281,6 +298,7 @@ void bgdrtm_entry( int argc, char * argv[] )
 
 #ifdef TARGET_PSP
     bgdrtm_psp_entry();
+#endif
 #endif
 
 #if defined(TARGET_GP2X_WIZ) || defined(TARGET_CAANOO)

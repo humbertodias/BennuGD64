@@ -48,6 +48,9 @@
 #ifdef TARGET_WII
 #include "libkey_wii.h"
 #endif
+#ifdef TARGET_PS2
+#include "libkey_ps2.h"
+#endif
 
 /* ---------------------------------------------------------------------- */
 
@@ -296,6 +299,14 @@ static void process_key_events()
     static int keyring_start = 0, keyring_tail = 0 ;
     int ignore_key, n;
 
+#ifdef TARGET_PS2
+    if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
+    {
+        libkey_ps2_after_events();
+        return;
+    }
+#endif
+
     /* Actualizar eventos */
 
     keypress = 0 ;
@@ -416,6 +427,26 @@ static void process_key_events()
 #ifdef TARGET_WII
     libkey_wii_after_events();
 #endif
+#ifdef TARGET_PS2
+    libkey_ps2_after_events();
+    if ( !GLODWORD( libkey, SCANCODE ) )
+    {
+        int ascii = 0;
+        int sc = libkey_ps2_scan_code( &ascii );
+        if ( sc )
+        {
+            GLODWORD( libkey, SCANCODE ) = sc;
+            GLODWORD( libkey, ASCII ) = ascii;
+        }
+    }
+    if ( keystate )
+    {
+        if ( keystate[ SDL_SCANCODE_LCTRL ] )
+            GLODWORD( libkey, SHIFTSTATUS ) |= STAT_CTRL | STAT_LCTRL;
+        if ( keystate[ SDL_SCANCODE_LALT ] )
+            GLODWORD( libkey, SHIFTSTATUS ) |= STAT_ALT | STAT_LALT;
+    }
+#endif
 }
 
 /* ---------------------------------------------------------------------- */
@@ -436,7 +467,11 @@ void __bgdexport( libkey, module_initialize )()
 {
     int * ptr = equivs ;
 
+#ifdef TARGET_PS2
+    /* PADMAN lives in libkey_ps2. Skip SDL_Init VIDEO; SET_MODE owns gsKit. */
+#else
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
+#endif
 
     memset( sdl_equiv, 0, sizeof( sdl_equiv ) );
     memset( key_table, 0, sizeof( key_table ) ) ;
@@ -452,6 +487,8 @@ void __bgdexport( libkey, module_initialize )()
 
 #ifdef TARGET_PSP
     libkey_psp_after_init( window );
+#elif defined(TARGET_PS2)
+    /* No OSK. DualShock is polled in libkey_ps2_after_events. */
 #elif defined(TARGET_EMSCRIPTEN)
     libkey_emscripten_after_init( window );
 #else

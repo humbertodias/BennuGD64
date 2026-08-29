@@ -33,7 +33,7 @@ add_library (
   ../../common/xctype.c
 )
 
-if (NINTENDO_SWITCH OR PLATFORM_DREAMCAST OR DREAMCAST OR NINTENDO_WII OR PLATFORM_WII)
+if (NINTENDO_SWITCH OR PLATFORM_DREAMCAST OR DREAMCAST OR NINTENDO_WII OR PLATFORM_WII OR PLATFORM_PS2 OR PS2)
   target_sources (bgdrtm PRIVATE nx_glob.c)
 endif ()
 
@@ -48,6 +48,9 @@ bennugd_files_native (bgdrtm)
 
 if (PLATFORM_PSP OR PSP)
   target_sources (bgdrtm PRIVATE misc_psp.c)
+endif ()
+if (PLATFORM_PS2 OR PS2)
+  target_sources (bgdrtm PRIVATE misc_ps2.c dirs_ps2.c)
 endif ()
 if (EMSCRIPTEN)
   target_sources (bgdrtm PRIVATE
@@ -71,8 +74,11 @@ else ()
   )
 endif ()
 
-if (UNIX OR NINTENDO_SWITCH OR PLATFORM_DREAMCAST OR DREAMCAST OR PLATFORM_PSP OR PSP OR NINTENDO_WII OR PLATFORM_WII)
+if (UNIX OR NINTENDO_SWITCH OR PLATFORM_DREAMCAST OR DREAMCAST OR PLATFORM_PSP OR PSP OR PLATFORM_PS2 OR PS2 OR NINTENDO_WII OR PLATFORM_WII)
   target_link_libraries ( bgdrtm m )
+endif ()
+if (PLATFORM_PS2 OR PS2)
+  target_link_libraries ( bgdrtm ${BENNUGD_SDL3_TARGET} )
 endif ()
 if (NOT STATIC_MODULES)
   target_link_libraries ( bgdrtm ${CMAKE_DL_LIBS} )

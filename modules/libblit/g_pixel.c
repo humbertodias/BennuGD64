@@ -59,6 +59,7 @@ uint16_t * pixel_alpha16 = NULL ;
 
 int gr_get_pixel( GRAPH * dest, int x, int y )
 {
+    if ( !dest || !dest->data ) return -1 ;
     if ( x < 0 || y < 0 || x >= ( int ) dest->width || y >= ( int ) dest->height ) return -1 ;
 
     switch ( dest->format->depth )
@@ -97,6 +98,7 @@ int gr_get_pixel( GRAPH * dest, int x, int y )
 
 void gr_put_pixel( GRAPH * dest, int x, int y, int color )
 {
+    if ( !dest || !dest->data ) return ;
     if ( x < 0 || y < 0 || x >= ( int ) dest->width || y >= ( int ) dest->height ) return ;
 
     switch ( dest->format->depth )

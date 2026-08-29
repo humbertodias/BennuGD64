@@ -56,3 +56,21 @@ int file_native_move( const char * source_file, const char * target_file )
     ( void ) target_file;
     return -1;
 }
+
+int file_native_size( file * fp )
+{
+    ( void ) fp;
+    return -1;
+}
+
+int file_native_seek( file * fp, int pos, int where )
+{
+    if ( !fp || !fp->fp )
+        return -1;
+    return fseek( fp->fp, pos, where );
+}
+
+void file_ps2_bind_root( const char * dcb_path )
+{
+    ( void ) dcb_path;
+}

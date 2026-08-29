@@ -60,6 +60,7 @@
 #define OS_SWITCH               1005
 #define OS_PSP                  1006
 #define OS_PANDORA              1007
+#define OS_PS2                  1008
 
 #endif
 

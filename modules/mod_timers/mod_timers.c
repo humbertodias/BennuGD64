@@ -71,6 +71,10 @@ DLVARFIXUP __bgdexport( mod_timers, globals_fixup )[] =
 
 static void _advance_timers( void )
 {
+#ifdef TARGET_PS2
+    if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
+        return;
+#endif
     int * timer, i ;
     int curr_ticktimer = SDL_GetTicks() ;
     static int initial_ticktimer[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} ;

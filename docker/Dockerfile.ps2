@@ -1,0 +1,34 @@
+# PlayStation 2 homebrew toolchain (linux/amd64: EE host tools are x86_64).
+#   docker build --platform linux/amd64 -t bennugd64-ps2 \
+#     -f docker/Dockerfile.ps2 docker/
+#   docker run --platform linux/amd64 --rm -v "$PWD":/src -w /src \
+#     bennugd64-ps2 cmake --preset ps2-mips
+#
+# Toolchain only: does not clone this repo or bake Bennu into the image.
+# Compiler, ps2sdk, gsKit, and bin2c come from ps2dev/ps2dev.
+# Host gcc/ninja/cmake are added for native bgdc.
+
+FROM ps2dev/ps2dev:latest
+
+ENV PLATFORM=ps2 \
+    PS2DEV=/usr/local/ps2dev \
+    PS2SDK=/usr/local/ps2dev/ps2sdk \
+    GSKIT=/usr/local/ps2dev/gsKit \
+    PATH="/usr/local/ps2dev/bin:/usr/local/ps2dev/ee/bin:/usr/local/ps2dev/iop/bin:/usr/local/ps2dev/dvp/bin:/usr/local/ps2dev/ps2sdk/bin:${PATH}"
+
+RUN apk add --no-cache \
+        bash \
+        cmake \
+        gcc \
+        g++ \
+        git \
+        musl-dev \
+        ninja \
+        pkgconf \
+        python3 \
+        xorriso \
+        zip \
+    && git config --system --add safe.directory '*'
+
+WORKDIR /src
+CMD ["bash"]

@@ -30,6 +30,7 @@
 #include <string.h>
 
 #include "librender.h"
+#include "g_stats.h"
 
 /* --------------------------------------------------------------------------- */
 
@@ -505,6 +506,7 @@ void gr_unlock_screen()
     else if ( scrbitmap->info_flags & GI_EXTERNAL_DATA )
     {
         if ( double_buffer ||
+                gr_stats_force_present() ||
                 (
                     updaterects_count == 1 &&
                     updaterects[0].x == 0 &&

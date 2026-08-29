@@ -19,7 +19,11 @@ add_library (
   file_fpg.c
   file_fnt.c
   mod_map.c
-) 
+)
+
+if (PLATFORM_PS2 OR PS2)
+  target_sources (mod_map PRIVATE file_fpg_ps2.c)
+endif ()
 
 target_link_libraries (
   mod_map

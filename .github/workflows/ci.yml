@@ -14,9 +14,9 @@ concurrency:
 
 jobs:
   build:
-    name: ${{ matrix.artifact }}
+    name: ${{ matrix.shared && matrix.artifact || format('{0}-static', matrix.artifact) }}
     runs-on: ubuntu-22.04
-    timeout-minutes: 90
+    timeout-minutes: ${{ matrix.timeout }}
     strategy:
       fail-fast: false
       matrix:
@@ -26,11 +26,78 @@ jobs:
             dist_static: dist/linux-static
             dist_shared: dist/linux-shared
             docker_target: linux
+            shared: true
+            timeout: 90
           - platform: windows
             artifact: windows-x86_64
             dist_static: dist/windows-x86_64-static
             dist_shared: dist/windows-x86_64-shared
             docker_target: ""
+            shared: true
+            timeout: 90
+          - platform: macos
+            artifact: macos-x86_64
+            dist_static: dist/macos-x86_64-static
+            dist_shared: dist/macos-x86_64-shared
+            docker_target: ""
+            shared: true
+            timeout: 180
+          - platform: wasm
+            artifact: web-wasm32
+            dist_static: dist/web-wasm32-static
+            dist_shared: ""
+            docker_target: ""
+            shared: false
+            timeout: 90
+          - platform: android
+            artifact: android-arm64
+            dist_static: dist/android-arm64-static
+            dist_shared: ""
+            docker_target: ""
+            shared: false
+            timeout: 120
+          - platform: switch
+            artifact: switch-aarch64
+            dist_static: dist/switch-aarch64-static
+            dist_shared: ""
+            docker_target: ""
+            shared: false
+            timeout: 120
+          - platform: dreamcast
+            artifact: dreamcast-sh4
+            dist_static: dist/dreamcast-sh4-static
+            dist_shared: ""
+            docker_target: ""
+            shared: false
+            timeout: 120
+          - platform: psp
+            artifact: psp-mips
+            dist_static: dist/psp-mips-static
+            dist_shared: ""
+            docker_target: ""
+            shared: false
+            timeout: 120
+          - platform: ps2
+            artifact: ps2-mips
+            dist_static: dist/ps2-mips-static
+            dist_shared: ""
+            docker_target: ""
+            shared: false
+            timeout: 120
+          - platform: pandora
+            artifact: pandora-arm
+            dist_static: dist/pandora-arm-static
+            dist_shared: ""
+            docker_target: ""
+            shared: false
+            timeout: 120
+          - platform: wii
+            artifact: wii-powerpc
+            dist_static: dist/wii-powerpc-static
+            dist_shared: ""
+            docker_target: ""
+            shared: false
+            timeout: 120
 
     steps:
       - name: Checkout
@@ -58,11 +125,10 @@ jobs:
         uses: actions/cache@v6
         with:
           path: |
-            build-static/_deps
-            build-shared/_deps
-            build-windows-static/_deps
-            build-windows-shared/_deps
-          key: fetch-${{ matrix.platform }}-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.linux', 'docker/Dockerfile.windows') }}
+            **/_deps
+            .deps
+            build-android-gradle
+          key: fetch-${{ matrix.platform }}-${{ hashFiles('versions.env', 'CMakePresets.json', format('docker/Dockerfile.{0}', matrix.platform)) }}
           restore-keys: |
             fetch-${{ matrix.platform }}-
 
@@ -76,18 +142,39 @@ jobs:
           file: docker/Dockerfile.${{ matrix.platform }}
           target: ${{ matrix.docker_target }}
           tags: bennugd64-${{ matrix.platform }}
+          platforms: linux/amd64
           load: true
           provenance: false
+          build-args: |
+            MACOSX_SDK=${{ env.MACOSX_SDK }}
+            MACOSX_SDK_SHA256=${{ env.MACOSX_SDK_SHA256 }}
+            OSX_VERSION_MIN=${{ env.OSXCROSS_OSX_VERSION_MIN }}
+            CMAKE_VERSION=${{ env.CMAKE_VERSION }}
+            EMSCRIPTEN_VERSION=${{ env.EMSCRIPTEN_VERSION }}
+            ANDROID_NDK_VERSION=${{ env.ANDROID_NDK_VERSION }}
+            ANDROID_CMDLINE_TOOLS=${{ env.ANDROID_CMDLINE_TOOLS }}
+            ANDROID_COMPILE_SDK=${{ env.ANDROID_COMPILE_SDK }}
+            ANDROID_BUILD_TOOLS=${{ env.ANDROID_BUILD_TOOLS }}
+            GRADLE_VERSION=${{ env.GRADLE_VERSION }}
           cache-from: type=gha,scope=bennugd-${{ matrix.platform }}
           cache-to: type=gha,mode=max,scope=bennugd-${{ matrix.platform }}
 
+      - name: Build
+        if: ${{ !matrix.shared }}
+        env:
+          SKIP_DOCKER_BUILD: "1"
+          BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
+        run: bash scripts/docker-build.sh ${{ matrix.platform }}
+
       - name: Build static
+        if: ${{ matrix.shared }}
         env:
           SKIP_DOCKER_BUILD: "1"
           BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
         run: bash scripts/docker-build.sh ${{ matrix.platform }} static
 
       - name: Build shared
+        if: ${{ matrix.shared }}
         env:
           SKIP_DOCKER_BUILD: "1"
           BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
@@ -102,6 +189,7 @@ jobs:
           retention-days: 14
 
       - name: Upload shared
+        if: ${{ matrix.shared }}
         uses: actions/upload-artifact@v7
         with:
           name: bennugd64-${{ steps.meta.outputs.version }}-${{ matrix.artifact }}-shared
@@ -183,564 +271,6 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  build-macos-osxcross:
-    name: macos-x86_64 (osxcross)
-    runs-on: ubuntu-22.04
-    timeout-minutes: 180
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-macos-x86_64-static/_deps/*-src
-            build-macos-x86_64-shared/_deps/*-src
-          key: fetch-macos-osxcross-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.macos') }}
-          restore-keys: |
-            fetch-macos-osxcross-
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build osxcross toolchain image
-        uses: docker/build-push-action@v6
-        with:
-          context: docker
-          file: docker/Dockerfile.macos
-          tags: bennugd64-macos
-          platforms: linux/amd64
-          load: true
-          provenance: false
-          build-args: |
-            MACOSX_SDK=${{ env.MACOSX_SDK }}
-            MACOSX_SDK_SHA256=${{ env.MACOSX_SDK_SHA256 }}
-            OSX_VERSION_MIN=${{ env.OSXCROSS_OSX_VERSION_MIN }}
-            CMAKE_VERSION=${{ env.CMAKE_VERSION }}
-          cache-from: type=gha,scope=bennugd-macos
-          cache-to: type=gha,mode=max,scope=bennugd-macos
-
-      - name: Build static
-        env:
-          SKIP_DOCKER_BUILD: "1"
-        run: bash scripts/docker-build.sh macos static
-
-      - name: Build shared
-        env:
-          SKIP_DOCKER_BUILD: "1"
-        run: bash scripts/docker-build.sh macos shared
-
-      - name: Resolve version
-        id: meta
-        run: |
-          VERSION="$(tr -d '[:space:]' < build-macos-x86_64-static/generated/VERSION)"
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload static
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-macos-x86_64-static
-          path: dist/macos-x86_64-static/
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload shared
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-macos-x86_64-shared
-          path: dist/macos-x86_64-shared/
-          if-no-files-found: error
-          retention-days: 14
-
-  build-wasm:
-    name: web-wasm32-static
-    runs-on: ubuntu-22.04
-    timeout-minutes: 90
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-host/_deps/*-src
-            .deps/wasi-sdk-${{ env.WASI_SDK_VERSION_FULL }}-x86_64-linux
-            build-wasi/_deps
-          key: fetch-wasm-src-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.wasm') }}
-          restore-keys: |
-            fetch-wasm-
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build wasm toolchain image
-        uses: docker/build-push-action@v6
-        with:
-          context: docker
-          file: docker/Dockerfile.wasm
-          tags: bennugd64-wasm
-          load: true
-          provenance: false
-          build-args: |
-            EMSCRIPTEN_VERSION=${{ env.EMSCRIPTEN_VERSION }}
-          cache-from: type=gha,scope=bennugd-wasm
-          cache-to: type=gha,mode=max,scope=bennugd-wasm
-
-      - name: Build
-        env:
-          SKIP_DOCKER_BUILD: "1"
-        run: bash scripts/docker-build.sh wasm
-
-      - name: Resolve version
-        id: meta
-        run: |
-          VERSION="$(tr -d '[:space:]' < build-wasm/generated/VERSION)"
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-web-wasm32-static
-          path: dist/web-wasm32-static/
-          if-no-files-found: error
-          retention-days: 14
-
-  build-android:
-    name: android-arm64-static
-    runs-on: ubuntu-22.04
-    timeout-minutes: 120
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-android-host/_deps/*-src
-            build-android-arm64/_deps/*-src
-            build-android-gradle
-          key: fetch-android-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.android') }}
-          restore-keys: |
-            fetch-android-
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Android toolchain image
-        uses: docker/build-push-action@v6
-        with:
-          context: docker
-          file: docker/Dockerfile.android
-          tags: bennugd64-android
-          platforms: linux/amd64
-          load: true
-          provenance: false
-          build-args: |
-            ANDROID_NDK_VERSION=${{ env.ANDROID_NDK_VERSION }}
-            ANDROID_CMDLINE_TOOLS=${{ env.ANDROID_CMDLINE_TOOLS }}
-            ANDROID_COMPILE_SDK=${{ env.ANDROID_COMPILE_SDK }}
-            ANDROID_BUILD_TOOLS=${{ env.ANDROID_BUILD_TOOLS }}
-            GRADLE_VERSION=${{ env.GRADLE_VERSION }}
-          cache-from: type=gha,scope=bennugd-android
-          cache-to: type=gha,mode=max,scope=bennugd-android
-
-      - name: Build
-        env:
-          SKIP_DOCKER_BUILD: "1"
-        run: bash scripts/docker-build.sh android
-
-      - name: Resolve version
-        id: meta
-        run: |
-          VERSION="$(tr -d '[:space:]' < build-android-arm64/generated/VERSION)"
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-android-arm64-static
-          path: dist/android-arm64-static/
-          if-no-files-found: error
-          retention-days: 14
-
-  build-switch:
-    name: switch-aarch64-static
-    runs-on: ubuntu-22.04
-    timeout-minutes: 120
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-switch-host/_deps/*-src
-            build-switch-aarch64/_deps/*-src
-          key: fetch-switch-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.switch') }}
-          restore-keys: |
-            fetch-switch-
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Switch toolchain image
-        uses: docker/build-push-action@v6
-        with:
-          context: docker
-          file: docker/Dockerfile.switch
-          tags: bennugd64-switch
-          platforms: linux/amd64
-          load: true
-          provenance: false
-          cache-from: type=gha,scope=bennugd-switch
-          cache-to: type=gha,mode=max,scope=bennugd-switch
-
-      - name: Build
-        env:
-          SKIP_DOCKER_BUILD: "1"
-        run: bash scripts/docker-build.sh switch
-
-      - name: Resolve version
-        id: meta
-        run: |
-          VERSION="$(tr -d '[:space:]' < build-switch-aarch64/generated/VERSION)"
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-switch-aarch64-static
-          path: dist/switch-aarch64-static/
-          if-no-files-found: error
-          retention-days: 14
-
-  build-dreamcast:
-    name: dreamcast-sh4-static
-    runs-on: ubuntu-22.04
-    timeout-minutes: 120
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-dreamcast-host/_deps/*-src
-            build-dreamcast-sh4/_deps/*-src
-          key: fetch-dreamcast-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.dreamcast') }}
-          restore-keys: |
-            fetch-dreamcast-
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Dreamcast toolchain image
-        uses: docker/build-push-action@v6
-        with:
-          context: docker
-          file: docker/Dockerfile.dreamcast
-          tags: bennugd64-dreamcast
-          platforms: linux/amd64
-          load: true
-          provenance: false
-          cache-from: type=gha,scope=bennugd-dreamcast
-          cache-to: type=gha,mode=max,scope=bennugd-dreamcast
-
-      - name: Build
-        env:
-          SKIP_DOCKER_BUILD: "1"
-        run: bash scripts/docker-build.sh dreamcast
-
-      - name: Resolve version
-        id: meta
-        run: |
-          VERSION="$(tr -d '[:space:]' < build-dreamcast-sh4/generated/VERSION)"
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-dreamcast-sh4-static
-          path: dist/dreamcast-sh4-static/
-          if-no-files-found: error
-          retention-days: 14
-
-  build-psp:
-    name: psp-mips-static
-    runs-on: ubuntu-22.04
-    timeout-minutes: 120
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-psp-host/_deps/*-src
-            build-psp-mips/_deps/*-src
-          key: fetch-psp-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.psp') }}
-          restore-keys: |
-            fetch-psp-
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build PSP toolchain image
-        uses: docker/build-push-action@v6
-        with:
-          context: docker
-          file: docker/Dockerfile.psp
-          tags: bennugd64-psp
-          platforms: linux/amd64
-          load: true
-          provenance: false
-          cache-from: type=gha,scope=bennugd-psp
-          cache-to: type=gha,mode=max,scope=bennugd-psp
-
-      - name: Build
-        env:
-          SKIP_DOCKER_BUILD: "1"
-        run: bash scripts/docker-build.sh psp
-
-      - name: Resolve version
-        id: meta
-        run: |
-          VERSION="$(tr -d '[:space:]' < build-psp-mips/generated/VERSION)"
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-psp-mips-static
-          path: dist/psp-mips-static/
-          if-no-files-found: error
-          retention-days: 14
-
-  build-ps2:
-    name: ps2-mips-static
-    runs-on: ubuntu-22.04
-    timeout-minutes: 120
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-ps2-host/_deps/*-src
-            build-ps2-mips/_deps/*-src
-          key: fetch-ps2-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.ps2') }}
-          restore-keys: |
-            fetch-ps2-
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build PS2 toolchain image
-        uses: docker/build-push-action@v6
-        with:
-          context: docker
-          file: docker/Dockerfile.ps2
-          tags: bennugd64-ps2
-          platforms: linux/amd64
-          load: true
-          provenance: false
-          cache-from: type=gha,scope=bennugd-ps2
-          cache-to: type=gha,mode=max,scope=bennugd-ps2
-
-      - name: Build
-        env:
-          SKIP_DOCKER_BUILD: "1"
-        run: bash scripts/docker-build.sh ps2
-
-      - name: Resolve version
-        id: meta
-        run: |
-          VERSION="$(tr -d '[:space:]' < build-ps2-mips/generated/VERSION)"
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-ps2-mips-static
-          path: dist/ps2-mips-static/
-          if-no-files-found: error
-          retention-days: 14
-
-  build-pandora:
-    name: pandora-arm-static
-    runs-on: ubuntu-22.04
-    timeout-minutes: 120
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-pandora-host/_deps/*-src
-            build-pandora-arm/_deps/*-src
-          key: fetch-pandora-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.pandora') }}
-          restore-keys: |
-            fetch-pandora-
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Pandora toolchain image
-        uses: docker/build-push-action@v6
-        with:
-          context: docker
-          file: docker/Dockerfile.pandora
-          tags: bennugd64-pandora
-          platforms: linux/amd64
-          load: true
-          provenance: false
-          cache-from: type=gha,scope=bennugd-pandora
-          cache-to: type=gha,mode=max,scope=bennugd-pandora
-
-      - name: Build
-        env:
-          SKIP_DOCKER_BUILD: "1"
-        run: bash scripts/docker-build.sh pandora
-
-      - name: Resolve version
-        id: meta
-        run: |
-          VERSION="$(tr -d '[:space:]' < build-pandora-arm/generated/VERSION)"
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-pandora-arm-static
-          path: dist/pandora-arm-static/
-          if-no-files-found: error
-          retention-days: 14
-
-  build-wii:
-    name: wii-powerpc-static
-    runs-on: ubuntu-22.04
-    timeout-minutes: 120
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-wii-host/_deps/*-src
-            build-wii-powerpc/_deps/*-src
-          key: fetch-wii-${{ hashFiles('versions.env', 'CMakePresets.json', 'docker/Dockerfile.wii') }}
-          restore-keys: |
-            fetch-wii-
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Wii toolchain image
-        uses: docker/build-push-action@v6
-        with:
-          context: docker
-          file: docker/Dockerfile.wii
-          tags: bennugd64-wii
-          platforms: linux/amd64
-          load: true
-          provenance: false
-          cache-from: type=gha,scope=bennugd-wii
-          cache-to: type=gha,mode=max,scope=bennugd-wii
-
-      - name: Build
-        env:
-          SKIP_DOCKER_BUILD: "1"
-        run: bash scripts/docker-build.sh wii
-
-      - name: Resolve version
-        id: meta
-        run: |
-          VERSION="$(tr -d '[:space:]' < build-wii-powerpc/generated/VERSION)"
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-wii-powerpc-static
-          path: dist/wii-powerpc-static/
-          if-no-files-found: error
-          retention-days: 14
-
   build-wasi:
     name: wasi-wasm32-static
     runs-on: ubuntu-22.04
@@ -803,7 +333,7 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: [build, build-macos, build-macos-osxcross, build-wasm, build-wasi, build-android, build-switch, build-dreamcast, build-psp, build-ps2, build-pandora, build-wii]
+    needs: [build, build-macos, build-wasi]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:

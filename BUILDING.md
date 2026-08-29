@@ -391,16 +391,8 @@ The install scripts download the latest GitHub Release for your platform, unpack
 
 GitHub Actions (`.github/workflows/ci.yml`):
 
-- Linux x86_64 and Windows x86_64 — one toolchain image per OS, then static + shared (`scripts/docker-build.sh`)
-- macOS arm64 — native runner (static + shared in one job)
-- Web (Emscripten) — `scripts/docker-build.sh wasm` (`Dockerfile.wasm`) → `bennugd64-<tag>-web-wasm32-static.zip`; Pages deploys this artifact
-- Android arm64 — `scripts/docker-build.sh android` (`Dockerfile.android`) → `bennugd64-<tag>-android-arm64-static.zip` (`bennugd64.apk`)
-- Nintendo Switch — `scripts/docker-build.sh switch` (`Dockerfile.switch`) → `bennugd64-<tag>-switch-aarch64-static.zip` (`bennugd64.nro`)
-- Sega Dreamcast — `scripts/docker-build.sh dreamcast` (`Dockerfile.dreamcast`) → `bennugd64-<tag>-dreamcast-sh4-static.zip` (`bennugd64.cdi`)
-- PlayStation Portable — `scripts/docker-build.sh psp` (`Dockerfile.psp`) → `bennugd64-<tag>-psp-mips-static.zip` (`EBOOT.PBP`)
-- PlayStation 2 — `scripts/docker-build.sh ps2` (`Dockerfile.ps2`) → `bennugd64-<tag>-ps2-mips-static.zip` (`bgdi.elf`, `bennugd64.iso`)
-- OpenPandora — `scripts/docker-build.sh pandora` (`Dockerfile.pandora`) → `bennugd64-<tag>-pandora-arm-static.zip` (`bennugd64.pnd`)
-- Nintendo Wii — `scripts/docker-build.sh wii` (`Dockerfile.wii`) → `bennugd64-<tag>-wii-powerpc-static.zip` (`apps/bennugd64/boot.dol`)
-- WASI — `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
+- Docker platforms share one `build` job keyed by `matrix.platform` (`linux`, `windows`, `macos`/osxcross, `wasm`, `android`, `switch`, `dreamcast`, `psp`, `ps2`, `pandora`, `wii`): `docker/Dockerfile.$platform` then `scripts/docker-build.sh`. Linux, Windows, and osxcross also build shared modules. Pages deploys the `web-wasm32-static` artifact.
+- macOS arm64 — native `macos-latest` runner (static + shared)
+- WASI — host `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
 
 On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`; Switch zip for `switch-aarch64-static`; Dreamcast zip for `dreamcast-sh4-static`; PSP zip for `psp-mips-static`; Pandora zip for `pandora-arm-static`; Wii zip for `wii-powerpc-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`; the Switch NRO links SDL3 statically from the devkitPro fork; the Dreamcast CDI links SDL3 statically from the GPF Dreamcast fork; the PSP PBP links SDL3 statically from the pspdev packages; the Pandora PND links official SDL3 statically against the Ångström sysroot; the Wii DOL links SDL3 statically from the libogc2 fork). OS graphics/audio libraries may still be required at runtime on native builds.

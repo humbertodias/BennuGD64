@@ -433,6 +433,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 #ifdef TARGET_PSP
             gr_video_psp_destroy();
 #endif
+#ifdef TARGET_VITA
+            gr_video_vita_destroy();
+#endif
 #ifdef TARGET_WII
             gr_video_wii_destroy();
 #endif
@@ -967,6 +970,9 @@ void __bgdexport( libvideo, module_finalize )()
         gr_destroy_present_renderer();
 #ifdef TARGET_PSP
         gr_video_psp_destroy();
+#endif
+#ifdef TARGET_VITA
+        gr_video_vita_destroy();
 #endif
 #ifdef TARGET_WII
         gr_video_wii_destroy();

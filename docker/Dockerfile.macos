@@ -2,8 +2,8 @@
 # Apple’s SDK is not in this repo: the image build downloads MacOSX*.sdk.tar.xz
 # (Xcode license: https://www.apple.com/legal/sla/docs/xcode.pdf).
 #
-#   bash scripts/docker-build.sh macos
-#   bash scripts/docker-build.sh macos arm64
+#   bash scripts/build.sh macos
+#   bash scripts/build.sh macos arm64
 #
 # SDL3 is FetchContent (not osxcross-macports libsdl2).
 # MacOSX 15.x libc++ needs Clang 16+; Ubuntu 22.04’s Clang 14 fails with

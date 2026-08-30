@@ -30,7 +30,7 @@ shared:
 	ctest --preset shared --output-on-failure
 
 wasm:
-	bash scripts/docker-build.sh wasm
+	bash scripts/build.sh wasm
 
 wasi:
 	cmake --preset wasi
@@ -39,34 +39,34 @@ wasi:
 	ctest --preset wasi --output-on-failure
 
 docker-linux:
-	bash scripts/docker-build.sh linux
+	bash scripts/build.sh linux
 
 docker-linux-shared:
-	bash scripts/docker-build.sh linux shared
+	bash scripts/build.sh linux shared
 
 docker-windows:
-	bash scripts/docker-build.sh windows
+	bash scripts/build.sh windows
 
 docker-windows-shared:
-	bash scripts/docker-build.sh windows shared
+	bash scripts/build.sh windows shared
 
 docker-android:
-	bash scripts/docker-build.sh android
+	bash scripts/build.sh android
 
 docker-switch:
-	bash scripts/docker-build.sh switch
+	bash scripts/build.sh switch
 
 docker-dreamcast:
-	bash scripts/docker-build.sh dreamcast
+	bash scripts/build.sh dreamcast
 
 docker-psp:
-	bash scripts/docker-build.sh psp
+	bash scripts/build.sh psp
 
 docker-ps2:
-	bash scripts/docker-build.sh ps2
+	bash scripts/build.sh ps2
 
 docker-pandora:
-	bash scripts/docker-build.sh pandora
+	bash scripts/build.sh pandora
 
 wasi/run:
 	wasmtime --dir=. dist/wasi-wasm32-static/bgdc.wasm -- -o web/demo/hello.dcb web/demo/hello.prg

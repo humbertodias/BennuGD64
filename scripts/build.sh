@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 # Build artifacts in a toolchain image (CMake presets + CTest).
 #
-#   bash scripts/docker-build.sh
-#   bash scripts/docker-build.sh linux shared
-#   bash scripts/docker-build.sh windows
-#   bash scripts/docker-build.sh wasm
-#   bash scripts/docker-build.sh android
-#   bash scripts/docker-build.sh switch
-#   bash scripts/docker-build.sh dreamcast
-#   bash scripts/docker-build.sh psp
-#   bash scripts/docker-build.sh vita
-#   bash scripts/docker-build.sh ps2
-#   bash scripts/docker-build.sh pandora
-#   bash scripts/docker-build.sh wii
-#   bash scripts/docker-build.sh macos
-#   bash scripts/docker-build.sh macos arm64
-#   bash scripts/docker-build.sh macos arm64 shared
-#   bash scripts/docker-build.sh linux shell
+#   bash scripts/build.sh
+#   bash scripts/build.sh linux shared
+#   bash scripts/build.sh windows
+#   bash scripts/build.sh wasm
+#   bash scripts/build.sh android
+#   bash scripts/build.sh switch
+#   bash scripts/build.sh dreamcast
+#   bash scripts/build.sh psp
+#   bash scripts/build.sh vita
+#   bash scripts/build.sh ps2
+#   bash scripts/build.sh pandora
+#   bash scripts/build.sh wii
+#   bash scripts/build.sh macos
+#   bash scripts/build.sh macos arm64
+#   bash scripts/build.sh macos arm64 shared
+#   bash scripts/build.sh linux shell
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"

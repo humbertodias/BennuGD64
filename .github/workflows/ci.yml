@@ -181,21 +181,21 @@ jobs:
         env:
           SKIP_DOCKER_BUILD: "1"
           BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
-        run: bash scripts/docker-build.sh ${{ matrix.platform }} ${{ matrix.arch }}
+        run: bash scripts/build.sh ${{ matrix.platform }} ${{ matrix.arch }}
 
       - name: Build static
         if: ${{ matrix.shared }}
         env:
           SKIP_DOCKER_BUILD: "1"
           BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
-        run: bash scripts/docker-build.sh ${{ matrix.platform }} ${{ matrix.arch }} static
+        run: bash scripts/build.sh ${{ matrix.platform }} ${{ matrix.arch }} static
 
       - name: Build shared
         if: ${{ matrix.shared }}
         env:
           SKIP_DOCKER_BUILD: "1"
           BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
-        run: bash scripts/docker-build.sh ${{ matrix.platform }} ${{ matrix.arch }} shared
+        run: bash scripts/build.sh ${{ matrix.platform }} ${{ matrix.arch }} shared
 
       - name: Upload static
         uses: actions/upload-artifact@v7

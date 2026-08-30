@@ -86,11 +86,8 @@ RUN arch="$(uname -m)" \
     && cmake --version
 
 # Ad-hoc signer for Mach-O after install_name_tool (osxcross cctools do not re-sign).
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        libplist-dev \
-        pkg-config \
-    && rm -rf /var/lib/apt/lists/* \
-    && git clone --depth 1 https://github.com/thefloweringash/sigtool.git /tmp/sigtool \
+# Pin v0.1.3: later sigtool needs libplist and fails to build bundle.cpp on Clang 18.
+RUN git clone --depth 1 --branch v0.1.3 https://github.com/thefloweringash/sigtool.git /tmp/sigtool \
     && cmake -S /tmp/sigtool -B /tmp/sigtool/build \
          -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF \
     && cmake --build /tmp/sigtool/build --parallel \

@@ -210,6 +210,34 @@
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
       }
+    },
+    {
+      "name": "macos-x86_64-static",
+      "inherits": "static",
+      "displayName": "osxcross macOS x86_64, static modules",
+      "binaryDir": "${sourceDir}/build-macos-x86_64-static",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-x86_64.cmake"
+    },
+    {
+      "name": "macos-x86_64-shared",
+      "inherits": "shared",
+      "displayName": "osxcross macOS x86_64, shared modules",
+      "binaryDir": "${sourceDir}/build-macos-x86_64-shared",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-x86_64.cmake"
+    },
+    {
+      "name": "macos-arm64-static",
+      "inherits": "static",
+      "displayName": "osxcross macOS arm64, static modules",
+      "binaryDir": "${sourceDir}/build-macos-arm64-static",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-arm64.cmake"
+    },
+    {
+      "name": "macos-arm64-shared",
+      "inherits": "shared",
+      "displayName": "osxcross macOS arm64, shared modules",
+      "binaryDir": "${sourceDir}/build-macos-arm64-shared",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-arm64.cmake"
     }
   ],
   "buildPresets": [
@@ -232,7 +260,11 @@
     { "name": "pandora-host", "configurePreset": "pandora-host", "targets": ["bgdc"] },
     { "name": "pandora-arm", "configurePreset": "pandora-arm", "targets": ["bgdi"] },
     { "name": "wii-host", "configurePreset": "wii-host", "targets": ["bgdc"] },
-    { "name": "wii-powerpc", "configurePreset": "wii-powerpc", "targets": ["bgdi"] }
+    { "name": "wii-powerpc", "configurePreset": "wii-powerpc", "targets": ["bgdi"] },
+    { "name": "macos-x86_64-static", "configurePreset": "macos-x86_64-static" },
+    { "name": "macos-x86_64-shared", "configurePreset": "macos-x86_64-shared" },
+    { "name": "macos-arm64-static", "configurePreset": "macos-arm64-static" },
+    { "name": "macos-arm64-shared", "configurePreset": "macos-arm64-shared" }
   ],
   "testPresets": [
     {

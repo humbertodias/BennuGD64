@@ -39,6 +39,13 @@ elseif (MSVC)
   add_compile_options(/utf-8)
 endif()
 
+# osxcross: SDL @available needs compiler-rt. Do not link_libraries() globally —
+# SDL3's export(SDL3-static) would then require this target in an export set.
+if (APPLE AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND NOT BENNUGD_OSXCROSS_COMPILER_RT)
+  add_library (bennugd_osxcross_rt STATIC cmake/osxcross_isplatformversion.c)
+  set_target_properties (bennugd_osxcross_rt PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif ()
+
 option (STATIC_MODULES "Build modules as static libraries linked into bgdi" ON)
 option (INTERPRETER_ONLY "Generate only the bgdi executable" OFF)
 option (COMPILER_ONLY "Generate only the bgdc executable" OFF)
@@ -235,3 +242,16 @@ endif ()
 add_subdirectory (core)
 include (${CMAKE_SOURCE_DIR}/cmake/InstallLayout.cmake)
 include (${CMAKE_SOURCE_DIR}/cmake/SmokeTests.cmake)
+
+# Shared .dylibs that pull in libSDL3.a need the same @available stub as bgdi.
+if (TARGET bennugd_osxcross_rt)
+  foreach (_tgt
+      bgdi bgdc bgdrtm
+      sdlhandler video render key joy mouse wm scroll bgload
+      mod_sound mod_map mod_wpad mod_wm mod_video mod_timers mod_time
+      mod_flic mod_debug)
+    if (TARGET ${_tgt})
+      target_link_libraries (${_tgt} bennugd_osxcross_rt)
+    endif ()
+  endforeach ()
+endif ()

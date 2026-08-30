@@ -1,9 +1,19 @@
 /*
  * PlayStation Vita pad → keyboard. Compiled only into the vita-arm build.
  *
- * hello.prg exits on key(_esc). SDL's Vita keyboard map can report Escape
- * with no key pressed; that looks like the bubble opening and closing.
- * SELECT is Escape (same as PS2); START is Enter.
+ * Keyboard (key() / SCANCODE), via sceCtrl on top of SDL_GetKeyboardState:
+ *   D-pad     → arrows
+ *   Cross     → Space
+ *   START     → Enter
+ *   SELECT    → Escape
+ * Phantom SDL Escape is cleared (hello.prg would exit with no key pressed).
+ *
+ * Joystick (JOY_*): SDL's Vita pad as joy 0 (hat = D-pad, analog axes,
+ * face buttons). Not remapped here. OS_LINUX in misc_vita.c makes SoRR
+ * use that pad as P1 instead of the keyboard.
+ *
+ * The event pump (libsdlhandler_vita) PumpEvents + UpdateJoysticks and
+ * does not drain the SDL queue.
  */
 
 #include <string.h>

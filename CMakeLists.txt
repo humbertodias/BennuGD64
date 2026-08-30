@@ -179,16 +179,6 @@ else ()
   find_package (ZLIB REQUIRED)
 endif ()
 
-# After FetchDeps: sorr-vita sceClib redirects must not leak into SDL3 (SDL_qsort.c).
-if (PLATFORM_VITA OR VITA)
-  add_compile_definitions (
-    memcpy=sceClibMemcpy
-    memcmp=sceClibMemcmp
-    strcmp=sceClibStrcmp
-    strncmp=sceClibStrncmp
-    strncpy=sceClibStrncpy
-  )
-endif ()
 if (USE_LIBDES)
   add_definitions (-DUSE_LIBDES)
   include_directories (${CMAKE_SOURCE_DIR}/3rdparty/des-4.04b)

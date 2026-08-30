@@ -31,6 +31,8 @@ void gr_video_vita_adjust_window( int * width, int * height, Uint32 * window_fla
 
 void gr_video_vita_apply_mode( void )
 {
+    /* SoRR-vita hardcoded the GXM window to 960x544 fullscreen; depth is
+     * forced to 32 in gr_set_mode() like the PS2 16-bit override. */
     full_screen = 1;
 }
 

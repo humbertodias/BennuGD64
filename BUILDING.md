@@ -298,7 +298,25 @@ Needs Docker. `docker/Dockerfile.vita` is a toolchain image from [`vitasdk/vitas
 bash scripts/docker-build.sh vita
 ```
 
-That configures native `bgdc` (`vita-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi` with vitasdk (`vita-arm`), and packs `dist/vita-arm-static/bennugd64.vpk` (title id `BGDV00001`). The VPK ships `hello.dcb` as `app0:/main.dcb`. Install the VPK on a jailbroken Vita. Extra game files can go in `ux0:/data/bennugd64/`.
+That configures native `bgdc` (`vita-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi` with vitasdk (`vita-arm`), and packs `dist/vita-arm-static/bennugd64.vpk` (title id `BGDV00001`). Install the VPK on a jailbroken Vita.
+
+**Where `main.dcb` goes** (first match wins):
+
+1. `ux0:/data/bennugd64/main.dcb` — drop-in game (create the folder in VitaShell; name must be `main.dcb`)
+2. `app0:/main.dcb` — bundled in the VPK (`hello.dcb` from `web/demo/hello.prg`)
+3. `app0:/` cwd as `main.dcb`
+
+Other assets (FPG, WAV, …) also go in `ux0:/data/bennugd64/` or next to the DCB in the VPK. Compile with the matching `vita-host` `bgdc`, not a random desktop Bennu.
+
+If none of those files exist, the screen lists the paths (same idea as the PS2 missing-DCB help). CROSS / START / SELECT quits. LiveArea has no console; copy `ux0:/data/bennugd64/bgdi.log` after a silent close. SELECT is Escape (hello's `key(_esc)`); START is Enter.
+
+Crashes write `ux0:/data/psp2core-*-eboot.bin.psp2dmp` (gzip ELF core). Copy it off the Vita and:
+
+```shell
+python3 scripts/vita/parse-dmp.py ~/psp2core-….psp2dmp dist/vita-arm-static/bgdi.elf
+```
+
+Use the unstripped `bgdi.elf` from the same build, not `eboot.bin`. For disassembly around PC: [vita-parse-core](https://github.com/xyzz/vita-parse-core) (`python2 main.py dump.psp2dmp bgdi.elf`) with `arm-vita-eabi-addr2line` on `PATH`.
 
 SDL3 is FetchContent (official Vita GXM backend). Modules are linked into `bgdi`.
 

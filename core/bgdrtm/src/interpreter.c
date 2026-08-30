@@ -471,7 +471,8 @@ int instance_go( INSTANCE * r )
                 p = sysproc_get( ptr[1] ) ;
                 if ( !p )
                 {
-                    fprintf( stderr, "ERROR: Runtime error in %s(%d) - Unknown system function\n", r->proc->name, LOCDWORD( r, PROCESS_ID ) ) ;
+                    const char * pname = sysproc_name( ptr[1] );
+                    fprintf( stderr, "ERROR: Runtime error in %s(%d) - Unknown system function (%d %s) [sysproc_table=%u]\n", r->proc->name, LOCDWORD( r, PROCESS_ID ), ptr[1], pname ? pname : "?", dcb.data.NSysProcsCodes ) ;
                     exit( 0 );
                 }
 
@@ -493,7 +494,8 @@ int instance_go( INSTANCE * r )
                 p = sysproc_get( ptr[1] ) ;
                 if ( !p )
                 {
-                    fprintf( stderr, "ERROR: Runtime error in %s(%d) - Unknown system process\n", r->proc->name, LOCDWORD( r, PROCESS_ID ) ) ;
+                    const char * pname = sysproc_name( ptr[1] );
+                    fprintf( stderr, "ERROR: Runtime error in %s(%d) - Unknown system process (%d %s) [sysproc_table=%u]\n", r->proc->name, LOCDWORD( r, PROCESS_ID ), ptr[1], pname ? pname : "?", dcb.data.NSysProcsCodes ) ;
                     exit( 0 );
                 }
                 r->stack_ptr -= p->params ;

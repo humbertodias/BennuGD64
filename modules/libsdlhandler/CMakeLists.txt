@@ -16,6 +16,9 @@ if (NINTENDO_WII OR PLATFORM_WII)
 endif ()
 if (PLATFORM_PS2 OR PS2)
   target_sources (sdlhandler PRIVATE libsdlhandler_ps2.c)
+endif ()
+if (PLATFORM_VITA OR VITA)
+  target_sources (sdlhandler PRIVATE libsdlhandler_vita.c)
 endif () 
 
 target_link_libraries (

@@ -541,6 +541,9 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_VITA
     gr_video_vita_apply_mode();
+    /* GXM present is XRGB8888. hello.prg's set_mode(..., 16) would otherwise
+     * fill colorghost[65536] and ConvertSurface every FRAME. */
+    depth = 32;
 #endif
 #ifdef TARGET_PS2
     gr_video_ps2_apply_mode();

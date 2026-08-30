@@ -51,6 +51,8 @@ extern int bgd_internal_copy_string_array( INSTANCE * my, intptr_t * params ) ;
 
 /* ---------------------------------------------------------------------- */
 
+extern DCB_SYSPROC_CODE2 * sysproc_code_ref ;
+
 HOOK * handler_hook_list = NULL ;
 int handler_hook_allocated = 0 ;
 int handler_hook_count = 0 ;
@@ -103,6 +105,7 @@ int module_finalize_count = 0 ;
 /* ---------------------------------------------------------------------- */
 
 static SYSPROC ** sysproc_tab = NULL ;
+static int sysproc_tab_max = -1 ;
 
 /* ---------------------------------------------------------------------- */
 
@@ -327,12 +330,14 @@ int sysproc_add( char * name, char * paramtypes, int type, void * func )
 {
     static SYSPROC * sysproc_new = 0 ;
     static int sysproc_count = 0 ;
+    static int sysproc_maxcode = 0 ;
 
     if ( !sysproc_new )
     {
         sysproc_new = sysprocs ;
         while ( sysproc_new->name )
         {
+            if ( sysproc_new->code > sysproc_maxcode ) sysproc_maxcode = sysproc_new->code ;
             sysproc_new++ ;
             sysproc_count++ ;
         }
@@ -344,7 +349,10 @@ int sysproc_add( char * name, char * paramtypes, int type, void * func )
         return -1;
     }
 
-    sysproc_new->code = -1 ; /* Se llena en el fixup */
+    /* Same numbering as bgdc (internals 1–3, then load order). DCB fixup
+     * overwrites these when NSysProcsCodes > 0. */
+    sysproc_maxcode++ ;
+    sysproc_new->code = sysproc_maxcode ;
     sysproc_new->name = name ;
     sysproc_new->paramtypes = paramtypes ;
     sysproc_new->params = strlen( paramtypes ) ;
@@ -357,14 +365,25 @@ int sysproc_add( char * name, char * paramtypes, int type, void * func )
 
     sysproc_new->func = NULL ;
 
-    return 0 /*sysproc_new->code*/ ;
+    return sysproc_maxcode ;
 }
 
 /* ---------------------------------------------------------------------- */
 
 SYSPROC * sysproc_get( int code )
 {
-    return sysproc_tab[code] ;
+    SYSPROC * p ;
+
+    if ( sysproc_tab && code >= 0 && code <= sysproc_tab_max && sysproc_tab[code] )
+        return sysproc_tab[code] ;
+
+    /* Empty DCB table: codes are load-order 1..N (see sysproc_add). */
+    if ( dcb.data.NSysProcsCodes != 0 || code < 1 )
+        return NULL ;
+    for ( p = sysprocs ; p->func ; p++ )
+        if ( p->code == code )
+            return p ;
+    return NULL ;
 }
 
 /* ---------------------------------------------------------------------- */
@@ -528,6 +547,9 @@ void sysproc_init()
 
     /* System Procs FixUp */
 
+    fprintf( stderr, "bgdi: dcb version=0x%x procs=%u imports=%u sysproc_table=%u\n",
+             dcb.data.Version, dcb.data.NProcs, dcb.data.NImports, dcb.data.NSysProcsCodes );
+
     sysprocs_fixup();
 
     proc = sysprocs ;
@@ -537,13 +559,35 @@ void sysproc_init()
         proc++ ;
     }
 
-    sysproc_tab = calloc( maxcode + 1 , sizeof( SYSPROC * ) );
+    /* DCB codes that never match stay NULL; they must still be inside the table
+     * or sysproc_get() reads off the end (Vita dump: r0=0x808 at MN_SYSPROC). */
+    if ( sysproc_code_ref )
+    {
+        DCB_SYSPROC_CODE2 * s = sysproc_code_ref ;
+        for ( n = 0; n < dcb.data.NSysProcsCodes; n++, s++ )
+            if ( maxcode < ( int ) s->Code ) maxcode = ( int ) s->Code ;
+    }
+
+    sysproc_tab_max = maxcode ;
+    sysproc_tab = calloc( ( size_t ) maxcode + 1 , sizeof( SYSPROC * ) );
 
     proc = sysprocs ;
     while ( proc->func )
     {
         if ( proc->code > -1 ) sysproc_tab[proc->code] = proc ;
         proc++ ;
+    }
+
+    if ( sysproc_code_ref )
+    {
+        DCB_SYSPROC_CODE2 * s = sysproc_code_ref ;
+        for ( n = 0; n < dcb.data.NSysProcsCodes; n++, s++ )
+        {
+            if ( ( int ) s->Code < 0 || ( int ) s->Code > sysproc_tab_max || !sysproc_tab[s->Code] )
+                fprintf( stderr, "bgdi: unmatched sysproc code=%d id=%s type=%u params=%u types=%s\n",
+                         ( int ) s->Code, getid_name( s->Id ), ( unsigned ) s->Type, ( unsigned ) s->Params,
+                         s->ParamTypes ? ( const char * ) s->ParamTypes : "" );
+        }
     }
 
     /* Sort handler_hooks */
@@ -558,18 +602,19 @@ void sysproc_init()
 
 /* ---------------------------------------------------------------------- */
 
-extern DCB_SYSPROC_CODE2 * sysproc_code_ref ;
-
-/* ---------------------------------------------------------------------- */
-
 char * sysproc_name( int code )
 {
     DCB_SYSPROC_CODE2 * s = NULL ;
+    SYSPROC * p ;
     int n;
 
     s = sysproc_code_ref ;
     for ( n = 0; n < dcb.data.NSysProcsCodes; n++, s++ )
         if ( s->Code == code ) return getid_name( s->Id ) ;
+
+    for ( p = sysprocs ; p->func ; p++ )
+        if ( p->code == code && p->name )
+            return p->name ;
 
     return NULL ;
 }

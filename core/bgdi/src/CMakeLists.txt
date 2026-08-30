@@ -175,6 +175,7 @@ if (PLATFORM_VITA OR VITA)
     ${BENNUGD_SDL3_TARGET}
     ${BENNUGD_SDL3_MIXER_TARGET}
     ScePower_stub
+    SceCtrl_stub
     m
   )
   if (COMMAND vita_create_self)

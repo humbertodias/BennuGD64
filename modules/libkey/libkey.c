@@ -430,6 +430,9 @@ static void process_key_events()
 #ifdef TARGET_WII
     libkey_wii_after_events();
 #endif
+#ifdef TARGET_VITA
+    libkey_vita_after_events();
+#endif
 #ifdef TARGET_PS2
     libkey_ps2_after_events();
     if ( !GLODWORD( libkey, SCANCODE ) )

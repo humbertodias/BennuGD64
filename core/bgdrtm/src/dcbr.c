@@ -31,8 +31,10 @@
 #include <string.h>
 #ifndef WIN32
 #include <unistd.h>
+#include <strings.h>
 #else
 #include <direct.h>
+#define strcasecmp _stricmp
 #endif
 #include "bgdrtm.h"
 #include "bgd_lowmem.h"
@@ -66,20 +68,30 @@ void sysprocs_fixup( void )
 {
     SYSPROC * proc = sysprocs ;
     DCB_SYSPROC_CODE2 * s = NULL ;
-    int n;
+    int n, id ;
+
+    if ( !sysproc_code_ref || dcb.data.NSysProcsCodes == 0 )
+        return ;
 
     while ( proc->func )
     {
         proc->code = -1;
+        id = getid( proc->name );
 
         s = sysproc_code_ref ;
         for ( n = 0; n < dcb.data.NSysProcsCodes; n++, s++ )
         {
-            if (
-                proc->type == s->Type && proc->params == s->Params &&
-                s->Id == getid( proc->name ) && !strcmp( (const char *)s->ParamTypes, proc->paramtypes ) )
+            int type_ok = ( proc->type == ( int ) s->Type ) ||
+                          ( ( proc->type == TYPE_INT || proc->type == TYPE_DWORD ) &&
+                            ( ( int ) s->Type == TYPE_INT || ( int ) s->Type == TYPE_DWORD ) );
+            int params_ok = ( proc->params == ( int ) s->Params );
+            int types_ok = ( proc->params == 0 ) ||
+                           ( s->ParamTypes && proc->paramtypes &&
+                             strcmp( ( const char * ) s->ParamTypes, proc->paramtypes ) == 0 );
+
+            if ( type_ok && params_ok && types_ok && id >= 0 && ( int ) s->Id == id )
             {
-                proc->code = s->Code ;
+                proc->code = ( int ) s->Code ;
                 break ;
             }
         }
@@ -538,6 +550,15 @@ int dcb_load_from( file * fp, char * filename, int offset )
         if ( sdcb.Params ) file_read( fp, sysproc_code_ref[n].ParamTypes, sdcb.Params ) ;
     }
 
+    if ( dcb.data.NSysProcsCodes )
+    {
+        unsigned int dump_n = dcb.data.NSysProcsCodes < 8u ? dcb.data.NSysProcsCodes : 8u ;
+        fprintf( stderr, "bgdi: first sysproc codes:" ) ;
+        for ( n = 0; n < dump_n; n++ )
+            fprintf( stderr, " %d:%s", ( int ) sysproc_code_ref[n].Code, getid_name( sysproc_code_ref[n].Id ) ) ;
+        fprintf( stderr, " (of %u)\n", dcb.data.NSysProcsCodes ) ;
+    }
+
     sysprocs_fixup();
 
     mainproc = procdef_get_by_name( "MAIN" );
@@ -562,7 +583,7 @@ int getid( char * name )
 {
     unsigned int n ;
     for ( n = 0 ; n < dcb.data.NID ; n++ )
-        if ( strcmp( (const char *)dcb.id[n].Name, name ) == 0 )
+        if ( strcasecmp( (const char *)dcb.id[n].Name, name ) == 0 )
             return dcb.id[n].Code ;
     return -1 ;
 }

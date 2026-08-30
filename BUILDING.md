@@ -1,8 +1,8 @@
 # Building BennuGD64
 
-## Docker (Linux, Windows, web, Android, Switch, Dreamcast, PSP, PS2, Pandora, Wii, and macOS)
+## Docker (Linux, Windows, web, Android, Switch, Dreamcast, PSP, Vita, PS2, Pandora, Wii, and macOS)
 
-No local compiler, CMake, MinGW, Emscripten, Android SDK, devkitPro, KallistiOS, pspdev, ps2dev, Ångström toolchain, or Xcode. Only [Docker](https://www.docker.com/get-started/).
+No local compiler, CMake, MinGW, Emscripten, Android SDK, devkitPro, KallistiOS, pspdev, vitasdk, ps2dev, Ångström toolchain, or Xcode. Only [Docker](https://www.docker.com/get-started/).
 
 ```shell
 bash scripts/docker-build.sh linux
@@ -12,6 +12,7 @@ bash scripts/docker-build.sh android
 bash scripts/docker-build.sh switch
 bash scripts/docker-build.sh dreamcast
 bash scripts/docker-build.sh psp
+bash scripts/docker-build.sh vita
 bash scripts/docker-build.sh ps2
 bash scripts/docker-build.sh pandora
 bash scripts/docker-build.sh wii
@@ -30,6 +31,7 @@ bash scripts/docker-build.sh windows shared
 | `switch` | `docker/Dockerfile.switch` | `dist/switch-aarch64-static/` (`bennugd64.nro`) |
 | `dreamcast` | `docker/Dockerfile.dreamcast` | `dist/dreamcast-sh4-static/` (`bennugd64.cdi`) |
 | `psp` | `docker/Dockerfile.psp` | `dist/psp-mips-static/` (`EBOOT.PBP`) |
+| `vita` | `docker/Dockerfile.vita` | `dist/vita-arm-static/` (`bennugd64.vpk`) |
 | `ps2` | `docker/Dockerfile.ps2` | `dist/ps2-mips-static/` (`bgdi.elf`, `bennugd64.iso`) |
 | `pandora` | `docker/Dockerfile.pandora` | `dist/pandora-arm-static/` (`bennugd64.pnd`) |
 | `wii` | `docker/Dockerfile.wii` | `dist/wii-powerpc-static/` (`apps/bennugd64/boot.dol`) |
@@ -37,7 +39,7 @@ bash scripts/docker-build.sh windows shared
 | `macos arm64` / `macos arm64 shared` | `docker/Dockerfile.macos` | `dist/macos-arm64-{static,shared}/` |
 | `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
 
-The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; PS2: native `bgdc` + ps2dev `bgdi.elf`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
+The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; PS2: native `bgdc` + ps2dev `bgdi.elf`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
 
 ```shell
 bash scripts/docker-build.sh linux shell
@@ -45,13 +47,14 @@ bash scripts/docker-build.sh android shell
 bash scripts/docker-build.sh switch shell
 bash scripts/docker-build.sh dreamcast shell
 bash scripts/docker-build.sh psp shell
+bash scripts/docker-build.sh vita shell
 bash scripts/docker-build.sh ps2 shell
 bash scripts/docker-build.sh pandora shell
 bash scripts/docker-build.sh wii shell
 bash scripts/docker-build.sh macos shell
 ```
 
-Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, **Android (NDK)**, **Switch (devkitA64)**, **Dreamcast (KallistiOS)**, **PSP (pspdev)**, **PS2 (ps2dev)**, **OpenPandora (Ångström)**, **Wii (devkitPPC)**, or **macOS (osxcross)** in the config picker. The repo is mounted at `/src`, same as `docker-build.sh`.
+Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, **Android (NDK)**, **Switch (devkitA64)**, **Dreamcast (KallistiOS)**, **PSP (pspdev)**, **PS Vita (vitasdk)**, **PS2 (ps2dev)**, **OpenPandora (Ångström)**, **Wii (devkitPPC)**, or **macOS (osxcross)** in the config picker. The repo is mounted at `/src`, same as `docker-build.sh`.
 
 The first `macos` image build downloads a macOS SDK (Xcode license) and compiles [osxcross](https://github.com/tpoechtrager/osxcross); later runs reuse `bennugd64-macos`. SDL3 is built from FetchContent (not `osxcross-macports` / SDL2). SDK 10.10 is too old for SDL3; the image uses MacOSX 14.5 with deployment target 11.0.
 
@@ -84,6 +87,8 @@ MinGW-w64 on Windows). Presets in `CMakePresets.json`:
 | `dreamcast-sh4` | `build-dreamcast-sh4` | KallistiOS `bgdi.elf` (needs `KOS_BASE`) |
 | `psp-host` | `build-psp-host` | Native `bgdc` for PSP demo DCBs |
 | `psp-mips` | `build-psp-mips` | pspdev `bgdi.elf` (needs `PSPDEV`) |
+| `vita-host` | `build-vita-host` | Native `bgdc` for Vita demo DCBs |
+| `vita-arm` | `build-vita-arm` | vitasdk `bgdi` (needs `VITASDK`) |
 | `ps2-host` | `build-ps2-host` | Native `bgdc` for PS2 demo DCBs |
 | `ps2-mips` | `build-ps2-mips` | ps2dev `bgdi.elf` (needs `PS2DEV`) |
 | `pandora-host` | `build-pandora-host` | Native `bgdc` for Pandora demo DCBs |
@@ -285,6 +290,36 @@ For **Streets of Rage Remake**, copy the **entire** SoRR install folder (not jus
 
 SDL3 and SDL3_mixer come from the pspdev packages (Allegrex GU/audio). Modules are linked into `bgdi.elf`.
 
+## PlayStation Vita
+
+Needs Docker. `docker/Dockerfile.vita` is a toolchain image from [`vitasdk/vitasdk`](https://hub.docker.com/r/vitasdk/vitasdk) (Ubuntu 24.04, `arm-vita-eabi-gcc`, `vita-elf-create` / `vita-make-fself` / `vita-pack-vpk`). Host gcc and Ninja are installed for native `bgdc`. The image is linux/amd64 and linux/arm64.
+
+```shell
+bash scripts/docker-build.sh vita
+```
+
+That configures native `bgdc` (`vita-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi` with vitasdk (`vita-arm`), and packs `dist/vita-arm-static/bennugd64.vpk` (title id `BGDV00001`). Install the VPK on a jailbroken Vita.
+
+**Where `main.dcb` goes** (first match wins):
+
+1. `ux0:/data/bennugd64/main.dcb` — drop-in game (create the folder in VitaShell; name must be `main.dcb`)
+2. `app0:/main.dcb` — bundled in the VPK (`hello.dcb` from `web/demo/hello.prg`)
+3. `app0:/` cwd as `main.dcb`
+
+Other assets (FPG, WAV, …) also go in `ux0:/data/bennugd64/` or next to the DCB in the VPK. Compile with the matching `vita-host` `bgdc`, not a random desktop Bennu.
+
+If none of those files exist, the screen lists the paths (same idea as the PS2 missing-DCB help). CROSS / START / SELECT quits. LiveArea has no console; copy `ux0:/data/bennugd64/bgdi.log` after a silent close. SELECT is Escape (hello's `key(_esc)`); START is Enter.
+
+Crashes write `ux0:/data/psp2core-*-eboot.bin.psp2dmp` (gzip ELF core). Copy it off the Vita and:
+
+```shell
+python3 scripts/vita/parse-dmp.py ~/psp2core-….psp2dmp dist/vita-arm-static/bgdi.elf
+```
+
+Use the unstripped `bgdi.elf` from the same build, not `eboot.bin`. For disassembly around PC: [vita-parse-core](https://github.com/xyzz/vita-parse-core) (`python2 main.py dump.psp2dmp bgdi.elf`) with `arm-vita-eabi-addr2line` on `PATH`.
+
+SDL3 is FetchContent (official Vita GXM backend). Modules are linked into `bgdi`.
+
 ## PlayStation 2
 
 Needs Docker. `docker/Dockerfile.ps2` is a toolchain image built for **linux/amd64** (Emotion Engine host tools are x86_64; on Apple Silicon Docker uses qemu). It does not clone this repo or bake Bennu into the image.
@@ -392,7 +427,7 @@ The install scripts download the latest GitHub Release for your platform, unpack
 
 GitHub Actions (`.github/workflows/ci.yml`):
 
-- Docker platforms share one `build` job keyed by `matrix.platform` (`linux`, `windows`, `macos`/osxcross, `wasm`, `android`, `switch`, `dreamcast`, `psp`, `ps2`, `pandora`, `wii`): `docker/Dockerfile.$platform` then `scripts/docker-build.sh`. Linux, Windows, and osxcross (x86_64 and arm64) also build shared modules. Pages deploys the `web-wasm32-static` artifact.
+- Docker platforms share one `build` job keyed by `matrix.platform` (`linux`, `windows`, `macos`/osxcross, `wasm`, `android`, `switch`, `dreamcast`, `psp`, `vita`, `ps2`, `pandora`, `wii`): `docker/Dockerfile.$platform` then `scripts/docker-build.sh`. Linux, Windows, and osxcross (x86_64 and arm64) also build shared modules. Pages deploys the `web-wasm32-static` artifact.
 - WASI — host `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
 
-On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`; Switch zip for `switch-aarch64-static`; Dreamcast zip for `dreamcast-sh4-static`; PSP zip for `psp-mips-static`; Pandora zip for `pandora-arm-static`; Wii zip for `wii-powerpc-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`; the Switch NRO links SDL3 statically from the devkitPro fork; the Dreamcast CDI links SDL3 statically from the GPF Dreamcast fork; the PSP PBP links SDL3 statically from the pspdev packages; the Pandora PND links official SDL3 statically against the Ångström sysroot; the Wii DOL links SDL3 statically from the libogc2 fork). OS graphics/audio libraries may still be required at runtime on native builds.
+On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`; Switch zip for `switch-aarch64-static`; Dreamcast zip for `dreamcast-sh4-static`; PSP zip for `psp-mips-static`; Vita zip for `vita-arm-static`; Pandora zip for `pandora-arm-static`; Wii zip for `wii-powerpc-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`; the Switch NRO links SDL3 statically from the devkitPro fork; the Dreamcast CDI links SDL3 statically from the GPF Dreamcast fork; the PSP PBP links SDL3 statically from the pspdev packages; the Vita VPK links official SDL3 statically from FetchContent; the Pandora PND links official SDL3 statically against the Ångström sysroot; the Wii DOL links SDL3 statically from the libogc2 fork). OS graphics/audio libraries may still be required at runtime on native builds.

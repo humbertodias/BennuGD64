@@ -42,6 +42,9 @@
 #ifdef TARGET_PSP
 #include "libkey_psp.h"
 #endif
+#ifdef TARGET_VITA
+#include "libkey_vita.h"
+#endif
 #ifdef TARGET_EMSCRIPTEN
 #include "libkey_emscripten.h"
 #endif
@@ -427,6 +430,9 @@ static void process_key_events()
 #ifdef TARGET_WII
     libkey_wii_after_events();
 #endif
+#ifdef TARGET_VITA
+    libkey_vita_after_events();
+#endif
 #ifdef TARGET_PS2
     libkey_ps2_after_events();
     if ( !GLODWORD( libkey, SCANCODE ) )
@@ -487,6 +493,8 @@ void __bgdexport( libkey, module_initialize )()
 
 #ifdef TARGET_PSP
     libkey_psp_after_init( window );
+#elif defined(TARGET_VITA)
+    libkey_vita_after_init( window );
 #elif defined(TARGET_PS2)
     /* No OSK. DualShock is polled in libkey_ps2_after_events. */
 #elif defined(TARGET_EMSCRIPTEN)

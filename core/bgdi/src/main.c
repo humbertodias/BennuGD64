@@ -63,6 +63,9 @@
 #ifdef TARGET_PSP
 #include "main_psp.h"
 #endif
+#ifdef TARGET_VITA
+#include "main_vita.h"
+#endif
 #ifdef TARGET_PS2
 #include "main_ps2.h"
 #endif
@@ -140,6 +143,23 @@ int main( int argc, char *argv[] )
         char * psp_dcb = bgdi_psp_startup( argc, argv, &standalone );
         if ( psp_dcb )
             filename = psp_dcb;
+    }
+#endif
+
+#ifdef TARGET_VITA
+    {
+        static char * vita_argv[2] = { "app0:/eboot.bin", NULL };
+        char * vita_dcb;
+
+        if ( argc < 1 || !argv || !argv[0] )
+        {
+            argc = 1;
+            argv = vita_argv;
+        }
+
+        vita_dcb = bgdi_vita_startup( argc, argv, &standalone );
+        if ( vita_dcb )
+            filename = vita_dcb;
     }
 #endif
 

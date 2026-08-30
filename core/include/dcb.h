@@ -128,12 +128,14 @@ DCB_VARSPACE ;
 typedef struct
 {
     uint32_t    Id ; /* Identifier of Name, Segment Key 1 */
-    BASETYPE    Type ; /* Segment Key 2 */
+    uint32_t    Type ; /* BASETYPE; uint32 so host bgdc and 32-bit runtimes agree */
     uint32_t    Params ; /* Segment Key 3 */
     uint32_t    Code ;
 }
 __PACKED
 DCB_SYSPROC_CODE ;
+
+_Static_assert( sizeof( DCB_SYSPROC_CODE ) == 16, "DCB sysproc on-disk record is 16 bytes" );
 
 /* Internal Use, see also DCB_SYSPROC_CODE */
 typedef struct
@@ -281,5 +283,6 @@ extern DCB_HEADER dcb ;
 
 extern void sysprocs_fixup( void );
 extern int getid( char * name );
+extern char * getid_name( unsigned int code );
 
 #endif

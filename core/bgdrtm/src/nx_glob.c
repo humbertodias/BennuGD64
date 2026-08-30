@@ -1,7 +1,7 @@
 /*
- * Minimal glob(3) for newlib (Switch libnx / Dreamcast KallistiOS / Wii libogc): headers
- * exist, libc does not. Enough for dirs.c: GLOB_ERR | GLOB_NOSORT, fnmatch
- * on the last path component.
+ * Minimal glob(3) for newlib (Switch libnx / Dreamcast KallistiOS / Wii libogc /
+ * Vita): headers exist, libc does not (or omits POSIX return codes). Enough for
+ * dirs.c: GLOB_ERR | GLOB_NOSORT, fnmatch on the last path component.
  */
 
 #include <dirent.h>
@@ -17,6 +17,11 @@
 #else
 #define GLOB_ABEND 2
 #endif
+#endif
+
+/* Vita/newlib glob.h has GLOB_NOMAGIC but historically no GLOB_NOMATCH. */
+#ifndef GLOB_NOMATCH
+#define GLOB_NOMATCH (-3)
 #endif
 
 /* newlib on some KOS/libnx trees has fnmatch.h but no fnmatch(). */

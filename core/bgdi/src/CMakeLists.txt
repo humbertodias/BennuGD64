@@ -20,6 +20,9 @@ endif ()
 if (PLATFORM_PSP OR PSP)
   target_sources (bgdi PRIVATE main_psp.c)
 endif ()
+if (PLATFORM_VITA OR VITA)
+  target_sources (bgdi PRIVATE main_vita.c)
+endif ()
 if (PLATFORM_PS2 OR PS2)
   set (_ps2sdk "$ENV{PS2SDK}")
   if (NOT _ps2sdk)
@@ -164,6 +167,24 @@ if (PLATFORM_PSP OR PSP)
     pspkernel
     m
   )
+endif ()
+
+if (PLATFORM_VITA OR VITA)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+    ScePower_stub
+    SceCtrl_stub
+    m
+  )
+  if (COMMAND vita_create_self)
+    vita_create_self (bgdi.self bgdi UNSAFE)
+    vita_create_vpk (bennugd64.vpk BGDV00001 bgdi.self
+      VERSION 01.00
+      NAME BennuGD64
+    )
+  endif ()
 endif ()
 
 if (PLATFORM_PS2 OR PS2)

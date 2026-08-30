@@ -44,6 +44,9 @@
 #ifdef TARGET_PSP
 #include "g_video_psp.h"
 #endif
+#ifdef TARGET_VITA
+#include "g_video_vita.h"
+#endif
 #ifdef TARGET_PS2
 #include "g_video_ps2.h"
 #endif
@@ -262,6 +265,10 @@ void gr_video_present( SDL_Surface * src )
     gr_video_psp_present( src );
     return;
 #endif
+#ifdef TARGET_VITA
+    gr_video_vita_present( src );
+    return;
+#endif
 #ifdef TARGET_PS2
     gr_video_ps2_present( src );
     return;
@@ -305,6 +312,10 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_present_rects( src, rects, count );
+    return;
+#endif
+#ifdef TARGET_VITA
+    gr_video_vita_present_rects( src, rects, count );
     return;
 #endif
 #ifdef TARGET_PS2
@@ -383,6 +394,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 #ifdef TARGET_PSP
     gr_video_psp_adjust_window( &width, &height, &window_flags );
 #endif
+#ifdef TARGET_VITA
+    gr_video_vita_adjust_window( &width, &height, &window_flags );
+#endif
 #ifdef TARGET_PS2
     gr_video_ps2_adjust_window( &width, &height, &window_flags );
     gr_video_ps2_before_window();
@@ -418,6 +432,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
             gr_destroy_present_renderer();
 #ifdef TARGET_PSP
             gr_video_psp_destroy();
+#endif
+#ifdef TARGET_VITA
+            gr_video_vita_destroy();
 #endif
 #ifdef TARGET_WII
             gr_video_wii_destroy();
@@ -524,6 +541,12 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_apply_mode();
+#endif
+#ifdef TARGET_VITA
+    gr_video_vita_apply_mode();
+    /* GXM present is XRGB8888. hello.prg's set_mode(..., 16) would otherwise
+     * fill colorghost[65536] and ConvertSurface every FRAME. */
+    depth = 32;
 #endif
 #ifdef TARGET_PS2
     gr_video_ps2_apply_mode();
@@ -901,6 +924,8 @@ void __bgdexport( libvideo, module_initialize )()
 #endif
 #ifdef TARGET_PSP
     gr_video_psp_module_initialize();
+#elif defined(TARGET_VITA)
+    gr_video_vita_module_initialize();
 #elif defined(TARGET_PANDORA)
     gr_video_pandora_module_initialize();
 #else
@@ -945,6 +970,9 @@ void __bgdexport( libvideo, module_finalize )()
         gr_destroy_present_renderer();
 #ifdef TARGET_PSP
         gr_video_psp_destroy();
+#endif
+#ifdef TARGET_VITA
+        gr_video_vita_destroy();
 #endif
 #ifdef TARGET_WII
         gr_video_wii_destroy();

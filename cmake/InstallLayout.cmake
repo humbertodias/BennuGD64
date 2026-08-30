@@ -3,6 +3,7 @@
 #   <prefix>/libbgdrtm.*  <prefix>/libdes.*   (shared builds)
 #   <prefix>/modules/*                        (shared builds)
 #   <prefix>/README.md  <prefix>/BUILD_INFO.txt
+#   <prefix>/unquarantine.sh                  (macOS)
 
 if (DEFINED BENNUGD_RESOLVED_VERSION AND NOT BENNUGD_RESOLVED_VERSION STREQUAL "")
   set (BENNUGD_PACKAGE_VERSION "${BENNUGD_RESOLVED_VERSION}")
@@ -127,7 +128,7 @@ set (BENNUGD_PACKAGE_NAME
 
 if (APPLE)
   set (BENNUGD_PACKAGE_NOTE
-    "Downloads: xattr -cr . then ./bgdi.  ${BENNUGD_PACKAGE_NOTE}")
+    "Downloads: ./unquarantine.sh (clears Gatekeeper quarantine, then runs bgdi).  ${BENNUGD_PACKAGE_NOTE}")
 endif ()
 
 configure_file (
@@ -185,6 +186,10 @@ install (FILES
   ${CMAKE_BINARY_DIR}/BUILD_INFO.txt
   DESTINATION .
 )
+
+if (APPLE)
+  install (PROGRAMS ${CMAKE_SOURCE_DIR}/scripts/osx/unquarantine.sh DESTINATION .)
+endif ()
 
 if (MINGW)
   install (CODE [[

@@ -1006,7 +1006,7 @@ if [[ "${PLATFORM}" == "macos" ]]; then
         -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
       cmake --build --preset "${PRESET}"
       cmake --install "${BUILD_DIR}" --prefix "${STAGE}"
-      bash /src/scripts/macos-codesign-dist.sh "${STAGE}"
+      bash /src/scripts/osx/codesign.sh "${STAGE}"
     '
   exit 0
 fi

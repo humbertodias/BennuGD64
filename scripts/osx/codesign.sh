@@ -5,7 +5,7 @@
 set -euo pipefail
 
 STAGE="${1:?usage: $0 <install-prefix>}"
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 ENTITLEMENTS="${ROOT}/cmake/macos-disable-library-validation.plist"
 
 if command -v osxcross-codesign >/dev/null 2>&1; then
@@ -17,7 +17,7 @@ elif command -v codesign >/dev/null 2>&1; then
     codesign --force --sign - --timestamp=none --entitlements "${ENTITLEMENTS}" "$1"
   }
 else
-  echo "macos-codesign-dist: no codesign/osxcross-codesign" >&2
+  echo "codesign: no codesign/osxcross-codesign" >&2
   exit 1
 fi
 
@@ -34,12 +34,12 @@ shopt -s nullglob
 for f in "${STAGE}"/*.dylib "${STAGE}/modules"/*.dylib; do
   [[ -f "${f}" ]] || continue
   is_macho "${f}" || continue
-  echo "macos-codesign-dist: ${f}"
+  echo "codesign: ${f}"
   sign_lib "${f}"
 done
 for f in "${STAGE}/bgdi" "${STAGE}/bgdc"; do
   [[ -f "${f}" ]] || continue
   is_macho "${f}" || continue
-  echo "macos-codesign-dist: ${f}"
+  echo "codesign: ${f}"
   sign_bin "${f}"
 done

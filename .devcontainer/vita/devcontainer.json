@@ -1,0 +1,22 @@
+{
+  "name": "BennuGD64 PS Vita (vitasdk)",
+  "build": {
+    "dockerfile": "../../docker/Dockerfile.vita",
+    "context": "../../docker"
+  },
+  "workspaceFolder": "/src",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
+  "remoteUser": "root",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+      ]
+    },
+    "zed": {
+      "extensions": ["dockerfile", "make"]
+    }
+  }
+}

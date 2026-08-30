@@ -67,6 +67,9 @@ endif ()
 if (PLATFORM_PSP OR PSP)
   include (${CMAKE_SOURCE_DIR}/cmake/PSP.cmake)
 endif ()
+if (PLATFORM_VITA OR VITA)
+  include (${CMAKE_SOURCE_DIR}/cmake/PlayStationVita.cmake)
+endif ()
 if (PLATFORM_PS2 OR PS2)
   include (${CMAKE_SOURCE_DIR}/cmake/PlayStation2.cmake)
 endif ()
@@ -133,6 +136,8 @@ elseif (PLATFORM_DREAMCAST OR DREAMCAST)
   add_definitions (-DTARGET_DC)
 elseif (PLATFORM_PSP OR PSP)
   add_definitions (-DTARGET_PSP)
+elseif (PLATFORM_VITA OR VITA)
+  add_definitions (-DTARGET_VITA)
 elseif (PLATFORM_PS2 OR PS2)
   add_definitions (-DTARGET_PS2)
 elseif (PLATFORM_PANDORA OR OPENPANDORA)
@@ -172,6 +177,17 @@ else ()
     find_package (PNG REQUIRED)
   endif ()
   find_package (ZLIB REQUIRED)
+endif ()
+
+# After FetchDeps: sorr-vita sceClib redirects must not leak into SDL3 (SDL_qsort.c).
+if (PLATFORM_VITA OR VITA)
+  add_compile_definitions (
+    memcpy=sceClibMemcpy
+    memcmp=sceClibMemcmp
+    strcmp=sceClibStrcmp
+    strncmp=sceClibStrncmp
+    strncpy=sceClibStrncpy
+  )
 endif ()
 if (USE_LIBDES)
   add_definitions (-DUSE_LIBDES)

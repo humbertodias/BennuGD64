@@ -49,6 +49,9 @@
 #ifdef TARGET_PSP
 #include "misc_psp.h"
 #endif
+#ifdef TARGET_VITA
+#include "misc_vita.h"
+#endif
 #ifdef TARGET_PS2
 #include "misc_ps2.h"
 #endif
@@ -163,6 +166,13 @@ int debug = 0;  /* 1 if running in debug mode      */
 #undef _OS_ID
 #endif
 #define _OS_ID          OS_PSP
+#endif
+
+#ifdef TARGET_VITA
+#ifdef _OS_ID
+#undef _OS_ID
+#endif
+#define _OS_ID          OS_VITA
 #endif
 
 #ifdef TARGET_PANDORA
@@ -298,6 +308,9 @@ void bgdrtm_entry( int argc, char * argv[] )
 
 #ifdef TARGET_PSP
     bgdrtm_psp_entry();
+#endif
+#ifdef TARGET_VITA
+    bgdrtm_vita_entry();
 #endif
 #endif
 

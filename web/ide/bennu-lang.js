@@ -18,7 +18,7 @@ const CORE_CONSTS = [
   'STATUS_DEAD', 'STATUS_KILLED', 'STATUS_RUNNING', 'STATUS_SLEEPING',
   'STATUS_FROZEN', 'STATUS_WAITING',
   'OS_WIN32', 'OS_LINUX', 'OS_MACOS', 'OS_WII', 'OS_ANDROID', 'OS_EMSCRIPTEN',
-  'OS_SWITCH', 'OS_PSP', 'OS_PANDORA', 'MIN_INT', 'MAX_INT'
+  'OS_SWITCH', 'OS_PSP', 'OS_PANDORA', 'OS_PS2', 'OS_VITA', 'MIN_INT', 'MAX_INT'
 ];
 
 const CORE_LOCALS = ['id', 'father', 'son', 'smallbro', 'bigbro', 'priority'];

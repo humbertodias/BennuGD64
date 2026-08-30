@@ -9,6 +9,7 @@
 #   bash scripts/docker-build.sh switch
 #   bash scripts/docker-build.sh dreamcast
 #   bash scripts/docker-build.sh psp
+#   bash scripts/docker-build.sh vita
 #   bash scripts/docker-build.sh ps2
 #   bash scripts/docker-build.sh pandora
 #   bash scripts/docker-build.sh wii
@@ -27,6 +28,7 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 switch [shell]
        $0 dreamcast [shell]
        $0 psp [shell]
+       $0 vita [shell]
        $0 ps2 [shell]
        $0 pandora [shell]
        $0 wii [shell]
@@ -52,7 +54,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|ps2|pandora|wii|macos) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|vita|ps2|pandora|wii|macos) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -98,6 +100,11 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
       --platform linux/amd64 \
       -t bennugd64-psp \
       -f docker/Dockerfile.psp \
+      docker/
+  elif [[ "${PLATFORM}" == "vita" ]]; then
+    docker build \
+      -t bennugd64-vita \
+      -f docker/Dockerfile.vita \
       docker/
   elif [[ "${PLATFORM}" == "ps2" ]]; then
     docker build \
@@ -180,6 +187,7 @@ reuse_fetchcontent_src() {
     "${ROOT}/build-android-arm64/_deps/${name}" \
     "${ROOT}/build-host/_deps/${name}" \
     "${ROOT}/build-psp-host/_deps/${name}" \
+    "${ROOT}/build-vita-host/_deps/${name}" \
     "${ROOT}/build-pandora-host/_deps/${name}"
   do
     if [[ -f "${cand}/CMakeLists.txt" ]]; then
@@ -673,6 +681,94 @@ if [[ "${PLATFORM}" == "psp" ]]; then
       cp "${GAMEDIR}/"* "${STAGE}/" 2>/dev/null || true
       test -s "${STAGE}/EBOOT.PBP"
       test -s "${STAGE}/bgdi.elf"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "vita" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: vita-host + vita-arm"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-vita-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-vita-arm/_deps"
+  docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -n "${VITASDK:-}"
+      test -x "${VITASDK}/bin/arm-vita-eabi-gcc"
+      test -x "${VITASDK}/bin/vita-elf-create"
+      test -x "${VITASDK}/bin/vita-make-fself"
+      test -x "${VITASDK}/bin/vita-pack-vpk"
+      test -x "${VITASDK}/bin/vita-mksfoex"
+      HOST_BUILD=/src/build-vita-host
+      VITA_BUILD=/src/build-vita-arm
+      GAMEDIR=/src/build-vita-game
+      STAGE=/src/dist/vita-arm-static
+      FETCH_DIR="${HOST_BUILD}/_deps"
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset vita-host "${COMMON[@]}"
+      cmake --build --preset vita-host
+      for prg in /src/web/demo/*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      cmake --preset vita-arm \
+        "${COMMON[@]}" \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
+      cmake --build --preset vita-arm
+      ELF=""
+      for cand in \
+        "${VITA_BUILD}/core/bgdi/src/bgdi" \
+        "${VITA_BUILD}/core/bgdi/src/bgdi.elf"
+      do
+        if [[ -f "${cand}" ]]; then
+          ELF="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${ELF}" ]]; then
+        ELF="$(find "${VITA_BUILD}/core/bgdi" \( -type f -o -type l \) \( -name bgdi -o -name bgdi.elf \) | grep -v /CMakeFiles/ | head -n 1 || true)"
+      fi
+      test -n "${ELF}"
+      test -s "${ELF}"
+      rm -rf "${GAMEDIR}"
+      mkdir -p "${GAMEDIR}" "${STAGE}"
+      cp "${ELF}" "${GAMEDIR}/bgdi.elf"
+      "${VITASDK}/bin/vita-elf-create" "${GAMEDIR}/bgdi.elf" "${GAMEDIR}/bgdi.velf"
+      "${VITASDK}/bin/vita-make-fself" -u "${GAMEDIR}/bgdi.velf" "${GAMEDIR}/eboot.bin"
+      "${VITASDK}/bin/vita-mksfoex" -s TITLE_ID=BGDV00001 \
+        -d PARENTAL_LEVEL=1 -d ATTRIBUTE2=12 \
+        "BennuGD64" "${GAMEDIR}/param.sfo"
+      cp /src/web/demo/*.dcb "${GAMEDIR}/"
+      cp /src/web/demo/hello.dcb "${GAMEDIR}/main.dcb"
+      (
+        cd "${GAMEDIR}"
+        "${VITASDK}/bin/vita-pack-vpk" -s param.sfo -b eboot.bin \
+          -a main.dcb=main.dcb \
+          "${STAGE}/bennugd64.vpk"
+      )
+      cmake --install "${VITA_BUILD}" --prefix "${STAGE}"
+      cp "${GAMEDIR}/bgdi.elf" "${GAMEDIR}/eboot.bin" "${GAMEDIR}/main.dcb" "${STAGE}/"
+      test -s "${STAGE}/bennugd64.vpk"
+      test -s "${STAGE}/eboot.bin"
     '
   exit 0
 fi

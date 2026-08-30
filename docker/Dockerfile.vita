@@ -1,0 +1,25 @@
+# PlayStation Vita homebrew toolchain (linux/amd64 and linux/arm64).
+#   docker build -t bennugd64-vita -f docker/Dockerfile.vita docker/
+#   docker run --rm -v "$PWD":/src -w /src \
+#     bennugd64-vita cmake --preset vita-arm
+#
+# Toolchain only: does not clone this repo or bake Bennu into the image.
+# Compiler, vitasdk, CMake, vita-elf-create / vita-make-fself / vita-pack-vpk
+# come from vitasdk/vitasdk (Ubuntu 24.04). Host gcc/ninja are added for native bgdc.
+
+FROM vitasdk/vitasdk:latest
+
+ENV PLATFORM=vita
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc \
+        g++ \
+        git \
+        ninja-build \
+        zip \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*' \
+    && if [ -n "${VITASDK}" ] && [ -d "${VITASDK}" ]; then chmod -R a+rX "${VITASDK}"; fi
+
+WORKDIR /src
+CMD ["bash"]

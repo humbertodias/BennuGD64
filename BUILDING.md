@@ -17,6 +17,7 @@ bash scripts/docker-build.sh pandora
 bash scripts/docker-build.sh wii
 bash scripts/docker-build.sh macos
 bash scripts/docker-build.sh macos arm64
+bash scripts/docker-build.sh macos arm64 shared
 bash scripts/docker-build.sh windows
 bash scripts/docker-build.sh windows shared
 ```
@@ -33,7 +34,7 @@ bash scripts/docker-build.sh windows shared
 | `pandora` | `docker/Dockerfile.pandora` | `dist/pandora-arm-static/` (`bennugd64.pnd`) |
 | `wii` | `docker/Dockerfile.wii` | `dist/wii-powerpc-static/` (`apps/bennugd64/boot.dol`) |
 | `macos` / `macos shared` | `docker/Dockerfile.macos` | `dist/macos-x86_64-{static,shared}/` |
-| `macos arm64` | `docker/Dockerfile.macos` | `dist/macos-arm64-static/` |
+| `macos arm64` / `macos arm64 shared` | `docker/Dockerfile.macos` | `dist/macos-arm64-{static,shared}/` |
 | `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
 
 The images are toolchains only. `scripts/docker-build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; PS2: native `bgdc` + ps2dev `bgdi.elf`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
@@ -54,7 +55,7 @@ Zed and VS Code can attach to the same images via [Dev Containers](https://conta
 
 The first `macos` image build downloads a macOS SDK (Xcode license) and compiles [osxcross](https://github.com/tpoechtrager/osxcross); later runs reuse `bennugd64-macos`. SDL3 is built from FetchContent (not `osxcross-macports` / SDL2). SDK 10.10 is too old for SDL3; the image uses MacOSX 14.5 with deployment target 11.0.
 
-Native CI still uses a Mac (`macos-latest`) for `dist/macos-arm64-*`. Docker osxcross is the Linux → Mach-O path (`dist/macos-x86_64-*` or `dist/macos-arm64-*`). Shared macOS archives from the internet are quarantined; dyld then refuses `@rpath` dylibs. Run `./unquarantine.sh` from the extracted folder (it `xattr -cr`s the directory and execs `./bgdi`). On a copy that still fails: `codesign --force --sign - ./bgdi ./bgdc ./*.dylib ./modules/*.dylib`.
+Docker osxcross is the Linux → Mach-O path (`dist/macos-x86_64-*` or `dist/macos-arm64-*`). Shared macOS archives from the internet are quarantined; dyld then refuses `@rpath` dylibs. Run `./unquarantine.sh` from the extracted folder (it `xattr -cr`s the directory and execs `./bgdi`). On a copy that still fails: `codesign --force --sign - ./bgdi ./bgdc ./*.dylib ./modules/*.dylib`.
 
 Pinned dependency versions live in `versions.env`. Native Linux packages are listed in `docker/Dockerfile.linux`.
 
@@ -391,8 +392,7 @@ The install scripts download the latest GitHub Release for your platform, unpack
 
 GitHub Actions (`.github/workflows/ci.yml`):
 
-- Docker platforms share one `build` job keyed by `matrix.platform` (`linux`, `windows`, `macos`/osxcross, `wasm`, `android`, `switch`, `dreamcast`, `psp`, `ps2`, `pandora`, `wii`): `docker/Dockerfile.$platform` then `scripts/docker-build.sh`. Linux, Windows, and osxcross also build shared modules. Pages deploys the `web-wasm32-static` artifact.
-- macOS arm64 — native `macos-latest` runner (static + shared)
+- Docker platforms share one `build` job keyed by `matrix.platform` (`linux`, `windows`, `macos`/osxcross, `wasm`, `android`, `switch`, `dreamcast`, `psp`, `ps2`, `pandora`, `wii`): `docker/Dockerfile.$platform` then `scripts/docker-build.sh`. Linux, Windows, and osxcross (x86_64 and arm64) also build shared modules. Pages deploys the `web-wasm32-static` artifact.
 - WASI — host `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
 
 On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`; Switch zip for `switch-aarch64-static`; Dreamcast zip for `dreamcast-sh4-static`; PSP zip for `psp-mips-static`; Pandora zip for `pandora-arm-static`; Wii zip for `wii-powerpc-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`; the Switch NRO links SDL3 statically from the devkitPro fork; the Dreamcast CDI links SDL3 statically from the GPF Dreamcast fork; the PSP PBP links SDL3 statically from the pspdev packages; the Pandora PND links official SDL3 statically against the Ångström sysroot; the Wii DOL links SDL3 statically from the libogc2 fork). OS graphics/audio libraries may still be required at runtime on native builds.

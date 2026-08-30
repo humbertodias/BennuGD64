@@ -37,8 +37,17 @@ jobs:
             timeout: 90
           - platform: macos
             artifact: macos-x86_64
+            arch: x86_64
             dist_static: dist/macos-x86_64-static
             dist_shared: dist/macos-x86_64-shared
+            docker_target: ""
+            shared: true
+            timeout: 180
+          - platform: macos
+            artifact: macos-arm64
+            arch: arm64
+            dist_static: dist/macos-arm64-static
+            dist_shared: dist/macos-arm64-shared
             docker_target: ""
             shared: true
             timeout: 180
@@ -128,8 +137,9 @@ jobs:
             **/_deps
             .deps
             build-android-gradle
-          key: fetch-${{ matrix.platform }}-${{ hashFiles('versions.env', 'CMakePresets.json', format('docker/Dockerfile.{0}', matrix.platform)) }}
+          key: fetch-${{ matrix.artifact }}-${{ hashFiles('versions.env', 'CMakePresets.json', format('docker/Dockerfile.{0}', matrix.platform)) }}
           restore-keys: |
+            fetch-${{ matrix.artifact }}-
             fetch-${{ matrix.platform }}-
 
       - name: Set up Docker Buildx
@@ -164,21 +174,21 @@ jobs:
         env:
           SKIP_DOCKER_BUILD: "1"
           BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
-        run: bash scripts/docker-build.sh ${{ matrix.platform }}
+        run: bash scripts/docker-build.sh ${{ matrix.platform }} ${{ matrix.arch }}
 
       - name: Build static
         if: ${{ matrix.shared }}
         env:
           SKIP_DOCKER_BUILD: "1"
           BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
-        run: bash scripts/docker-build.sh ${{ matrix.platform }} static
+        run: bash scripts/docker-build.sh ${{ matrix.platform }} ${{ matrix.arch }} static
 
       - name: Build shared
         if: ${{ matrix.shared }}
         env:
           SKIP_DOCKER_BUILD: "1"
           BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
-        run: bash scripts/docker-build.sh ${{ matrix.platform }} shared
+        run: bash scripts/docker-build.sh ${{ matrix.platform }} ${{ matrix.arch }} shared
 
       - name: Upload static
         uses: actions/upload-artifact@v7
@@ -324,7 +334,7 @@ jobs:
             - **wii-powerpc-static** — homebrew DOL (`apps/bennugd64/boot.dol`); copy the folder to the SD card and launch from the Homebrew Channel
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-            Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, PS2, Pandora, Wii, and macOS x86_64 CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), `docker/Dockerfile.wii` (`devkitpro/devkitppc`), and `docker/Dockerfile.macos` (osxcross). Native `macos-arm64` still builds on `macos-latest`.
+            Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, PS2, Pandora, Wii, and macOS (x86_64 and arm64) CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), `docker/Dockerfile.wii` (`devkitpro/devkitppc`), and `docker/Dockerfile.macos` (osxcross).
             OS graphics/audio libraries may still be required at runtime.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

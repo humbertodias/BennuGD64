@@ -14,6 +14,7 @@
 #   bash scripts/docker-build.sh wii
 #   bash scripts/docker-build.sh macos
 #   bash scripts/docker-build.sh macos arm64
+#   bash scripts/docker-build.sh macos arm64 shared
 #   bash scripts/docker-build.sh linux shell
 set -euo pipefail
 
@@ -29,7 +30,7 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 ps2 [shell]
        $0 pandora [shell]
        $0 wii [shell]
-       $0 macos [static|shared|arm64|shell]"
+       $0 macos [x86_64|arm64] [static|shared|shell]"
 
 if [[ -f "${ROOT}/versions.env" ]]; then
   set -a
@@ -961,15 +962,18 @@ fi
 if [[ "${PLATFORM}" == "macos" ]]; then
   MACOS_ARCH="${MACOS_ARCH:-x86_64}"
   LINKAGE="static"
-  case "${SECOND}" in
-    static|shared) LINKAGE="${SECOND}" ;;
-    arm64|aarch64) MACOS_ARCH="arm64" ;;
-    x86_64|amd64) MACOS_ARCH="x86_64" ;;
-    *)
-      echo "${USAGE}" >&2
-      exit 1
-      ;;
-  esac
+  for arg in "${SECOND}" "${3:-}"; do
+    [[ -z "${arg}" ]] && continue
+    case "${arg}" in
+      static|shared) LINKAGE="${arg}" ;;
+      arm64|aarch64) MACOS_ARCH="arm64" ;;
+      x86_64|amd64) MACOS_ARCH="x86_64" ;;
+      *)
+        echo "${USAGE}" >&2
+        exit 1
+        ;;
+    esac
+  done
   PRESET="macos-${MACOS_ARCH}-${LINKAGE}"
   BUILD_DIR="/src/build-macos-${MACOS_ARCH}-${LINKAGE}"
   STAGE="/src/dist/macos-${MACOS_ARCH}-${LINKAGE}"

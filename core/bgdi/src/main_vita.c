@@ -15,10 +15,13 @@
 #include <sys/stat.h>
 
 #include <psp2/ctrl.h>
+#include <psp2/io/dirent.h>
+#include <psp2/io/stat.h>
 #include <psp2/power.h>
 
 #include "main_vita.h"
 #include "files.h"
+#include "files_vita.h"
 
 /* vitasdk newlib default heap is too small for Bennu + SDL3. */
 int _newlib_heap_size_user = 168 * 1024 * 1024;
@@ -63,6 +66,95 @@ static int vita_dcb_exists( const char * path )
         return 0;
     fclose( test );
     return 1;
+}
+
+static void vita_join( char * out, size_t out_sz, const char * root, const char * sub )
+{
+    size_t n;
+
+    snprintf( out, out_sz, "%s", root );
+    n = strlen( out );
+    if ( n && out[ n - 1 ] != '/' && out_sz > n + 1 )
+    {
+        out[ n++ ] = '/';
+        out[ n ] = '\0';
+    }
+    snprintf( out + n, out_sz - n, "%s", sub );
+}
+
+/* SoRR loads galsia.pal by basename; PATH must include palettes/enemies/. */
+static void vita_add_dir_and_children( const char * dir )
+{
+    char child[ __MAX_PATH ];
+    SceUID uid;
+    SceIoDirent ent;
+
+    file_addp( dir );
+
+    uid = sceIoDopen( dir );
+    if ( uid < 0 )
+        return;
+
+    memset( &ent, 0, sizeof( ent ) );
+    while ( sceIoDread( uid, &ent ) > 0 )
+    {
+        if ( ent.d_name[0] == '.' )
+            continue;
+        if ( !( ent.d_stat.st_attr & SCE_SO_IFDIR ) )
+            continue;
+        vita_join( child, sizeof( child ), dir, ent.d_name );
+        file_addp( child );
+        memset( &ent, 0, sizeof( ent ) );
+    }
+    sceIoDclose( uid );
+}
+
+static void vita_add_sorr_paths( const char * root )
+{
+    static const char * subs[] = {
+        "palettes",
+        "palettes/enemies",
+        "palettes/players",
+        "palettes/stages",
+        "palettes/bonus",
+        "palettes/boss",
+        "palettes/misc",
+        "mod",
+        "data",
+        "fpg",
+        "fnt",
+        "maps",
+        "chars",
+        "char",
+        NULL
+    };
+    char path[ __MAX_PATH ];
+    int i;
+
+    file_addp( root );
+    for ( i = 0 ; subs[i] ; i++ )
+    {
+        vita_join( path, sizeof( path ), root, subs[i] );
+        file_addp( path );
+    }
+    vita_join( path, sizeof( path ), root, "palettes" );
+    vita_add_dir_and_children( path );
+}
+
+static void vita_use_dcb( const char * dcb_path )
+{
+    const char * root;
+
+    file_vita_bind_root( dcb_path );
+    root = file_vita_root();
+    chdir( root );
+    vita_add_sorr_paths( root );
+    if ( strcmp( root, "ux0:/data/bennugd64/" ) != 0 )
+        vita_add_sorr_paths( "ux0:/data/bennugd64/" );
+    if ( strcmp( root, "app0:/" ) != 0 )
+        vita_add_sorr_paths( "app0:/" );
+    file_addp( "." );
+    fprintf( stderr, "bgdi: data root %s\n", root );
 }
 
 /* LiveArea has no console. Same idea as ps2_missing_dcb(): keep a readable
@@ -146,18 +238,16 @@ char * bgdi_vita_startup( int argc, char * argv[], int * standalone )
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
         SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS );
 
-    chdir( "app0:/" );
-    file_addp( "ux0:/data/bennugd64/" );
-    file_addp( "app0:/" );
-    file_addp( "." );
-
     if ( standalone )
         *standalone = 1;
 
     if ( argc >= 2 && argv && argv[1] && argv[1][0] && vita_arg_is_dcb( argv[1] ) )
     {
         if ( vita_dcb_exists( argv[1] ) )
+        {
+            vita_use_dcb( argv[1] );
             return NULL;
+        }
         fprintf( stderr, "bgdi: missing argv %s\n", argv[1] );
         vita_missing_dcb();
     }
@@ -169,6 +259,7 @@ char * bgdi_vita_startup( int argc, char * argv[], int * standalone )
             fprintf( stderr, "bgdi: using %s\n", bundled[k] );
             if ( k == 0 )
                 fprintf( stderr, "bgdi: ux0 main.dcb overrides the VPK; delete it to run app0:/main.dcb\n" );
+            vita_use_dcb( bundled[k] );
             return ( char * ) bundled[k];
         }
         fprintf( stderr, "bgdi: missing %s\n", bundled[k] );

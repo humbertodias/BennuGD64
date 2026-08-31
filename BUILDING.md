@@ -306,7 +306,11 @@ That configures native `bgdc` (`vita-host`), compiles `web/demo/*.prg`, cross-co
 2. `app0:/main.dcb` — bundled in the VPK (`hello.dcb` from `web/demo/hello.prg`)
 3. `app0:/` cwd as `main.dcb`
 
-Other assets (FPG, WAV, …) also go in `ux0:/data/bennugd64/` or next to the DCB in the VPK. Compile with the matching `vita-host` `bgdc`, not a random desktop Bennu.
+Other assets (FPG, WAV, palettes, …) also go in `ux0:/data/bennugd64/` or next to the DCB in the VPK. Compile with the matching `vita-host` `bgdc`, not a random desktop Bennu.
+
+On **real hardware**, relative `fopen` does not follow POSIX cwd the way Vita3K does. The interpreter prefixes asset opens with the directory that held `main.dcb` (`ux0:/data/bennugd64/` or `app0:/`) so both the emulator and a device see the same files.
+
+For **Streets of Rage Remake**, copy the **entire** install into `ux0:/data/bennugd64/` (not only the DCB): `palettes/`, `mod/`, maps, and so on, plus `main.dcb` (rename `SorR.dat` if needed). In `mod/system.txt`, handheld ports use `PSP`.
 
 If none of those files exist, the screen lists the paths (same idea as the PS2 missing-DCB help). CROSS / START / SELECT quits. LiveArea has no console; copy `ux0:/data/bennugd64/bgdi.log` after a silent close. SELECT is Escape (hello's `key(_esc)`); START is Enter.
 

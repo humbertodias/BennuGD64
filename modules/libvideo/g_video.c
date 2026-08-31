@@ -544,9 +544,7 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_VITA
     gr_video_vita_apply_mode();
-    /* GXM present is XRGB8888. hello.prg's set_mode(..., 16) would otherwise
-     * fill colorghost[65536] and ConvertSurface every FRAME. */
-    depth = 32;
+    GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
 #endif
 #ifdef TARGET_PS2
     gr_video_ps2_apply_mode();
@@ -567,7 +565,7 @@ int gr_set_mode( int width, int height, int depth )
     if ( GLOEXISTS( libvideo, SCALE_RESOLUTION_ASPECTRATIO ) ) scale_resolution_aspectratio = GLODWORD( libvideo, SCALE_RESOLUTION_ASPECTRATIO );
     if ( GLOEXISTS( libvideo, SCALE_RESOLUTION_ORIENTATION ) ) scale_resolution_orientation = GLODWORD( libvideo, SCALE_RESOLUTION_ORIENTATION );
 
-#ifndef TARGET_PS2
+#if !defined(TARGET_PS2) && !defined(TARGET_VITA)
     /* Overwrite all params */
     if ( ( e = getenv( "SCALE_RESOLUTION"             ) ) ) scale_resolution = atol( e );
     if ( ( e = getenv( "SCALE_RESOLUTION_ASPECTRATIO" ) ) ) scale_resolution_aspectratio = atol( e );

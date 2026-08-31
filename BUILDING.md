@@ -315,7 +315,7 @@ Other assets (FPG, WAV, palettes, …) also go in `ux0:/data/bennugd64/` or next
 
 On **real hardware**, relative `fopen` does not follow POSIX cwd the way Vita3K does. The interpreter prefixes asset opens with the directory that held `main.dcb` (`ux0:/data/bennugd64/` or `app0:/`) so both the emulator and a device see the same files.
 
-For **Streets of Rage Remake**, copy the **entire** install into `ux0:/data/bennugd64/` (not only the DCB): `palettes/`, `mod/`, maps, and so on, plus `main.dcb` (rename `SorR.dat` if needed). In `mod/system.txt`, handheld ports use `PSP`.
+For **Streets of Rage Remake**, copy the **entire** install into `ux0:/data/bennugd64/` (not only the DCB): `palettes/`, `mod/`, maps, and so on, plus `main.dcb` (rename `SorR.dat` if needed). In `mod/system.txt`, handheld ports use `PSP`. The interpreter keeps SoRR's 16-bit buffer (GXM uploads RGB565), turns vsync off, and sets ARM/bus/GPU to 444/222/222; Vita3K will still look smooth, the device no longer software-scales to 960x544.
 
 If none of those files exist, the screen lists the paths (same idea as the PS2 missing-DCB help). CROSS / START / SELECT quits. LiveArea has no console; copy `ux0:/data/bennugd64/bgdi.log` after a silent close. SELECT is Escape (hello's `key(_esc)`); START is Enter.
 

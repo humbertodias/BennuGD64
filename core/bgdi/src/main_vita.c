@@ -221,10 +221,17 @@ char * bgdi_vita_startup( int argc, char * argv[], int * standalone )
     };
     int k;
 
-    scePowerSetArmClockFrequency( 444 );
     scePowerSetGpuClockFrequency( 222 );
+    scePowerSetGpuXbarClockFrequency( 166 );
+    scePowerSetBusClockFrequency( 222 );
+    scePowerSetArmClockFrequency( 444 );
     vita_redirect_stdio();
     fprintf( stderr, "bgdi: vita start argc=%d\n", argc );
+    fprintf( stderr, "bgdi: clocks arm=%d bus=%d gpu=%d xbar=%d\n",
+             scePowerGetArmClockFrequency(),
+             scePowerGetBusClockFrequency(),
+             scePowerGetGpuClockFrequency(),
+             scePowerGetGpuXbarClockFrequency() );
 
     SDL_SetMainReady();
     SDL_SetHint( SDL_HINT_TOUCH_MOUSE_EVENTS, "0" );

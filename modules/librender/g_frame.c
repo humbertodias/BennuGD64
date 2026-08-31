@@ -36,6 +36,9 @@
 #ifdef TARGET_PSP
 #include "g_frame_psp.h"
 #endif
+#ifdef TARGET_VITA
+#include "g_frame_vita.h"
+#endif
 #ifdef TARGET_PS2
 #include "g_frame_ps2.h"
 #endif
@@ -90,6 +93,9 @@ void gr_set_fps( int fps, int skip )
 {
 #ifdef TARGET_PSP
     skip = gr_frame_psp_adjust_skip( skip );
+#endif
+#ifdef TARGET_VITA
+    skip = gr_frame_vita_adjust_skip( skip );
 #endif
 #ifdef TARGET_PS2
     skip = gr_frame_ps2_adjust_skip( skip );

@@ -17,7 +17,7 @@ This reference is generated automatically from the C sources with [Doxygen](http
 - **core/** — runtime (`bgdrtm`), interpreter (`bgdi`), compiler (`bgdc`), shared headers
 - **modules/** — engine libraries (`lib*`) and Bennu language modules (`mod_*`)
 
-Port-specific code lives in `*_psp.c`, `*_vita.c`, `*_switch.c`, `*_win32.c`, and similar units that
+Port-specific code lives in `*_psp.c`, `*_vita.c`, `*_tvos.c`, `*_switch.c`, `*_win32.c`, and similar units that
 CMake adds only for the matching target.
 
 ## User documentation

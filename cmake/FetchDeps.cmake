@@ -231,6 +231,12 @@ if (PLATFORM_VITA OR VITA)
   set (HAVE_FDATASYNC OFF CACHE BOOL "" FORCE)
   set (HAVE_GETHOSTNAME OFF CACHE BOOL "" FORCE)
 endif ()
+if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
+  set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+  set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
+endif ()
 if (PLATFORM_PANDORA OR OPENPANDORA)
   # Ångström sysroot is glibc 2.9 + X11 + ALSA; no Wayland/GLES/Pulse.
   # X11 extras: only Xext/Xrandr/Xrender are in the sysroot (no Xi/Xcursor).

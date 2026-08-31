@@ -23,6 +23,9 @@ endif ()
 if (PLATFORM_VITA OR VITA)
   target_sources (bgdi PRIVATE main_vita.c)
 endif ()
+if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
+  target_sources (bgdi PRIVATE main_tvos.c)
+endif ()
 if (PLATFORM_PS2 OR PS2)
   set (_ps2sdk "$ENV{PS2SDK}")
   if (NOT _ps2sdk)
@@ -185,6 +188,63 @@ if (PLATFORM_VITA OR VITA)
       NAME BennuGD64
     )
   endif ()
+endif ()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+  )
+  set_target_properties (bgdi PROPERTIES
+    MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE_GUI_IDENTIFIER "${BENNUGD_BUNDLE_IDENTIFIER}"
+    MACOSX_BUNDLE_BUNDLE_VERSION "${BENNUGD_PACKAGE_VERSION}"
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "${BENNUGD_PACKAGE_VERSION}"
+    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/tvos/Info.plist"
+    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BENNUGD_BUNDLE_IDENTIFIER}"
+    XCODE_ATTRIBUTE_BENNUGD_BUNDLE_DISPLAY_NAME "${BENNUGD_BUNDLE_NAME}"
+    XCODE_ATTRIBUTE_MARKETING_VERSION "${BENNUGD_PACKAGE_VERSION}"
+    XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION "1"
+    XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
+    XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
+    XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
+    XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "3"
+  )
+  # actool for appletvsimulator needs a tvOS Simulator runtime (often not
+  # installed). Device SDK compiles the layered App Icon without that runtime.
+  if (NOT CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+    target_sources (bgdi PRIVATE
+      ${CMAKE_SOURCE_DIR}/tvos/Assets.xcassets
+    )
+    set_source_files_properties (
+      ${CMAKE_SOURCE_DIR}/tvos/Assets.xcassets
+      PROPERTIES MACOSX_PACKAGE_LOCATION Resources
+    )
+    set_target_properties (bgdi PROPERTIES
+      XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+    )
+  endif ()
+  if (DEFINED BENNUGD_DEVELOPMENT_TEAM AND NOT BENNUGD_DEVELOPMENT_TEAM STREQUAL "")
+    set_target_properties (bgdi PROPERTIES
+      XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${BENNUGD_DEVELOPMENT_TEAM}"
+      XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
+      XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+    )
+  elseif (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+    set_target_properties (bgdi PROPERTIES
+      XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+      XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+    )
+  endif ()
+  add_custom_command (TARGET bgdi POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${CMAKE_SOURCE_DIR}/tvos/contents"
+      "$<TARGET_BUNDLE_DIR:bgdi>"
+    COMMAND ${CMAKE_COMMAND} -E remove -f
+      "$<TARGET_BUNDLE_DIR:bgdi>/.gitkeep"
+    COMMENT "Copy tvos/contents into bgdi.app"
+  )
 endif ()
 
 if (PLATFORM_PS2 OR PS2)

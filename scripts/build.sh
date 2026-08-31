@@ -10,6 +10,8 @@
 #   bash scripts/build.sh dreamcast
 #   bash scripts/build.sh psp
 #   bash scripts/build.sh vita
+#   bash scripts/build.sh tvos
+#   bash scripts/build.sh tvos simulator
 #   bash scripts/build.sh ps2
 #   bash scripts/build.sh pandora
 #   bash scripts/build.sh wii
@@ -29,6 +31,7 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 dreamcast [shell]
        $0 psp [shell]
        $0 vita [shell]
+       $0 tvos [simulator|device]
        $0 ps2 [shell]
        $0 pandora [shell]
        $0 wii [shell]
@@ -41,7 +44,7 @@ if [[ -f "${ROOT}/versions.env" ]]; then
   set +a
 fi
 
-if ! command -v docker >/dev/null 2>&1; then
+if [[ "${1:-}" != "tvos" ]] && ! command -v docker >/dev/null 2>&1; then
   echo "Docker is required (https://docs.docker.com/get-docker/)." >&2
   exit 1
 fi
@@ -54,7 +57,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|vita|ps2|pandora|wii|macos) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ps2|pandora|wii|macos) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -63,7 +66,7 @@ esac
 
 IMAGE="bennugd64-${PLATFORM}"
 
-if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
+if [[ "${PLATFORM}" != "tvos" && "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
   if [[ "${PLATFORM}" == "wasm" ]]; then
     docker build \
       --build-arg EMSCRIPTEN_VERSION="${EMSCRIPTEN_VERSION:-6.0.6}" \
@@ -139,6 +142,10 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
+  if [[ "${PLATFORM}" == "tvos" ]]; then
+    echo "tvOS has no Docker shell; it needs Xcode on macOS." >&2
+    exit 1
+  fi
   if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
@@ -188,6 +195,7 @@ reuse_fetchcontent_src() {
     "${ROOT}/build-host/_deps/${name}" \
     "${ROOT}/build-psp-host/_deps/${name}" \
     "${ROOT}/build-vita-host/_deps/${name}" \
+    "${ROOT}/build-tvos-host/_deps/${name}" \
     "${ROOT}/build-pandora-host/_deps/${name}"
   do
     if [[ -f "${cand}/CMakeLists.txt" ]]; then
@@ -214,6 +222,125 @@ prefetch_github_archive() {
   mv "${top}" "${dest}"
   rm -rf "${tmp}"
 }
+
+if [[ "${PLATFORM}" == "tvos" ]]; then
+  if [[ "$(uname -s)" != "Darwin" ]]; then
+    echo "tvOS needs macOS and Xcode (not Docker)." >&2
+    exit 1
+  fi
+  if ! command -v cmake >/dev/null 2>&1; then
+    echo "cmake is required." >&2
+    exit 1
+  fi
+  if ! command -v ninja >/dev/null 2>&1; then
+    echo "ninja is required (brew install ninja)." >&2
+    exit 1
+  fi
+  if ! command -v xcodebuild >/dev/null 2>&1; then
+    echo "Xcode is required (install Xcode, then xcode-select --install)." >&2
+    exit 1
+  fi
+
+  TVOS_KIND="${SECOND}"
+  case "${TVOS_KIND}" in
+    static|shared|simulator|"") TVOS_KIND="simulator" ;;
+    device|tvos) TVOS_KIND="device" ;;
+    *)
+      echo "${USAGE}" >&2
+      exit 1
+      ;;
+  esac
+
+  if [[ "${TVOS_KIND}" == "simulator" ]]; then
+    TVOS_PRESET="tvos-simulator"
+    TVOS_BUILD="${ROOT}/build-tvos-simulator"
+    TVOS_CONFIG="Debug"
+    STAGE="${ROOT}/dist/tvos-simulator-arm64-static"
+  else
+    TVOS_PRESET="tvos-arm64"
+    TVOS_BUILD="${ROOT}/build-tvos-arm64"
+    TVOS_CONFIG="Release"
+    STAGE="${ROOT}/dist/tvos-arm64-static"
+    TEAM="${BENNUGD_DEVELOPMENT_TEAM:-}"
+    if [[ -z "${TEAM}" ]]; then
+      TEAMS="$(security find-identity -v -p codesigning 2>/dev/null \
+        | grep -oE '\([A-Z0-9]+\)"$' | tr -d '()"' | sort -u || true)"
+      NUM_TEAMS="$(printf '%s\n' "${TEAMS}" | grep -c . || true)"
+      if [[ "${NUM_TEAMS}" -eq 1 ]]; then
+        TEAM="${TEAMS}"
+        echo "auto-detected signing team: ${TEAM}"
+      elif [[ "${NUM_TEAMS}" -gt 1 ]]; then
+        echo "Multiple signing teams; set BENNUGD_DEVELOPMENT_TEAM." >&2
+        printf '%s\n' "${TEAMS}" >&2
+        exit 1
+      else
+        echo "No signing identity. Set BENNUGD_DEVELOPMENT_TEAM or use: $0 tvos simulator" >&2
+        exit 1
+      fi
+    fi
+  fi
+
+  HOST_BUILD="${ROOT}/build-tvos-host"
+  echo "preset: tvos-host + ${TVOS_PRESET}"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${HOST_BUILD}/_deps"
+  scrub_fetchcontent "${TVOS_BUILD}/_deps"
+
+  COMMON=(
+    -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+    -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}"
+    -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}"
+    -DBENNUGD_SDL3_REF="${SDL3_REF:-release-3.4.14}"
+    -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}"
+  )
+  if [[ -n "${BENNUGD_BUNDLE_IDENTIFIER:-}" ]]; then
+    COMMON+=(-DBENNUGD_BUNDLE_IDENTIFIER="${BENNUGD_BUNDLE_IDENTIFIER}")
+  fi
+  if [[ -n "${BENNUGD_BUNDLE_NAME:-}" ]]; then
+    COMMON+=(-DBENNUGD_BUNDLE_NAME="${BENNUGD_BUNDLE_NAME}")
+  fi
+  if [[ "${TVOS_KIND}" == "device" ]]; then
+    COMMON+=(-DBENNUGD_DEVELOPMENT_TEAM="${TEAM}")
+  fi
+
+  cmake --preset tvos-host "${COMMON[@]}"
+  cmake --build --preset tvos-host
+  BGDC="${HOST_BUILD}/core/bgdc/src/bgdc"
+  test -x "${BGDC}"
+  for prg in "${ROOT}/web/demo/"*.prg; do
+    dcb="${prg%.prg}.dcb"
+    "${BGDC}" -o "${dcb}" "${prg}"
+    test -s "${dcb}"
+  done
+  mkdir -p "${ROOT}/tvos/contents"
+  cp "${ROOT}/web/demo/hello.dcb" "${ROOT}/tvos/contents/main.dcb"
+
+  cmake --preset "${TVOS_PRESET}" "${COMMON[@]}"
+  cmake --build --preset "${TVOS_PRESET}"
+  mkdir -p "${STAGE}"
+  cmake --install "${TVOS_BUILD}" --config "${TVOS_CONFIG}" --prefix "${STAGE}"
+  if [[ ! -d "${STAGE}/bgdi.app" ]]; then
+    APP=""
+    for cand in \
+      "${TVOS_BUILD}/core/bgdi/src/${TVOS_CONFIG}/bgdi.app" \
+      "${TVOS_BUILD}/core/bgdi/src/bgdi.app"
+    do
+      if [[ -d "${cand}" ]]; then
+        APP="${cand}"
+        break
+      fi
+    done
+    if [[ -z "${APP}" ]]; then
+      APP="$(find "${TVOS_BUILD}/core/bgdi" -name bgdi.app -type d | grep -v /CMakeFiles/ | head -n 1 || true)"
+    fi
+    test -n "${APP}"
+    cp -R "${APP}" "${STAGE}/"
+  fi
+  test -d "${STAGE}/bgdi.app"
+  test -x "${STAGE}/bgdi.app/bgdi"
+  test -s "${STAGE}/bgdi.app/main.dcb"
+  exit 0
+fi
 
 if [[ "${PLATFORM}" == "wasm" ]]; then
   echo "image: ${IMAGE}"

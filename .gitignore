@@ -87,3 +87,6 @@ local.properties
 
 # Nintendo Wii homebrew
 *.dol
+
+# Apple tvOS demo bytecode copied into the bundle
+/tvos/contents/*.dcb

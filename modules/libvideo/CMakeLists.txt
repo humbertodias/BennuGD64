@@ -49,4 +49,5 @@ target_link_libraries (
   bgdrtm
   grbase
   ${BENNUGD_SDL3_TARGET}
+  ZLIB::ZLIB
 )

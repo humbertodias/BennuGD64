@@ -193,3 +193,31 @@ char * bgdi_ps3_startup( int argc, char * argv[], int * standalone )
     ps3_missing_dcb();
     return NULL;
 }
+
+/* PSL1GHT newlib declares sysconf in unistd.h but does not define it.
+ * SDL_cpuinfo uses it when HAVE_SYSCONF was a false-positive try_compile. */
+long sysconf( int name )
+{
+#ifdef _SC_NPROCESSORS_ONLN
+    if ( name == _SC_NPROCESSORS_ONLN )
+        return 2;
+#endif
+#ifdef _SC_NPROCESSORS_CONF
+    if ( name == _SC_NPROCESSORS_CONF )
+        return 2;
+#endif
+#ifdef _SC_PAGESIZE
+    if ( name == _SC_PAGESIZE )
+        return 4096;
+#endif
+#ifdef _SC_PAGE_SIZE
+    if ( name == _SC_PAGE_SIZE )
+        return 4096;
+#endif
+#ifdef _SC_PHYS_PAGES
+    if ( name == _SC_PHYS_PAGES )
+        return ( 256 * 1024 * 1024 ) / 4096;
+#endif
+    (void) name;
+    return -1;
+}

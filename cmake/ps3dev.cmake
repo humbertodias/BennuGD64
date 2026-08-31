@@ -65,10 +65,15 @@ string (APPEND CMAKE_CXX_FLAGS_INIT
 string (APPEND CMAKE_C_FLAGS_RELEASE " -O2")
 string (APPEND CMAKE_CXX_FLAGS_RELEASE " -O2")
 
+# PSL1GHT headers + CELL-style aliases for onesixromcom SDL (video_out.h).
+# Do not put portlibs on the global include path: that zlib.h (often 1.2.x)
+# makes FetchContent libpng 1.6 fail with ZLIB_VERNUM != PNG_ZLIB_VERNUM.
+# zlib/png come from portlibs (matching pair) or FetchContent, via ZLIB::ZLIB
+# / PNG::PNG.
 string (APPEND CMAKE_C_FLAGS_INIT
-  " -I${PS3DEV}/ppu/include -I${PS3DEV}/ppu/include/simdmath -I${PS3DEV}/portlibs/ppu/include")
+  " -I${PS3DEV}/ppu/include -I${PS3DEV}/ppu/include/simdmath -I${CMAKE_CURRENT_LIST_DIR}/ps3-compat")
 string (APPEND CMAKE_CXX_FLAGS_INIT
-  " -I${PS3DEV}/ppu/include -I${PS3DEV}/ppu/include/simdmath -I${PS3DEV}/portlibs/ppu/include")
+  " -I${PS3DEV}/ppu/include -I${PS3DEV}/ppu/include/simdmath -I${CMAKE_CURRENT_LIST_DIR}/ps3-compat")
 
 string (APPEND CMAKE_EXE_LINKER_FLAGS_INIT
   " -Wl,-zmax-page-size=128 -L${PS3DEV}/ppu/lib -L${PS3DEV}/ppu/ppu/lib -L${PS3DEV}/portlibs/ppu/lib")

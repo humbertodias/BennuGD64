@@ -943,8 +943,7 @@ if [[ "${PLATFORM}" == "ps3" ]]; then
         test -s "${dcb}"
       done
       cmake --preset ps3-ppu \
-        "${COMMON[@]}" \
-        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
+        "${COMMON[@]}"
       cmake --build --preset ps3-ppu
       ELF=""
       for cand in \

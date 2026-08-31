@@ -184,6 +184,13 @@ else ()
   find_package (ZLIB REQUIRED)
 endif ()
 
+if (TARGET bennugd_zlib_hdr)
+  link_libraries (bennugd_zlib_hdr)
+endif ()
+if (PLATFORM_PS3 OR PS3)
+  bennugd_ps3_engine_zlib_includes ()
+endif ()
+
 if (USE_LIBDES)
   add_definitions (-DUSE_LIBDES)
   include_directories (${CMAKE_SOURCE_DIR}/3rdparty/des-4.04b)

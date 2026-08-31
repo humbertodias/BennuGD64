@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         gcc \
         g++ \
         git \
+        libelf1t64 \
         ninja-build \
         pkg-config \
         python3 \

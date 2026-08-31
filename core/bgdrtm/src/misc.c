@@ -269,6 +269,7 @@ void bgdrtm_ptimer_cleanup(void)
  *      Result of the comparison
  */
 
+#ifndef strncmpi
 int strncmpi( char * str1, char * str2, int sz )
 {
     while (( *str1 || *str2 ) && sz )
@@ -283,6 +284,7 @@ int strncmpi( char * str1, char * str2, int sz )
 
     return 0 ;
 }
+#endif
 
 /* --------------------------------------------------------------------------- */
 

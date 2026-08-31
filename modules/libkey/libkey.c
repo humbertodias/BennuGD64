@@ -54,6 +54,9 @@
 #ifdef TARGET_PS2
 #include "libkey_ps2.h"
 #endif
+#ifdef TARGET_PS3
+#include "libkey_ps3.h"
+#endif
 
 /* ---------------------------------------------------------------------- */
 
@@ -453,6 +456,9 @@ static void process_key_events()
             GLODWORD( libkey, SHIFTSTATUS ) |= STAT_ALT | STAT_LALT;
     }
 #endif
+#ifdef TARGET_PS3
+    libkey_ps3_after_events();
+#endif
 }
 
 /* ---------------------------------------------------------------------- */
@@ -495,6 +501,8 @@ void __bgdexport( libkey, module_initialize )()
     libkey_psp_after_init( window );
 #elif defined(TARGET_VITA)
     libkey_vita_after_init( window );
+#elif defined(TARGET_PS3)
+    libkey_ps3_after_init( window );
 #elif defined(TARGET_PS2)
     /* No OSK. DualShock is polled in libkey_ps2_after_events. */
 #elif defined(TARGET_EMSCRIPTEN)

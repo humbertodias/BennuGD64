@@ -12,7 +12,7 @@ endif
 
 .PHONY: all static shared wasm wasi docker-linux docker-linux-shared \
 	docker-windows docker-windows-shared docker-android docker-switch \
-	docker-dreamcast docker-psp docker-pandora \
+	docker-dreamcast docker-psp docker-ps2 docker-ps3 docker-pandora \
 	wasi/run wasm/server install/wasmtime clean format
 
 all: static
@@ -64,6 +64,9 @@ docker-psp:
 
 docker-ps2:
 	bash scripts/build.sh ps2
+
+docker-ps3:
+	bash scripts/build.sh ps3
 
 docker-pandora:
 	bash scripts/build.sh pandora

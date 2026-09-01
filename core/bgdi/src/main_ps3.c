@@ -10,12 +10,14 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <sys/stat.h>
 
 #include <io/pad.h>
 
 #include "main_ps3.h"
 #include "files.h"
+#include "files_ps3.h"
 
 #ifndef BENNUGD_PS3_TITLE_ID
 #define BENNUGD_PS3_TITLE_ID "BGD300001"
@@ -84,6 +86,103 @@ static void ps3_chdir_from_argv0( const char * argv0 )
     *slash = 0;
     if ( dir[0] )
         chdir( dir );
+}
+
+static void ps3_join( char * out, size_t out_sz, const char * root, const char * sub )
+{
+    size_t n;
+
+    snprintf( out, out_sz, "%s", root );
+    n = strlen( out );
+    if ( n && out[ n - 1 ] != '/' && out_sz > n + 1 )
+    {
+        out[ n++ ] = '/';
+        out[ n ] = '\0';
+    }
+    snprintf( out + n, out_sz - n, "%s", sub );
+}
+
+/* SoRR loads galsia.pal by basename; PATH must include palettes/enemies/. */
+static void ps3_add_dir_and_children( const char * dir )
+{
+    DIR * d;
+    struct dirent * ent;
+    struct stat st;
+    char child[ __MAX_PATH ];
+
+    file_addp( dir );
+
+    d = opendir( dir );
+    if ( !d )
+        return;
+
+    while ( ( ent = readdir( d ) ) )
+    {
+        if ( ent->d_name[0] == '.' )
+            continue;
+        ps3_join( child, sizeof( child ), dir, ent->d_name );
+        if ( stat( child, &st ) != 0 || !S_ISDIR( st.st_mode ) )
+            continue;
+        file_addp( child );
+    }
+    closedir( d );
+}
+
+static void ps3_add_sorr_paths( const char * root )
+{
+    static const char * subs[] = {
+        "palettes",
+        "palettes/enemies",
+        "palettes/players",
+        "palettes/stages",
+        "palettes/bonus",
+        "palettes/boss",
+        "palettes/misc",
+        "mod",
+        "data",
+        "fpg",
+        "fnt",
+        "maps",
+        "chars",
+        "char",
+        NULL
+    };
+    char path[ __MAX_PATH ];
+    int i;
+
+    file_addp( root );
+    for ( i = 0 ; subs[i] ; i++ )
+    {
+        ps3_join( path, sizeof( path ), root, subs[i] );
+        file_addp( path );
+    }
+    ps3_join( path, sizeof( path ), root, "palettes" );
+    ps3_add_dir_and_children( path );
+}
+
+static void ps3_use_dcb( const char * dcb_path )
+{
+    static const char * extra[] = {
+        "/dev_usb000/bennugd64/",
+        "/dev_hdd0/tmp/bennugd64/",
+        "/dev_hdd0/game/" BENNUGD_PS3_TITLE_ID "/USRDIR/",
+        "/app_home/",
+        NULL
+    };
+    const char * root;
+    int i;
+
+    file_ps3_bind_root( dcb_path );
+    root = file_ps3_root();
+    chdir( root );
+    ps3_add_sorr_paths( root );
+    for ( i = 0 ; extra[i] ; i++ )
+    {
+        if ( strcmp( root, extra[i] ) != 0 )
+            ps3_add_sorr_paths( extra[i] );
+    }
+    file_addp( "." );
+    fprintf( stderr, "bgdi: data root %s\n", root );
 }
 
 static void ps3_missing_dcb( void )
@@ -175,7 +274,10 @@ char * bgdi_ps3_startup( int argc, char * argv[], int * standalone )
     if ( argc >= 2 && argv && argv[1] && argv[1][0] && ps3_arg_is_dcb( argv[1] ) )
     {
         if ( ps3_dcb_exists( argv[1] ) )
+        {
+            ps3_use_dcb( argv[1] );
             return NULL;
+        }
         fprintf( stderr, "bgdi: missing argv %s\n", argv[1] );
         ps3_missing_dcb();
     }
@@ -185,6 +287,7 @@ char * bgdi_ps3_startup( int argc, char * argv[], int * standalone )
         if ( ps3_dcb_exists( bundled[k] ) )
         {
             fprintf( stderr, "bgdi: using %s\n", bundled[k] );
+            ps3_use_dcb( bundled[k] );
             return ( char * ) bundled[k];
         }
         fprintf( stderr, "bgdi: missing %s\n", bundled[k] );

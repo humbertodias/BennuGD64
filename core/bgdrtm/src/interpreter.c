@@ -1970,16 +1970,19 @@ int instance_go( INSTANCE * r )
                 ptr++ ;
                 break ;
 
-            /* Direct operations with variables FLOAT type */
+            /* Direct operations with variables FLOAT type.
+             * Destination is a 32-bit cell. The stack value must go through
+             * stack_get_f: punning *(float *)&intptr_t reads the high 32 bits
+             * on LP64 big-endian (PS3), so y += 0.25 became y += 0. */
 
             case MN_FLOAT | MN_LETNP:
-                ( *( float * )( r->stack_ptr[-2] ) ) = *( float * ) & r->stack_ptr[-1] ;
+                ( *( float * )( r->stack_ptr[-2] ) ) = stack_get_f( r->stack_ptr[-1] ) ;
                 r->stack_ptr -= 2 ;
                 ptr++ ;
                 break ;
 
             case MN_FLOAT | MN_LET :
-                ( *( float * )( r->stack_ptr[-2] ) ) = *( float * ) & r->stack_ptr[-1] ;
+                ( *( float * )( r->stack_ptr[-2] ) ) = stack_get_f( r->stack_ptr[-1] ) ;
                 r->stack_ptr-- ;
                 ptr++ ;
                 break ;
@@ -2007,25 +2010,25 @@ int instance_go( INSTANCE * r )
                 break ;
 
             case MN_FLOAT | MN_VARADD:
-                *( float * )( r->stack_ptr[-2] ) += *( float * ) & r->stack_ptr[-1] ;
+                *( float * )( r->stack_ptr[-2] ) += stack_get_f( r->stack_ptr[-1] ) ;
                 r->stack_ptr-- ;
                 ptr++ ;
                 break ;
 
             case MN_FLOAT | MN_VARSUB:
-                *( float * )( r->stack_ptr[-2] ) -= *( float * ) & r->stack_ptr[-1] ;
+                *( float * )( r->stack_ptr[-2] ) -= stack_get_f( r->stack_ptr[-1] ) ;
                 r->stack_ptr-- ;
                 ptr++ ;
                 break ;
 
             case MN_FLOAT | MN_VARMUL:
-                *( float * )( r->stack_ptr[-2] ) *= *( float * ) & r->stack_ptr[-1] ;
+                *( float * )( r->stack_ptr[-2] ) *= stack_get_f( r->stack_ptr[-1] ) ;
                 r->stack_ptr-- ;
                 ptr++ ;
                 break ;
 
             case MN_FLOAT | MN_VARDIV:
-                *( float * )( r->stack_ptr[-2] ) /= *( float * ) & r->stack_ptr[-1] ;
+                *( float * )( r->stack_ptr[-2] ) /= stack_get_f( r->stack_ptr[-1] ) ;
                 r->stack_ptr-- ;
                 ptr++ ;
                 break ;

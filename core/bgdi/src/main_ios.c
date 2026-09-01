@@ -2,16 +2,14 @@
  * Apple iOS interpreter entry: bundle path, search path, default DCB.
  *
  * Assets live at the .app root (flat bundle) and/or Documents. Relative
- * fopen is prefixed with the DCB directory in files_ios.c (SoRR
- * palettes/enemies/galsia.pal). Saves go to Documents via SDL_GetPrefPath.
+ * fopen is resolved against the DCB directory in files_ios.c; absolute
+ * paths are unchanged. Saves go to Documents via SDL_GetPrefPath.
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <dirent.h>
-#include <sys/stat.h>
 
 #include "main_ios.h"
 #include "files.h"
@@ -30,79 +28,10 @@ static int ios_readable( const char * path )
     return 1;
 }
 
-static void ios_join( char * out, size_t out_sz, const char * root, const char * sub )
+static void ios_add_root( const char * path )
 {
-    size_t n;
-
-    snprintf( out, out_sz, "%s", root );
-    n = strlen( out );
-    if ( n && out[ n - 1 ] != '/' && out_sz > n + 1 )
-    {
-        out[ n++ ] = '/';
-        out[ n ] = '\0';
-    }
-    snprintf( out + n, out_sz - n, "%s", sub );
-}
-
-/* SoRR loads galsia.pal by basename; PATH must include palettes/enemies/. */
-static void ios_add_dir_and_children( const char * dir )
-{
-    DIR * d;
-    struct dirent * ent;
-    struct stat st;
-    char child[ __MAX_PATH ];
-
-    file_addp( dir );
-
-    d = opendir( dir );
-    if ( !d )
-        return;
-
-    while ( ( ent = readdir( d ) ) )
-    {
-        if ( ent->d_name[0] == '.' )
-            continue;
-        ios_join( child, sizeof( child ), dir, ent->d_name );
-        if ( stat( child, &st ) != 0 || !S_ISDIR( st.st_mode ) )
-            continue;
-        file_addp( child );
-    }
-    closedir( d );
-}
-
-static void ios_add_sorr_paths( const char * root )
-{
-    static const char * subs[] = {
-        "palettes",
-        "palettes/enemies",
-        "palettes/players",
-        "palettes/stages",
-        "palettes/bonus",
-        "palettes/boss",
-        "palettes/misc",
-        "mod",
-        "data",
-        "fpg",
-        "fnt",
-        "maps",
-        "chars",
-        "char",
-        NULL
-    };
-    char path[ __MAX_PATH ];
-    int i;
-
-    if ( !root || !root[0] )
-        return;
-
-    file_addp( root );
-    for ( i = 0 ; subs[i] ; i++ )
-    {
-        ios_join( path, sizeof( path ), root, subs[i] );
+    if ( path && path[0] )
         file_addp( path );
-    }
-    ios_join( path, sizeof( path ), root, "palettes" );
-    ios_add_dir_and_children( path );
 }
 
 static void ios_use_dcb( const char * dcb_path, const char * bundle, const char * docs )
@@ -116,11 +45,11 @@ static void ios_use_dcb( const char * dcb_path, const char * bundle, const char 
     else if ( root && root[0] )
         chdir( root );
 
-    ios_add_sorr_paths( root );
+    ios_add_root( root );
     if ( docs && docs[0] && ( !root || strcmp( docs, root ) != 0 ) )
-        ios_add_sorr_paths( docs );
+        ios_add_root( docs );
     if ( bundle && bundle[0] && ( !root || strcmp( bundle, root ) != 0 ) )
-        ios_add_sorr_paths( bundle );
+        ios_add_root( bundle );
     file_addp( "." );
     fprintf( stderr, "bgdi: data root %s\n", root ? root : "(none)" );
 }

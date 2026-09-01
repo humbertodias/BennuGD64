@@ -368,11 +368,11 @@ BENNUGD_DEVELOPMENT_TEAM=YOUR_TEAM_ID bash scripts/build.sh tvos device
 
 If only one development team is on the Mac, `build.sh` detects it. Optional: `BENNUGD_BUNDLE_IDENTIFIER` (default `org.bennugd64.player`) and `BENNUGD_BUNDLE_NAME` (default `BennuGD64`). Output is `dist/tvos-arm64-static/bgdi.app`.
 
-**Where `main.dcb` goes:** files in `tvos/contents/` are copied to the `.app` root (flat bundle, same as PixTudio). `bgdi` looks for `main.dcb` next to the executable via `SDL_GetBasePath()`. Saves go to `SDL_GetPrefPath("bennugd64", "bgdi")`. Compile with the matching `tvos-host` `bgdc`, not a random desktop Bennu.
+**Where `main.dcb` goes:** files in `tvos/contents/` are copied to the `.app` root (flat bundle, same as PixTudio). `bgdi` looks for `main.dcb` in Documents (`SDL_GetPrefPath("bennugd64", "bgdi")`) first, then next to the executable via `SDL_GetBasePath()`. Put the **entire** game tree next to the DCB (not only `main.dcb`). Relative paths are resolved against that directory; absolute paths are unchanged. Compile with the matching `tvos-host` `bgdc`, not a random desktop Bennu.
 
 Siri Remote / Game Controller: D-pad is arrows, click/A is Space, Play/Pause is Enter, Menu/B is Escape. Phantom SDL Escape is cleared so `hello.prg` does not exit immediately.
 
-SDL3 is FetchContent (Metal). Modules are linked into `bgdi.app`. Deployment target is tvOS 17.0. Simulator CI skips the layered App Icon (`tvos/Assets.xcassets`) because `actool` needs a tvOS Simulator runtime; device builds include it.
+SDL3 is FetchContent (Metal). Modules are linked into `bgdi.app`. Deployment target is tvOS 15.0 (runs on a 15.0 Simulator and on newer Apple TV). Simulator CI skips the layered App Icon (`tvos/Assets.xcassets`) because `actool` needs a tvOS Simulator runtime; device builds include it.
 
 ## Apple iOS
 
@@ -401,7 +401,7 @@ BENNUGD_DEVELOPMENT_TEAM=YOUR_TEAM_ID bash scripts/build.sh ios device
 
 If only one development team is on the Mac, `build.sh` detects it. Optional: `BENNUGD_BUNDLE_IDENTIFIER` (default `org.bennugd64.player`) and `BENNUGD_BUNDLE_NAME` (default `BennuGD64`). Output is `dist/ios-arm64-static/bgdi.app`.
 
-**Where `main.dcb` goes:** files in `ios/contents/` are copied to the `.app` root. `bgdi` looks for `main.dcb` in Documents (`SDL_GetPrefPath("bennugd64", "bgdi")`) first, then next to the executable via `SDL_GetBasePath()`. Relative `fopen` (SoRR `palettes/enemies/galsia.pal`) is prefixed with that DCB directory; PATH also includes `palettes/` and its children. Finder file sharing is on (`UIFileSharingEnabled`), so you can drop a DCB plus its asset folders into the app's Documents folder. Compile with the matching `ios-host` `bgdc`, not a random desktop Bennu.
+**Where `main.dcb` goes:** files in `ios/contents/` are copied to the `.app` root. `bgdi` looks for `main.dcb` in Documents (`SDL_GetPrefPath("bennugd64", "bgdi")`) first, then next to the executable via `SDL_GetBasePath()`. Put the **entire** game tree next to the DCB. Relative paths are resolved against that directory; absolute paths are unchanged. Finder file sharing is on (`UIFileSharingEnabled`), so you can drop a DCB plus its asset folders into the app's Documents folder. Compile with the matching `ios-host` `bgdc`, not a random desktop Bennu.
 
 Gamepad / touch: D-pad and left-side stick are arrows, A / right-lower tap is Space, Start / right-upper tap is Enter, B is Escape. The system Home / Guide button is not mapped. Phantom SDL Escape is cleared so `hello.prg` does not exit immediately. Landscape only.
 

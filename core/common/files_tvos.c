@@ -1,9 +1,9 @@
 /*
- * Apple iOS file I/O. Linked instead of files_native.c.
+ * Apple tvOS file I/O. Linked instead of files_native.c.
  *
  * Startup chdir()s to Documents (writable); the DCB and assets live in the
- * .app bundle (or also in Documents). Relative fopen is prefixed with the
- * DCB directory; absolute paths are used as-is. Leave files.c unchanged.
+ * .app bundle. Relative fopen is prefixed with the DCB directory; absolute
+ * paths are used as-is. Leave files.c unchanged.
  */
 
 #include <stdio.h>
@@ -11,11 +11,11 @@
 
 #include "files_native.h"
 #include "files_st.h"
-#include "files_ios.h"
+#include "files_tvos.h"
 
-static char ios_root[ __MAX_PATH ] = "";
-static char ios_bundle[ __MAX_PATH ] = "";
-static char ios_docs[ __MAX_PATH ] = "";
+static char tvos_root[ __MAX_PATH ] = "";
+static char tvos_bundle[ __MAX_PATH ] = "";
+static char tvos_docs[ __MAX_PATH ] = "";
 
 static int is_abs( const char * path )
 {
@@ -58,24 +58,24 @@ static void copy_root( char * dst, size_t dst_sz, const char * src )
     slash_term( dst, dst_sz );
 }
 
-void file_ios_set_roots( const char * bundle, const char * docs )
+void file_tvos_set_roots( const char * bundle, const char * docs )
 {
-    copy_root( ios_bundle, sizeof( ios_bundle ), bundle );
-    copy_root( ios_docs, sizeof( ios_docs ), docs );
-    if ( !ios_root[0] && ios_bundle[0] )
-        snprintf( ios_root, sizeof( ios_root ), "%s", ios_bundle );
+    copy_root( tvos_bundle, sizeof( tvos_bundle ), bundle );
+    copy_root( tvos_docs, sizeof( tvos_docs ), docs );
+    if ( !tvos_root[0] && tvos_bundle[0] )
+        snprintf( tvos_root, sizeof( tvos_root ), "%s", tvos_bundle );
 }
 
-void file_ios_bind_root( const char * dcb_path )
+void file_tvos_bind_root( const char * dcb_path )
 {
     char * slash;
 
-    if ( ios_bundle[0] )
-        snprintf( ios_root, sizeof( ios_root ), "%s", ios_bundle );
-    else if ( ios_docs[0] )
-        snprintf( ios_root, sizeof( ios_root ), "%s", ios_docs );
+    if ( tvos_bundle[0] )
+        snprintf( tvos_root, sizeof( tvos_root ), "%s", tvos_bundle );
+    else if ( tvos_docs[0] )
+        snprintf( tvos_root, sizeof( tvos_root ), "%s", tvos_docs );
     else
-        ios_root[0] = '\0';
+        tvos_root[0] = '\0';
 
     if ( !dcb_path || !dcb_path[0] )
         return;
@@ -83,20 +83,20 @@ void file_ios_bind_root( const char * dcb_path )
     if ( !is_abs( dcb_path ) && !strchr( dcb_path, '/' ) )
         return;
 
-    snprintf( ios_root, sizeof( ios_root ), "%s", dcb_path );
-    slash = strrchr( ios_root, '/' );
+    snprintf( tvos_root, sizeof( tvos_root ), "%s", dcb_path );
+    slash = strrchr( tvos_root, '/' );
     if ( !slash )
     {
-        if ( ios_bundle[0] )
-            snprintf( ios_root, sizeof( ios_root ), "%s", ios_bundle );
+        if ( tvos_bundle[0] )
+            snprintf( tvos_root, sizeof( tvos_root ), "%s", tvos_bundle );
         return;
     }
     slash[1] = '\0';
 }
 
-const char * file_ios_root( void )
+const char * file_tvos_root( void )
 {
-    return ios_root;
+    return tvos_root;
 }
 
 int file_native_try_gzip( const char * filename )
@@ -122,32 +122,32 @@ FILE * file_native_fopen( const char * filename, const char * mode )
 
     if ( is_write_mode( mode ) )
     {
-        if ( ios_docs[0] )
+        if ( tvos_docs[0] )
         {
-            snprintf( path, sizeof( path ), "%s%s", ios_docs, filename );
+            snprintf( path, sizeof( path ), "%s%s", tvos_docs, filename );
             return fopen( path, mode );
         }
-        if ( ios_root[0] )
+        if ( tvos_root[0] )
         {
-            snprintf( path, sizeof( path ), "%s%s", ios_root, filename );
+            snprintf( path, sizeof( path ), "%s%s", tvos_root, filename );
             return fopen( path, mode );
         }
         return fopen( filename, mode );
     }
 
-    if ( ios_root[0] )
-        fallbacks[ n++ ] = ios_root;
-    if ( ios_docs[0] )
-        fallbacks[ n++ ] = ios_docs;
-    if ( ios_bundle[0] )
-        fallbacks[ n++ ] = ios_bundle;
+    if ( tvos_root[0] )
+        fallbacks[ n++ ] = tvos_root;
+    if ( tvos_docs[0] )
+        fallbacks[ n++ ] = tvos_docs;
+    if ( tvos_bundle[0] )
+        fallbacks[ n++ ] = tvos_bundle;
     fallbacks[ n ] = NULL;
 
     for ( i = 0 ; fallbacks[i] ; i++ )
     {
-        if ( i > 0 && strcmp( fallbacks[i], ios_root ) == 0 )
+        if ( i > 0 && strcmp( fallbacks[i], tvos_root ) == 0 )
             continue;
-        if ( i > 1 && ios_docs[0] && strcmp( fallbacks[i], ios_docs ) == 0 )
+        if ( i > 1 && tvos_docs[0] && strcmp( fallbacks[i], tvos_docs ) == 0 )
             continue;
         snprintf( path, sizeof( path ), "%s%s", fallbacks[i], filename );
         fp = fopen( path, mode );
@@ -167,17 +167,17 @@ int file_native_move( const char * source_file, const char * target_file )
 
     if ( is_abs( source_file ) )
         snprintf( src, sizeof( src ), "%s", source_file );
-    else if ( ios_root[0] )
-        snprintf( src, sizeof( src ), "%s%s", ios_root, strip_rel( source_file ) );
+    else if ( tvos_root[0] )
+        snprintf( src, sizeof( src ), "%s%s", tvos_root, strip_rel( source_file ) );
     else
         snprintf( src, sizeof( src ), "%s", source_file );
 
     if ( is_abs( target_file ) )
         snprintf( dst, sizeof( dst ), "%s", target_file );
-    else if ( ios_docs[0] )
-        snprintf( dst, sizeof( dst ), "%s%s", ios_docs, strip_rel( target_file ) );
-    else if ( ios_root[0] )
-        snprintf( dst, sizeof( dst ), "%s%s", ios_root, strip_rel( target_file ) );
+    else if ( tvos_docs[0] )
+        snprintf( dst, sizeof( dst ), "%s%s", tvos_docs, strip_rel( target_file ) );
+    else if ( tvos_root[0] )
+        snprintf( dst, sizeof( dst ), "%s%s", tvos_root, strip_rel( target_file ) );
     else
         snprintf( dst, sizeof( dst ), "%s", target_file );
 

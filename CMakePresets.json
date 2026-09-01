@@ -210,7 +210,7 @@
         "CMAKE_SYSTEM_NAME": "tvOS",
         "CMAKE_SYSTEM_PROCESSOR": "aarch64",
         "CMAKE_OSX_ARCHITECTURES": "arm64",
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "17.0",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "15.0",
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
       }

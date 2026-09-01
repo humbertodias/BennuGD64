@@ -32,9 +32,24 @@
 
 #include <stdint.h>
 
+#include "arrange.h"
 #include "files.h"
 #include "varspace_file.h"
 #include "xstrings.h"
+
+/* Compiler embeds DCB_TYPEDEF in globaldata for LOAD/SAVE/COPY. dcbr.c then
+ * ARRANGE_DWORDS the whole block, which byte-swaps BaseType[8]. Count[] and
+ * Members are uint32 and end up native. Restore only the 8 type bytes.
+ * Do not use this on varspace records from read_and_arrange_varspace. */
+DCB_TYPEDEF dcb_typedef_from_globaldata( const DCB_TYPEDEF * var )
+{
+    DCB_TYPEDEF tmp = *var;
+#if __BYTEORDER == __BIG_ENDIAN
+    ARRANGE_DWORD( ( uint32_t * )( void * ) tmp.BaseType );
+    ARRANGE_DWORD( ( uint32_t * )( void * ) ( tmp.BaseType + 4 ) );
+#endif
+    return tmp;
+}
 
 /* ----------------------------------------------------------------- */
 /*
@@ -93,7 +108,8 @@ int loadtypes( file * fp, void * data, DCB_TYPEDEF * var, int nvars, int dcbform
 
     for ( ; nvars > 0; nvars--, var++ )
     {
-        partial = loadtype( fp, data, var, dcbformat );
+        DCB_TYPEDEF tmp = dcb_typedef_from_globaldata( var );
+        partial = loadtype( fp, data, &tmp, dcbformat );
         data = (( uint8_t* )data ) + partial;
         result += partial;
     }
@@ -156,7 +172,8 @@ int savetypes( file * fp, void * data, DCB_TYPEDEF * var, int nvars, int dcbform
 
     for ( ; nvars > 0; nvars--, var++ )
     {
-        partial = savetype( fp, data, var, dcbformat );
+        DCB_TYPEDEF tmp = dcb_typedef_from_globaldata( var );
+        partial = savetype( fp, data, &tmp, dcbformat );
         result += partial;
         data = (( uint8_t* )data ) + partial;
     }

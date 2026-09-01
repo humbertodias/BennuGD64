@@ -100,6 +100,13 @@ jobs:
             docker_target: ""
             shared: false
             timeout: 120
+          - platform: ps3
+            artifact: ps3-ppu
+            dist_static: dist/ps3-ppu-static
+            dist_shared: ""
+            docker_target: ""
+            shared: false
+            timeout: 180
           - platform: pandora
             artifact: pandora-arm
             dist_static: dist/pandora-arm-static
@@ -357,7 +364,7 @@ jobs:
             esac
             echo "Packaging $base"
             case "$base" in
-              *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*psp*|*vita*|*ps2*|*pandora*|*wii*|*tvos*)
+              *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*psp*|*vita*|*ps2*|*ps3*|*pandora*|*wii*|*tvos*)
                 (cd artifacts && zip -r "$GITHUB_WORKSPACE/release-assets/${base}.zip" "$base")
                 ;;
               *)
@@ -378,9 +385,9 @@ jobs:
           generate_release_notes: true
           files: release-assets/*
           body: |
-            Builds of `bgdc` and `bgdi` for Linux, Windows, macOS, WebAssembly, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, PlayStation Vita, Apple tvOS, PlayStation 2, OpenPandora, and Nintendo Wii.
+            Builds of `bgdc` and `bgdi` for Linux, Windows, macOS, WebAssembly, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, PlayStation Vita, Apple tvOS, PlayStation 2, PlayStation 3, OpenPandora, and Nintendo Wii.
 
-            Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared>.tar.gz` (`.zip` on Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, tvOS, PS2, Pandora, and Wii):
+            Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared>.tar.gz` (`.zip` on Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, tvOS, PS2, PS3, Pandora, and Wii):
             - **static** — modules linked into `bgdi`
             - **shared** — modules as `.so`/`.dll`/`.dylib` under `modules/`
             - **web-wasm32-static** — browser interpreter (`index.html`, `bgdi.js`, `bgdi.wasm`, `bgdi.data`) plus Web IDE (`ide/`, `bgdc.wasm`, `samples/`); serve the folder over HTTP
@@ -392,11 +399,12 @@ jobs:
             - **vita-arm-static** — homebrew VPK (`bennugd64.vpk`); install on a jailbroken Vita, extra data in `ux0:/data/bennugd64/`
             - **tvos-simulator-arm64-static** — `bgdi.app` for the tvOS Simulator (unsigned); put `main.dcb` in `tvos/contents/` before rebuild, or at the `.app` root
             - **ps2-mips-static** — homebrew ELF (`bgdi.elf`) and ISO (`bennugd64.iso`); PCSX2 File→Open the ISO, USB `mass:/`, or HostFS File→Open ELF
+            - **ps3-ppu-static** — homebrew PKG (`bennugd64.pkg`); install on CFW, extra data in `/dev_usb000/bennugd64/` or USRDIR
             - **pandora-arm-static** — homebrew PND (`bennugd64.pnd`); copy to the Pandora SD card, or run `./bgdi` next to `main.dcb`
             - **wii-powerpc-static** — homebrew DOL (`apps/bennugd64/boot.dol`); copy the folder to the SD card and launch from the Homebrew Channel
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-            Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, PS2, Pandora, Wii, and macOS (x86_64 and arm64) CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.vita` (`vitasdk/vitasdk`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), `docker/Dockerfile.wii` (`devkitpro/devkitppc`), and `docker/Dockerfile.macos` (osxcross). tvOS CI runs natively on `macos-latest` (Xcode, unsigned Simulator).
+            Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, PS2, PS3, Pandora, Wii, and macOS (x86_64 and arm64) CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.vita` (`vitasdk/vitasdk`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.ps3` (`hldtux/ps3dev`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), `docker/Dockerfile.wii` (`devkitpro/devkitppc`), and `docker/Dockerfile.macos` (osxcross). tvOS CI runs natively on `macos-latest` (Xcode, unsigned Simulator).
             OS graphics/audio libraries may still be required at runtime.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

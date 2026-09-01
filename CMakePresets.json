@@ -225,6 +225,26 @@
       }
     },
     {
+      "name": "ps3-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile PS3 demo DCBs",
+      "binaryDir": "${sourceDir}/build-ps3-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "ps3-ppu",
+      "inherits": "base",
+      "displayName": "PlayStation 3 interpreter (bgdi.elf / PKG)",
+      "binaryDir": "${sourceDir}/build-ps3-ppu",
+      "toolchainFile": "${sourceDir}/cmake/ps3dev.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
       "name": "pandora-host",
       "inherits": "static",
       "displayName": "Native bgdc used to compile Pandora demo DCBs",
@@ -315,6 +335,8 @@
     { "name": "tvos-host", "configurePreset": "tvos-host", "targets": ["bgdc"] },
     { "name": "tvos-arm64", "configurePreset": "tvos-arm64", "configuration": "Release", "targets": ["bgdi"] },
     { "name": "tvos-simulator", "configurePreset": "tvos-simulator", "configuration": "Debug", "targets": ["bgdi"] },
+    { "name": "ps3-host", "configurePreset": "ps3-host", "targets": ["bgdc"] },
+    { "name": "ps3-ppu", "configurePreset": "ps3-ppu", "targets": ["bgdi"] },
     { "name": "pandora-host", "configurePreset": "pandora-host", "targets": ["bgdc"] },
     { "name": "pandora-arm", "configurePreset": "pandora-arm", "targets": ["bgdi"] },
     { "name": "wii-host", "configurePreset": "wii-host", "targets": ["bgdc"] },

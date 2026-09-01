@@ -58,6 +58,9 @@
 #ifdef TARGET_PS2
 #include "misc_ps2.h"
 #endif
+#ifdef TARGET_PS3
+#include "misc_ps3.h"
+#endif
 
 #if defined(TARGET_GP2X_WIZ) || defined(TARGET_CAANOO)
     #include <sys/types.h>
@@ -192,6 +195,13 @@ int debug = 0;  /* 1 if running in debug mode      */
 #define _OS_ID          OS_PS2
 #endif
 
+#ifdef TARGET_PS3
+#ifdef _OS_ID
+#undef _OS_ID
+#endif
+#define _OS_ID          OS_PS3
+#endif
+
 #ifdef TARGET_IOS
 #ifdef _OS_ID
 #undef _OS_ID
@@ -269,6 +279,7 @@ void bgdrtm_ptimer_cleanup(void)
  *      Result of the comparison
  */
 
+#ifndef strncmpi
 int strncmpi( char * str1, char * str2, int sz )
 {
     while (( *str1 || *str2 ) && sz )
@@ -283,6 +294,7 @@ int strncmpi( char * str1, char * str2, int sz )
 
     return 0 ;
 }
+#endif
 
 /* --------------------------------------------------------------------------- */
 
@@ -324,6 +336,9 @@ void bgdrtm_entry( int argc, char * argv[] )
 #endif
 #ifdef TARGET_TVOS
     bgdrtm_tvos_entry();
+#endif
+#ifdef TARGET_PS3
+    bgdrtm_ps3_entry();
 #endif
 #endif
 

@@ -23,6 +23,9 @@ endif ()
 if (PLATFORM_PS2 OR PS2)
   target_sources (video PRIVATE g_video_ps2.c)
 endif ()
+if (PLATFORM_PS3 OR PS3)
+  target_sources (video PRIVATE g_video_ps3.c)
+endif ()
 if (NINTENDO_SWITCH)
   target_sources (video PRIVATE g_video_switch.c)
 endif ()
@@ -49,4 +52,5 @@ target_link_libraries (
   bgdrtm
   grbase
   ${BENNUGD_SDL3_TARGET}
+  ZLIB::ZLIB
 )

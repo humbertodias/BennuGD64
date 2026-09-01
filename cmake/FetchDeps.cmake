@@ -14,6 +14,7 @@ set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/libsdl-org/SDL.git" CACHE S
 set (BENNUGD_SDL3_SWITCH_REF "switch-sdl-3.4" CACHE STRING "devkitPro SDL3 Switch branch")
 set (BENNUGD_SDL3_DREAMCAST_REF "dreamcastSDL3" CACHE STRING "GPF SDL3 Dreamcast branch")
 set (BENNUGD_SDL3_WII_REF "fixes" CACHE STRING "libogc2 SDL3 Wii branch")
+set (BENNUGD_SDL3_PS3_REF "ps3" CACHE STRING "onesixromcom SDL3 PS3 branch")
 set (BENNUGD_SDL3_MIXER_REF "release-3.2.4" CACHE STRING "SDL3_mixer git tag/branch to fetch")
 
 if (NINTENDO_SWITCH)
@@ -28,10 +29,14 @@ if (NINTENDO_WII OR PLATFORM_WII)
   set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/lucaspcamargo/SDL3-libogc2.git")
   set (BENNUGD_SDL3_REF "${BENNUGD_SDL3_WII_REF}")
 endif ()
+if (PLATFORM_PS3 OR PS3)
+  set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/onesixromcom/SDL.git")
+  set (BENNUGD_SDL3_REF "${BENNUGD_SDL3_PS3_REF}")
+endif ()
 
 # Static archives must be PIC so they can later link into .so/.dylib modules.
 # Switch/Dreamcast/PSP/Vita/PS2/Pandora/Wii homebrew uses the toolchain PIE/KOS/pspdev/vitasdk/libogc flags instead.
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_VITA AND NOT VITA AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_VITA AND NOT VITA AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PS3 AND NOT PS3 AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -53,6 +58,7 @@ set (SKIP_INSTALL_HEADERS ON CACHE BOOL "" FORCE)
 set (SKIP_INSTALL_FILES ON CACHE BOOL "" FORCE)
 
 # --- zlib ---
+set (_bennugd_skip_fetch_zlib_png FALSE)
 if (PLATFORM_PS2 OR PS2)
   # ps2sdk-ports already has zlib/libpng on the EE include path. FetchContent
   # 1.3.1 plus ports zlib.h makes libpng error ZLIB_VERNUM != PNG_ZLIB_VERNUM.
@@ -78,6 +84,7 @@ if (PLATFORM_PS2 OR PS2)
   endif ()
   set (ZLIB_INCLUDE_DIRS "${ZLIB_INCLUDE_DIR}")
   set (ZLIB_FOUND TRUE)
+  set (_bennugd_zlib_include_dirs "${ZLIB_INCLUDE_DIR}")
   if (NOT TARGET PNG::PNG)
     add_library (PNG::PNG STATIC IMPORTED GLOBAL)
     set_target_properties (PNG::PNG PROPERTIES
@@ -87,7 +94,88 @@ if (PLATFORM_PS2 OR PS2)
     )
   endif ()
   message (STATUS "PS2: zlib/libpng from ${_ps2_ports}")
-else ()
+  set (_bennugd_skip_fetch_zlib_png TRUE)
+elseif (PLATFORM_PS3 OR PS3)
+  # Same mismatch: ps3dev portlibs zlib is 1.2.x, FetchContent libpng 1.6
+  # wants 1.3.1. Prefer a matching portlibs pair when both are installed.
+  # Use EXISTS (not find_path): CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY re-roots
+  # absolute HINTS and can miss $PS3DEV/portlibs/ppu/include/zlib.h.
+  unset (ZLIB_INCLUDE_DIR CACHE)
+  unset (ZLIB_LIBRARY CACHE)
+  unset (PNG_PNG_INCLUDE_DIR CACHE)
+  unset (PNG_LIBRARY CACHE)
+  set (_ps3_ports "")
+  if (DEFINED ENV{PS3DEV} AND IS_DIRECTORY "$ENV{PS3DEV}/portlibs/ppu")
+    set (_ps3_ports "$ENV{PS3DEV}/portlibs/ppu")
+  elseif (DEFINED PS3DEV AND IS_DIRECTORY "${PS3DEV}/portlibs/ppu")
+    set (_ps3_ports "${PS3DEV}/portlibs/ppu")
+  endif ()
+  set (_ps3_zlib_h "")
+  set (_ps3_zlib_a "")
+  set (_ps3_png_h "")
+  set (_ps3_png_a "")
+  if (NOT _ps3_ports STREQUAL "")
+    if (EXISTS "${_ps3_ports}/include/zlib.h")
+      set (_ps3_zlib_h "${_ps3_ports}/include")
+    endif ()
+    foreach (_ps3_zlib libz.a libzlib.a)
+      if (EXISTS "${_ps3_ports}/lib/${_ps3_zlib}")
+        set (_ps3_zlib_a "${_ps3_ports}/lib/${_ps3_zlib}")
+        break ()
+      endif ()
+    endforeach ()
+    foreach (_ps3_pngh "${_ps3_ports}/include/png.h" "${_ps3_ports}/include/libpng16/png.h")
+      if (EXISTS "${_ps3_pngh}")
+        get_filename_component (_ps3_png_h "${_ps3_pngh}" DIRECTORY)
+        break ()
+      endif ()
+    endforeach ()
+    foreach (_ps3_pnglib libpng16.a libpng.a libpng_static.a)
+      if (EXISTS "${_ps3_ports}/lib/${_ps3_pnglib}")
+        set (_ps3_png_a "${_ps3_ports}/lib/${_ps3_pnglib}")
+        break ()
+      endif ()
+    endforeach ()
+  endif ()
+  if (_ps3_zlib_h AND _ps3_zlib_a AND _ps3_png_h AND _ps3_png_a)
+    set (ZLIB_INCLUDE_DIR "${_ps3_zlib_h}")
+    set (ZLIB_LIBRARY "${_ps3_zlib_a}")
+    set (PNG_PNG_INCLUDE_DIR "${_ps3_png_h}")
+    set (PNG_LIBRARY "${_ps3_png_a}")
+    if (NOT TARGET ZLIB::ZLIB)
+      add_library (ZLIB::ZLIB STATIC IMPORTED GLOBAL)
+      set_target_properties (ZLIB::ZLIB PROPERTIES
+        IMPORTED_LOCATION "${ZLIB_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE_DIR}"
+      )
+    endif ()
+    set (ZLIB_INCLUDE_DIRS "${ZLIB_INCLUDE_DIR}")
+    set (ZLIB_FOUND TRUE)
+    set (_bennugd_zlib_include_dirs "${ZLIB_INCLUDE_DIR}")
+    if (NOT TARGET PNG::PNG)
+      add_library (PNG::PNG STATIC IMPORTED GLOBAL)
+      set_target_properties (PNG::PNG PROPERTIES
+        IMPORTED_LOCATION "${PNG_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${PNG_PNG_INCLUDE_DIR}"
+        INTERFACE_LINK_LIBRARIES ZLIB::ZLIB
+      )
+    endif ()
+    message (STATUS "PS3: zlib/libpng from ${_ps3_ports}")
+    set (_bennugd_skip_fetch_zlib_png TRUE)
+    file (WRITE "${CMAKE_BINARY_DIR}/cmake-overrides/FindZLIB.cmake"
+"if (TARGET ZLIB::ZLIB)
+  set (ZLIB_FOUND TRUE)
+  set (ZLIB_INCLUDE_DIR \"${ZLIB_INCLUDE_DIR}\")
+  set (ZLIB_INCLUDE_DIRS \"${ZLIB_INCLUDE_DIR}\")
+  set (ZLIB_LIBRARIES ZLIB::ZLIB)
+  set (ZLIB_LIBRARY ZLIB::ZLIB)
+  return ()
+endif ()
+")
+    list (PREPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/cmake-overrides")
+  endif ()
+endif ()
+if (NOT _bennugd_skip_fetch_zlib_png)
 set (ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_Declare (
   zlib
@@ -96,8 +184,8 @@ FetchContent_Declare (
 FetchContent_GetProperties (zlib)
 if (NOT zlib_POPULATED)
   FetchContent_Populate (zlib)
-  add_subdirectory (${zlib_SOURCE_DIR} ${zlib_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif ()
+add_subdirectory (${zlib_SOURCE_DIR} ${zlib_BINARY_DIR} EXCLUDE_FROM_ALL)
 
 if (NOT TARGET ZLIB::ZLIB)
   if (TARGET zlibstatic)
@@ -110,6 +198,7 @@ if (NOT TARGET ZLIB::ZLIB)
 endif ()
 set (ZLIB_INCLUDE_DIR "${zlib_SOURCE_DIR};${zlib_BINARY_DIR}")
 set (ZLIB_INCLUDE_DIRS "${zlib_SOURCE_DIR}" "${zlib_BINARY_DIR}")
+set (_bennugd_zlib_include_dirs "${zlib_SOURCE_DIR}" "${zlib_BINARY_DIR}")
 set (ZLIB_FOUND TRUE)
 
 # libpng calls find_package(ZLIB); prefer our in-tree target over the module.
@@ -133,12 +222,17 @@ if (COMPILER_ONLY)
 endif ()
 
 # --- libpng ---
-if (NOT PLATFORM_PS2 AND NOT PS2)
+if (NOT _bennugd_skip_fetch_zlib_png)
 set (PNG_SHARED OFF CACHE BOOL "" FORCE)
 set (PNG_STATIC ON CACHE BOOL "" FORCE)
 set (PNG_FRAMEWORK OFF CACHE BOOL "" FORCE)
 set (PNG_TESTS OFF CACHE BOOL "" FORCE)
 set (PNG_TOOLS OFF CACHE BOOL "" FORCE)
+if (PLATFORM_PS3 OR PS3)
+  # Cell PPU is PowerPC without VSX; libpng would set PNG_POWERPC_VSX_OPT=2.
+  set (PNG_HARDWARE_OPTIMIZATIONS OFF CACHE BOOL "" FORCE)
+  set (PNG_POWERPC_VSX off CACHE STRING "" FORCE)
+endif ()
 FetchContent_Declare (
   libpng
   URL "https://github.com/pnggroup/libpng/archive/refs/tags/v${BENNUGD_LIBPNG_VERSION}.tar.gz"
@@ -214,6 +308,24 @@ if (PLATFORM_PS2 OR PS2)
   set (HAVE_GCC_SYNC_LOCK_TEST_AND_SET OFF CACHE BOOL "" FORCE)
   set (HAVE_FDATASYNC OFF CACHE BOOL "" FORCE)
   set (HAVE_GETHOSTNAME OFF CACHE BOOL "" FORCE)
+endif ()
+if (PLATFORM_PS3 OR PS3)
+  set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+  set (SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
+  set (SDL_CAMERA OFF CACHE BOOL "" FORCE)
+  set (SDL_HAPTIC OFF CACHE BOOL "" FORCE)
+  set (SDL_SENSOR OFF CACHE BOOL "" FORCE)
+  set (HAVE_FDATASYNC OFF CACHE BOOL "" FORCE)
+  set (HAVE_GETHOSTNAME OFF CACHE BOOL "" FORCE)
+  # try_compile is STATIC_LIBRARY; unistd.h declares sysconf but PSL1GHT
+  # libc has no symbol (SDL_cpuinfo then fails at bgdi link).
+  set (HAVE_SYSCONF OFF CACHE BOOL "" FORCE)
+  set (HAVE_GETPAGESIZE OFF CACHE BOOL "" FORCE)
 endif ()
 if (PLATFORM_VITA OR VITA)
   set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
@@ -339,6 +451,20 @@ if (PLATFORM_PS2 OR PS2)
         "#if defined(PS2) || defined(SDL_PLATFORM_PS2) || defined(__PS2__) || defined(_EE) || defined(_MIPS_ARCH_R5900)\n#include <kernel.h>"
         _ps2_spin_txt "${_ps2_spin_txt}")
       file (WRITE "${_ps2_spin}" "${_ps2_spin_txt}")
+    endif ()
+  endif ()
+endif ()
+
+if (PLATFORM_PS3 OR PS3)
+  if (TARGET SDL3-static)
+    # Prefer the same zlib libpng uses (FetchContent or portlibs), not -lz
+    # from CMAKE_FIND_ROOT_PATH which can mix 1.2.x and 1.3.1.
+    if (TARGET ZLIB::ZLIB)
+      target_link_libraries (SDL3-static PUBLIC
+        gcm_sys rsx sysutil io audio rt lv2 m ZLIB::ZLIB)
+    else ()
+      target_link_libraries (SDL3-static PUBLIC
+        gcm_sys rsx sysutil io audio rt lv2 m z)
     endif ()
   endif ()
 endif ()
@@ -501,6 +627,17 @@ if (NOT NO_SOUND)
     endif ()
   endif ()
 endif ()
+endif ()
+
+# SDL's find_package(ZLIB) can clear ZLIB_INCLUDE_DIRS. Engine sources include
+# zlib.h via files_st.h without linking ZLIB::ZLIB on every target.
+if (DEFINED _bennugd_zlib_include_dirs)
+  set (ZLIB_INCLUDE_DIRS "${_bennugd_zlib_include_dirs}")
+  include_directories (${_bennugd_zlib_include_dirs})
+  if (NOT TARGET bennugd_zlib_hdr)
+    add_library (bennugd_zlib_hdr INTERFACE)
+    target_include_directories (bennugd_zlib_hdr INTERFACE ${_bennugd_zlib_include_dirs})
+  endif ()
 endif ()
 
 set (BUILD_SHARED_LIBS "${_bennugd_saved_shared}")

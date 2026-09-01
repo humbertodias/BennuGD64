@@ -73,6 +73,9 @@
 #ifdef TARGET_PS2
 #include "main_ps2.h"
 #endif
+#ifdef TARGET_PS3
+#include "main_ps3.h"
+#endif
 #ifdef TARGET_PANDORA
 #include "main_pandora.h"
 #endif
@@ -200,6 +203,23 @@ int main( int argc, char *argv[] )
             filename = ps2_dcb;
         if ( filename && argv && argv[0] )
             bgdi_ps2_use_device_argv0( filename, argv );
+    }
+#endif
+
+#ifdef TARGET_PS3
+    {
+        static char * ps3_argv[2] = { "EBOOT.BIN", NULL };
+        char * ps3_dcb;
+
+        if ( argc < 1 || !argv || !argv[0] )
+        {
+            argc = 1;
+            argv = ps3_argv;
+        }
+
+        ps3_dcb = bgdi_ps3_startup( argc, argv, &standalone );
+        if ( ps3_dcb )
+            filename = ps3_dcb;
     }
 #endif
 

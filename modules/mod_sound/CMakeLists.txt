@@ -16,6 +16,9 @@ endif ()
 if (PLATFORM_PS2 OR PS2)
   target_sources (mod_sound PRIVATE mod_sound_ps2.c)
 endif ()
+if (PLATFORM_PS3 OR PS3)
+  target_sources (mod_sound PRIVATE mod_sound_ps3.c)
+endif ()
 
 target_link_libraries (
   mod_sound

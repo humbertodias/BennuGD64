@@ -13,6 +13,7 @@
 #   bash scripts/build.sh tvos
 #   bash scripts/build.sh tvos simulator
 #   bash scripts/build.sh ps2
+#   bash scripts/build.sh ps3
 #   bash scripts/build.sh pandora
 #   bash scripts/build.sh wii
 #   bash scripts/build.sh macos
@@ -33,6 +34,7 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 vita [shell]
        $0 tvos [simulator|device]
        $0 ps2 [shell]
+       $0 ps3 [shell]
        $0 pandora [shell]
        $0 wii [shell]
        $0 macos [x86_64|arm64] [static|shared|shell]"
@@ -57,7 +59,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ps2|pandora|wii|macos) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ps2|ps3|pandora|wii|macos) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -115,6 +117,12 @@ if [[ "${PLATFORM}" != "tvos" && "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
       -t bennugd64-ps2 \
       -f docker/Dockerfile.ps2 \
       docker/
+  elif [[ "${PLATFORM}" == "ps3" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      -t bennugd64-ps3 \
+      -f docker/Dockerfile.ps3 \
+      docker/
   elif [[ "${PLATFORM}" == "pandora" ]]; then
     docker build \
       --platform linux/amd64 \
@@ -146,7 +154,7 @@ if [[ "${SECOND}" == "shell" ]]; then
     echo "tvOS has no Docker shell; it needs Xcode on macOS." >&2
     exit 1
   fi
-  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
+  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "ps3" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
       -w /src \
@@ -196,6 +204,7 @@ reuse_fetchcontent_src() {
     "${ROOT}/build-psp-host/_deps/${name}" \
     "${ROOT}/build-vita-host/_deps/${name}" \
     "${ROOT}/build-tvos-host/_deps/${name}" \
+    "${ROOT}/build-ps3-host/_deps/${name}" \
     "${ROOT}/build-pandora-host/_deps/${name}"
   do
     if [[ -f "${cand}/CMakeLists.txt" ]]; then
@@ -1008,6 +1017,162 @@ if [[ "${PLATFORM}" == "ps2" ]]; then
       test -s "${STAGE}/main.dcb"
       test -s "${STAGE}/SYSTEM.CNF"
       test -s "${STAGE}/bennugd64.iso"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "ps3" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: ps3-host + ps3-ppu"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-ps3-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-ps3-ppu/_deps"
+  docker run --platform linux/amd64 --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_PS3_REF="${SDL3_PS3_REF:-ps3}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -n "${PS3DEV:-}"
+      test -x "${PS3DEV}/ppu/bin/powerpc64-ps3-elf-gcc" \
+        -o -x "${PS3DEV}/ppu/bin/ppu-gcc"
+      HOST_BUILD=/src/build-ps3-host
+      PS3_BUILD=/src/build-ps3-ppu
+      PKGDIR=/src/build-ps3-pkg
+      STAGE=/src/dist/ps3-ppu-static
+      FETCH_DIR="${HOST_BUILD}/_deps"
+      GAME_TITLE=BennuGD64
+      GAME_ID=BGD300001
+      CONTENT_ID=UP0000-BGD300001_00-0000000000000000
+      APPVERSION=01.00
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_PS3_REF="${SDL3_PS3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset ps3-host "${COMMON[@]}"
+      cmake --build --preset ps3-host
+      for prg in /src/web/demo/*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      cmake --preset ps3-ppu \
+        "${COMMON[@]}"
+      cmake --build --preset ps3-ppu
+      ELF=""
+      for cand in \
+        "${PS3_BUILD}/core/bgdi/src/bgdi.elf" \
+        "${PS3_BUILD}/core/bgdi/src/bgdi"
+      do
+        if [[ -f "${cand}" ]]; then
+          ELF="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${ELF}" ]]; then
+        ELF="$(find "${PS3_BUILD}/core/bgdi" \( -type f -o -type l \) \( -name bgdi.elf -o -name bgdi \) | grep -v /CMakeFiles/ | head -n 1 || true)"
+      fi
+      test -n "${ELF}"
+      test -s "${ELF}"
+      rm -rf "${PKGDIR}" "${STAGE}"
+      mkdir -p "${PKGDIR}" "${STAGE}"
+      cp "${ELF}" "${PKGDIR}/bgdi.elf"
+      SPRXLINKER=""
+      for cand in "${PS3DEV}/bin/sprxlinker" sprxlinker; do
+        if command -v "${cand}" >/dev/null 2>&1 || [[ -x "${cand}" ]]; then
+          SPRXLINKER="${cand}"
+          break
+        fi
+      done
+      test -n "${SPRXLINKER}"
+      "${SPRXLINKER}" "${PKGDIR}/bgdi.elf"
+      STRIP=""
+      for cand in \
+        "${PS3DEV}/ppu/bin/powerpc64-ps3-elf-strip" \
+        "${PS3DEV}/bin/ppu-strip" \
+        ppu-strip \
+        powerpc64-ps3-elf-strip
+      do
+        if command -v "${cand}" >/dev/null 2>&1 || [[ -x "${cand}" ]]; then
+          STRIP="${cand}"
+          break
+        fi
+      done
+      if [[ -n "${STRIP}" ]]; then
+        "${STRIP}" --strip-debug "${PKGDIR}/bgdi.elf" -o "${PKGDIR}/bgdi.stripped.elf" \
+          || "${STRIP}" "${PKGDIR}/bgdi.elf" -o "${PKGDIR}/bgdi.stripped.elf"
+      else
+        cp "${PKGDIR}/bgdi.elf" "${PKGDIR}/bgdi.stripped.elf"
+      fi
+      MAKE_SELF_NPDRM=""
+      for cand in "${PS3DEV}/bin/make_self_npdrm" make_self_npdrm; do
+        if command -v "${cand}" >/dev/null 2>&1 || [[ -x "${cand}" ]]; then
+          MAKE_SELF_NPDRM="${cand}"
+          break
+        fi
+      done
+      test -n "${MAKE_SELF_NPDRM}"
+      mkdir -p "${PKGDIR}/pkg/USRDIR"
+      "${MAKE_SELF_NPDRM}" "${PKGDIR}/bgdi.stripped.elf" "${PKGDIR}/pkg/USRDIR/EBOOT.BIN" "${CONTENT_ID}"
+      cp /src/web/demo/*.dcb "${PKGDIR}/pkg/USRDIR/"
+      cp /src/web/demo/hello.dcb "${PKGDIR}/pkg/USRDIR/main.dcb"
+      SFOXML=""
+      for cand in /src/ps3/sfo.xml "${PS3DEV}/bin/sfo.xml"; do
+        if [[ -f "${cand}" ]]; then
+          SFOXML="${cand}"
+          break
+        fi
+      done
+      test -n "${SFOXML}"
+      cp "${SFOXML}" "${PKGDIR}/sfo.xml"
+      sed -i "s/01\\.00/${APPVERSION}/g" "${PKGDIR}/sfo.xml"
+      SFO=""
+      for cand in "${PS3DEV}/bin/sfo" "${PS3DEV}/bin/sfo.py" sfo sfo.py; do
+        if command -v "${cand}" >/dev/null 2>&1 || [[ -x "${cand}" ]]; then
+          SFO="${cand}"
+          break
+        fi
+      done
+      test -n "${SFO}"
+      if [[ "${SFO}" == *.py ]]; then
+        python3 "${SFO}" --title "${GAME_TITLE}" --appid "${GAME_ID}" -f "${PKGDIR}/sfo.xml" "${PKGDIR}/pkg/PARAM.SFO"
+      else
+        "${SFO}" --title "${GAME_TITLE}" --appid "${GAME_ID}" -f "${PKGDIR}/sfo.xml" "${PKGDIR}/pkg/PARAM.SFO"
+      fi
+      if [[ -f "${PS3DEV}/bin/ICON0.PNG" ]]; then
+        cp "${PS3DEV}/bin/ICON0.PNG" "${PKGDIR}/pkg/ICON0.PNG"
+      fi
+      PKGTOOL=""
+      for cand in "${PS3DEV}/bin/pkg" "${PS3DEV}/bin/pkg.py" pkg.py; do
+        if command -v "${cand}" >/dev/null 2>&1 || [[ -x "${cand}" ]]; then
+          PKGTOOL="${cand}"
+          break
+        fi
+      done
+      test -n "${PKGTOOL}"
+      if [[ "${PKGTOOL}" == *.py ]]; then
+        python3 "${PKGTOOL}" --contentid "${CONTENT_ID}" "${PKGDIR}/pkg/" "${STAGE}/bennugd64.pkg"
+      else
+        "${PKGTOOL}" --contentid "${CONTENT_ID}" "${PKGDIR}/pkg/" "${STAGE}/bennugd64.pkg"
+      fi
+      cmake --install "${PS3_BUILD}" --prefix "${STAGE}"
+      cp "${PKGDIR}/bgdi.elf" "${PKGDIR}/pkg/USRDIR/EBOOT.BIN" "${PKGDIR}/pkg/USRDIR/main.dcb" "${STAGE}/"
+      test -s "${STAGE}/bennugd64.pkg"
+      test -s "${STAGE}/EBOOT.BIN"
+      test -s "${STAGE}/bgdi.elf"
     '
   exit 0
 fi

@@ -8,7 +8,7 @@
 
 /*
  * Platform stdio backend for files.c.
- * Default: files_native.c. Wii: files_wii.c. PS2: files_ps2.c. Vita: files_vita.c.
+ * Default: files_native.c. Wii: files_wii.c. PS2: files_ps2.c. Vita: files_vita.c. PS3: files_ps3.c.
  */
 
 int    file_native_try_gzip( const char * filename );

@@ -46,7 +46,7 @@ It will install two tools: `bgdc` *compiler* and `bgdi` *interpreter*. Shared bu
 
 ## Build
 
-Only Docker is required for Linux, Windows, macOS (osxcross), the web player, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, PlayStation Vita, PlayStation 2, OpenPandora, and Nintendo Wii (no local compiler or CMake):
+Only Docker is required for Linux, Windows, macOS (osxcross), the web player, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, PlayStation Vita, PlayStation 2, PlayStation 3, OpenPandora, and Nintendo Wii (no local compiler or CMake):
 
 ```shell
 bash scripts/build.sh windows
@@ -60,11 +60,12 @@ bash scripts/build.sh dreamcast
 bash scripts/build.sh psp
 bash scripts/build.sh vita
 bash scripts/build.sh ps2
+bash scripts/build.sh ps3
 bash scripts/build.sh pandora
 bash scripts/build.sh wii
 ```
 
-See [BUILDING.md](BUILDING.md) for Windows, wasm, WASI, Android, Switch, Dreamcast, PSP, Vita, PS2, Pandora, Wii, macOS (Docker osxcross and native), and native CMake.
+See [BUILDING.md](BUILDING.md) for Windows, wasm, WASI, Android, Switch, Dreamcast, PSP, Vita, PS2, PS3, Pandora, Wii, macOS (Docker osxcross and native), and native CMake.
 
 
 ## Getting started

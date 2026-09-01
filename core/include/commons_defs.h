@@ -62,6 +62,7 @@
 #define OS_PANDORA              1007
 #define OS_PS2                  1008
 #define OS_VITA                 1009
+#define OS_PS3                  1010
 
 #endif
 

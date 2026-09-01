@@ -42,6 +42,7 @@
 
 #include "xstrings.h"
 #include "bgdrtm.h"
+#include "varspace_file.h"
 
 static int copytype( void * dst, void * src, DCB_TYPEDEF * var );
 
@@ -107,7 +108,8 @@ int copytypes( void * dst, void * src, DCB_TYPEDEF * var, int nvars, int reps )
         nvars = _nvars;
         for ( ; nvars > 0; nvars--, var++ )
         {
-            partial = copytype( dst, src, var );
+            DCB_TYPEDEF tmp = dcb_typedef_from_globaldata( var );
+            partial = copytype( dst, src, &tmp );
             result += partial;
             src = (( uint8_t* )src ) + partial;
             dst = (( uint8_t* )dst ) + partial;

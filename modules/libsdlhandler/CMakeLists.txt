@@ -19,6 +19,9 @@ if (PLATFORM_PS2 OR PS2)
 endif ()
 if (PLATFORM_VITA OR VITA)
   target_sources (sdlhandler PRIVATE libsdlhandler_vita.c)
+endif ()
+if (PLATFORM_PS3 OR PS3)
+  target_sources (sdlhandler PRIVATE libsdlhandler_ps3.c)
 endif () 
 
 target_link_libraries (

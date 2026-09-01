@@ -73,7 +73,11 @@ extern INSTANCE * trace_instance;
 
 /* --------------------------------------------------------------------------- */
 
+#include <string.h>
+
+#ifndef strncmpi
 extern int strncmpi( char * str1, char * str2, int sz );
+#endif
 
 extern int dcb_load( const char * filename ) ;
 extern int dcb_load_from( file * fp, char * dcbname, int offset ) ;

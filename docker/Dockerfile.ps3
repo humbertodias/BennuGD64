@@ -1,0 +1,43 @@
+# PlayStation 3 homebrew toolchain (linux/amd64: PPU host tools are x86_64).
+#   docker build --platform linux/amd64 -t bennugd64-ps3 \
+#     -f docker/Dockerfile.ps3 docker/
+#   docker run --platform linux/amd64 --rm -v "$PWD":/src -w /src \
+#     bennugd64-ps3 cmake --preset ps3-ppu
+#
+# Toolchain only: does not clone this repo or bake Bennu into the image.
+# Compiler and PSL1GHT (sprxlinker, make_self_npdrm, sfo.py, pkg.py) come from
+# hldtux/ps3dev. Host gcc/ninja/cmake/python3 are on Ubuntu 24.04 for native bgdc.
+
+FROM --platform=linux/amd64 hldtux/ps3dev:latest AS ps3dev
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=ps3 \
+    PS3DEV=/usr/local/ps3dev \
+    PSL1GHT=/usr/local/ps3dev \
+    PATH="/usr/local/ps3dev/bin:/usr/local/ps3dev/ppu/bin:/usr/local/ps3dev/spu/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+COPY --from=ps3dev /usr/local/ps3dev /usr/local/ps3dev
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        cmake \
+        gcc \
+        g++ \
+        git \
+        libelf1t64 \
+        ninja-build \
+        pkg-config \
+        python3 \
+        python-is-python3 \
+        python3-setuptools \
+        zip \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*' \
+    && chmod -R a+rX /usr/local/ps3dev \
+    && test -x /usr/local/ps3dev/ppu/bin/powerpc64-ps3-elf-gcc \
+        -o -x /usr/local/ps3dev/ppu/bin/ppu-gcc
+
+WORKDIR /src
+CMD ["bash"]

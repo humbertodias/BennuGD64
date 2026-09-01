@@ -1,0 +1,28 @@
+{
+  "name": "BennuGD64 PS3 (ps3dev)",
+  "build": {
+    "dockerfile": "../../docker/Dockerfile.ps3",
+    "context": "../../docker",
+    "options": ["--platform=linux/amd64"]
+  },
+  "runArgs": ["--platform=linux/amd64"],
+  "workspaceFolder": "/src",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
+  "remoteUser": "root",
+  "containerEnv": {
+    "PS3DEV": "/usr/local/ps3dev",
+    "PSL1GHT": "/usr/local/ps3dev"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+      ]
+    },
+    "zed": {
+      "extensions": ["dockerfile", "make"]
+    }
+  }
+}

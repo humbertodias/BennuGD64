@@ -31,12 +31,15 @@
 
     #include <stdint.h>
 
-    #include "dcb.h"
-    #include "files.h"
+#include "dcb.h"
+#include "files.h"
 
-    int savetype (file * fp, void * data, DCB_TYPEDEF * var, int dcbformat);
-    int loadtype (file * fp, void * data, DCB_TYPEDEF * var, int dcbformat);
-    int savetypes( file * fp, void * data, DCB_TYPEDEF * var, int nvars, int dcbformat );
-    int loadtypes( file * fp, void * data, DCB_TYPEDEF * var, int nvars, int dcbformat );
+/* LOAD/SAVE/COPY type blobs live in globaldata; undo the BaseType dword-swap. */
+DCB_TYPEDEF dcb_typedef_from_globaldata( const DCB_TYPEDEF * var );
+
+int savetype (file * fp, void * data, DCB_TYPEDEF * var, int dcbformat);
+int loadtype (file * fp, void * data, DCB_TYPEDEF * var, int dcbformat);
+int savetypes( file * fp, void * data, DCB_TYPEDEF * var, int nvars, int dcbformat );
+int loadtypes( file * fp, void * data, DCB_TYPEDEF * var, int nvars, int dcbformat );
 
 #endif

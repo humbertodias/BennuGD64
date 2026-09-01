@@ -17,7 +17,7 @@
 #if defined(TARGET_PS2)
 #include <kernel.h>
 #endif
-#if defined(TARGET_PS2) || defined(TARGET_PSP) || defined(TARGET_VITA) || defined(__linux__)
+#if defined(TARGET_PS2) || defined(TARGET_PSP) || defined(TARGET_VITA) || defined(TARGET_PS3) || defined(__linux__)
 #include <malloc.h>
 #elif defined(__APPLE__)
 #include <malloc/malloc.h>
@@ -80,7 +80,7 @@ static void stats_boot( void )
 
 static uint32_t mem_used( void )
 {
-#if defined(TARGET_PS2) || defined(TARGET_PSP) || defined(TARGET_VITA) || defined(__linux__)
+#if defined(TARGET_PS2) || defined(TARGET_PSP) || defined(TARGET_VITA) || defined(TARGET_PS3) || defined(__linux__)
     struct mallinfo mi = mallinfo();
     return ( uint32_t ) mi.uordblks;
 #elif defined(__APPLE__)
@@ -106,6 +106,8 @@ static uint32_t mem_total( void )
     return 32u * 1024u * 1024u;
 #elif defined(TARGET_VITA)
     return 512u * 1024u * 1024u;
+#elif defined(TARGET_PS3)
+    return 256u * 1024u * 1024u;
 #elif defined(TARGET_WII)
     return 24u * 1024u * 1024u;
 #else

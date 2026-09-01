@@ -23,6 +23,9 @@ endif ()
 if (PLATFORM_VITA OR VITA)
   target_sources (bgdi PRIVATE main_vita.c)
 endif ()
+if (PLATFORM_PS3 OR PS3)
+  target_sources (bgdi PRIVATE main_ps3.c)
+endif ()
 if (PLATFORM_PS2 OR PS2)
   set (_ps2sdk "$ENV{PS2SDK}")
   if (NOT _ps2sdk)
@@ -202,6 +205,25 @@ if (PLATFORM_PS2 OR PS2)
     -ldebug
     ps2_drivers
     m
+    "-Wl,--end-group"
+  )
+endif ()
+
+if (PLATFORM_PS3 OR PS3)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+    "-Wl,--start-group"
+    gcm_sys
+    rsx
+    sysutil
+    io
+    audio
+    rt
+    lv2
+    m
+    z
     "-Wl,--end-group"
   )
 endif ()

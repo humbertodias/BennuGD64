@@ -11,7 +11,7 @@
  || defined(_arch_dreamcast) || defined(TARGET_DC) \
  || defined(__PSP__) || defined(TARGET_PSP) \
  || defined(__vita__) || defined(TARGET_VITA) \
- || defined(TARGET_TVOS) \
+ || defined(TARGET_TVOS) || defined(TARGET_IOS) \
  || defined(__wii__) || defined(TARGET_WII) \
  || defined(TARGET_PS2) || defined(TARGET_PS3) || defined(__PS3__)
 #define BGD_NO_PROCESS_SPAWN 1
@@ -22,14 +22,14 @@
  || defined(_arch_dreamcast) || defined(TARGET_DC) \
  || defined(__PSP__) || defined(TARGET_PSP) \
  || defined(__vita__) || defined(TARGET_VITA) \
- || defined(TARGET_TVOS) \
+ || defined(TARGET_TVOS) || defined(TARGET_IOS) \
  || defined(__wii__) || defined(TARGET_WII) \
  || defined(TARGET_PS2) || defined(TARGET_PS3) || defined(__PS3__)
 #define BGD_NO_DLOPEN 1
 #endif
 
 #if defined(TARGET_SWITCH) || defined(TARGET_DC) || defined(TARGET_PSP) \
- || defined(TARGET_VITA) || defined(TARGET_TVOS) || defined(TARGET_WII) || defined(TARGET_PS2) \
+ || defined(TARGET_VITA) || defined(TARGET_TVOS) || defined(TARGET_IOS) || defined(TARGET_WII) || defined(TARGET_PS2) \
  || defined(TARGET_PS3) \
  || defined(__SWITCH__) || defined(_arch_dreamcast) || defined(__PSP__) \
  || defined(__vita__) || defined(__wii__) || defined(__PS3__)
@@ -38,14 +38,14 @@
 
 #if defined(TARGET_MAC) || defined(TARGET_BEOS) || defined(TARGET_ANDROID) \
  || defined(TARGET_SWITCH) || defined(TARGET_DC) || defined(TARGET_PSP) \
- || defined(TARGET_VITA) || defined(TARGET_TVOS) || defined(TARGET_WII) || defined(TARGET_PS2) \
+ || defined(TARGET_VITA) || defined(TARGET_TVOS) || defined(TARGET_IOS) || defined(TARGET_WII) || defined(TARGET_PS2) \
  || defined(TARGET_PS3)
 #define BGD_GLOB_NO_PERIOD 1
 #endif
 
 #if defined(TARGET_MAC) || defined(TARGET_WII) || defined(TARGET_EMSCRIPTEN) \
  || defined(TARGET_SWITCH) || defined(TARGET_DC) || defined(TARGET_PSP) \
- || defined(TARGET_VITA) || defined(TARGET_TVOS) || defined(TARGET_PANDORA) || defined(TARGET_PS2) \
+ || defined(TARGET_VITA) || defined(TARGET_TVOS) || defined(TARGET_IOS) || defined(TARGET_PANDORA) || defined(TARGET_PS2) \
  || defined(TARGET_PS3)
 #define BGD_NO_SYSINFO_MEM 1
 #endif
@@ -60,7 +60,7 @@
  || defined(_arch_dreamcast) || defined(TARGET_DC) \
  || defined(__PSP__) || defined(TARGET_PSP) \
  || defined(__vita__) || defined(TARGET_VITA) \
- || defined(TARGET_TVOS) \
+ || defined(TARGET_TVOS) || defined(TARGET_IOS) \
  || defined(__wii__) || defined(TARGET_WII) \
  || defined(TARGET_PANDORA) || defined(TARGET_PS2) \
  || defined(TARGET_PS3) || defined(__PS3__)

@@ -90,3 +90,5 @@ local.properties
 
 # Apple tvOS demo bytecode copied into the bundle
 /tvos/contents/*.dcb
+# Apple iOS demo bytecode copied into the bundle
+/ios/contents/*.dcb

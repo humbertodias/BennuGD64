@@ -70,6 +70,10 @@
 #include "main_tvos.h"
 #include <SDL3/SDL_main.h>
 #endif
+#ifdef TARGET_IOS
+#include "main_ios.h"
+#include <SDL3/SDL_main.h>
+#endif
 #ifdef TARGET_PS2
 #include "main_ps2.h"
 #endif
@@ -184,6 +188,23 @@ int main( int argc, char *argv[] )
         tvos_dcb = bgdi_tvos_startup( argc, argv, &standalone );
         if ( tvos_dcb )
             filename = tvos_dcb;
+    }
+#endif
+
+#ifdef TARGET_IOS
+    {
+        static char * ios_argv[2] = { "bgdi", NULL };
+        char * ios_dcb;
+
+        if ( argc < 1 || !argv || !argv[0] )
+        {
+            argc = 1;
+            argv = ios_argv;
+        }
+
+        ios_dcb = bgdi_ios_startup( argc, argv, &standalone );
+        if ( ios_dcb )
+            filename = ios_dcb;
     }
 #endif
 

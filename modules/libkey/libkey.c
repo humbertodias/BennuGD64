@@ -48,6 +48,9 @@
 #ifdef TARGET_TVOS
 #include "libkey_tvos.h"
 #endif
+#ifdef TARGET_IOS
+#include "libkey_ios.h"
+#endif
 #ifdef TARGET_EMSCRIPTEN
 #include "libkey_emscripten.h"
 #endif
@@ -442,6 +445,9 @@ static void process_key_events()
 #ifdef TARGET_TVOS
     libkey_tvos_after_events();
 #endif
+#ifdef TARGET_IOS
+    libkey_ios_after_events();
+#endif
 #ifdef TARGET_PS2
     libkey_ps2_after_events();
     if ( !GLODWORD( libkey, SCANCODE ) )
@@ -509,6 +515,8 @@ void __bgdexport( libkey, module_initialize )()
     libkey_vita_after_init( window );
 #elif defined(TARGET_TVOS)
     libkey_tvos_after_init( window );
+#elif defined(TARGET_IOS)
+    libkey_ios_after_init( window );
 #elif defined(TARGET_PS3)
     libkey_ps3_after_init( window );
 #elif defined(TARGET_PS2)

@@ -1,0 +1,4 @@
+# Drop main.dcb (and palettes/, mod/, …) here. The interpreter copies this
+# folder to the .app root. scripts/build.sh ios installs hello.dcb as main.dcb.
+# Finder file sharing also exposes Documents (SDL_GetPrefPath), which overrides
+# the bundled main.dcb when present.

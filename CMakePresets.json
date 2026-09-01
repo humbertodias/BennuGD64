@@ -225,6 +225,39 @@
       }
     },
     {
+      "name": "ios-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile iOS demo DCBs",
+      "binaryDir": "${sourceDir}/build-ios-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "ios-arm64",
+      "inherits": "base",
+      "displayName": "iOS arm64 interpreter (bgdi.app)",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build-ios-arm64",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_SYSTEM_PROCESSOR": "aarch64",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "17.0",
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "ios-simulator",
+      "inherits": "ios-arm64",
+      "displayName": "iOS Simulator arm64 interpreter (bgdi.app)",
+      "binaryDir": "${sourceDir}/build-ios-simulator",
+      "cacheVariables": {
+        "CMAKE_OSX_SYSROOT": "iphonesimulator"
+      }
+    },
+    {
       "name": "ps3-host",
       "inherits": "static",
       "displayName": "Native bgdc used to compile PS3 demo DCBs",
@@ -335,6 +368,9 @@
     { "name": "tvos-host", "configurePreset": "tvos-host", "targets": ["bgdc"] },
     { "name": "tvos-arm64", "configurePreset": "tvos-arm64", "configuration": "Release", "targets": ["bgdi"] },
     { "name": "tvos-simulator", "configurePreset": "tvos-simulator", "configuration": "Debug", "targets": ["bgdi"] },
+    { "name": "ios-host", "configurePreset": "ios-host", "targets": ["bgdc"] },
+    { "name": "ios-arm64", "configurePreset": "ios-arm64", "configuration": "Release", "targets": ["bgdi"] },
+    { "name": "ios-simulator", "configurePreset": "ios-simulator", "configuration": "Debug", "targets": ["bgdi"] },
     { "name": "ps3-host", "configurePreset": "ps3-host", "targets": ["bgdc"] },
     { "name": "ps3-ppu", "configurePreset": "ps3-ppu", "targets": ["bgdi"] },
     { "name": "pandora-host", "configurePreset": "pandora-host", "targets": ["bgdc"] },

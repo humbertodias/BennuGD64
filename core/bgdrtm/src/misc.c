@@ -55,6 +55,9 @@
 #ifdef TARGET_TVOS
 #include "misc_tvos.h"
 #endif
+#ifdef TARGET_IOS
+#include "misc_ios.h"
+#endif
 #ifdef TARGET_PS2
 #include "misc_ps2.h"
 #endif
@@ -336,6 +339,9 @@ void bgdrtm_entry( int argc, char * argv[] )
 #endif
 #ifdef TARGET_TVOS
     bgdrtm_tvos_entry();
+#endif
+#ifdef TARGET_IOS
+    bgdrtm_ios_entry();
 #endif
 #ifdef TARGET_PS3
     bgdrtm_ps3_entry();

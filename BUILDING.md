@@ -2,7 +2,7 @@
 
 ## Docker (Linux, Windows, web, Android, Switch, Dreamcast, PSP, Vita, PS2, PS3, Pandora, Wii, and macOS)
 
-No local compiler, CMake, MinGW, Emscripten, Android SDK, devkitPro, KallistiOS, pspdev, vitasdk, ps2dev, ps3dev, Ångström toolchain, or osxcross. Only [Docker](https://www.docker.com/get-started/). Apple tvOS is the exception: it needs Xcode on macOS (`bash scripts/build.sh tvos`).
+No local compiler, CMake, MinGW, Emscripten, Android SDK, devkitPro, KallistiOS, pspdev, vitasdk, ps2dev, ps3dev, Ångström toolchain, or osxcross. Only [Docker](https://www.docker.com/get-started/). Apple tvOS and iOS are the exception: they need Xcode on macOS (`bash scripts/build.sh tvos` / `bash scripts/build.sh ios`).
 
 ```shell
 bash scripts/build.sh linux
@@ -14,6 +14,7 @@ bash scripts/build.sh dreamcast
 bash scripts/build.sh psp
 bash scripts/build.sh vita
 bash scripts/build.sh tvos
+bash scripts/build.sh ios
 bash scripts/build.sh ps2
 bash scripts/build.sh ps3
 bash scripts/build.sh pandora
@@ -36,6 +37,8 @@ bash scripts/build.sh windows shared
 | `vita` | `docker/Dockerfile.vita` | `dist/vita-arm-static/` (`bennugd64.vpk`) |
 | `tvos` / `tvos simulator` | *(native Xcode, no image)* | `dist/tvos-simulator-arm64-static/` (`bgdi.app`) |
 | `tvos device` | *(native Xcode, no image)* | `dist/tvos-arm64-static/` (`bgdi.app`, signed) |
+| `ios` / `ios simulator` | *(native Xcode, no image)* | `dist/ios-simulator-arm64-static/` (`bgdi.app`) |
+| `ios device` | *(native Xcode, no image)* | `dist/ios-arm64-static/` (`bgdi.app`, signed) |
 | `ps2` | `docker/Dockerfile.ps2` | `dist/ps2-mips-static/` (`bgdi.elf`, `bennugd64.iso`) |
 | `ps3` | `docker/Dockerfile.ps3` | `dist/ps3-ppu-static/` (`bennugd64.pkg`) |
 | `pandora` | `docker/Dockerfile.pandora` | `dist/pandora-arm-static/` (`bennugd64.pnd`) |
@@ -44,7 +47,7 @@ bash scripts/build.sh windows shared
 | `macos arm64` / `macos arm64 shared` | `docker/Dockerfile.macos` | `dist/macos-arm64-{static,shared}/` |
 | `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
 
-The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native macOS `bgdc` + Xcode `bgdi.app`, no Docker; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper) except tvOS, which runs on `macos-latest`. Wasm native `bgdc` is `COMPILER_ONLY`.
+The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native macOS `bgdc` + Xcode `bgdi.app`, no Docker; iOS: native macOS `bgdc` + Xcode `bgdi.app`, no Docker; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper) except tvOS and iOS, which run on `macos-latest`. Wasm native `bgdc` is `COMPILER_ONLY`.
 
 ```shell
 ./scripts/build.sh linux shell
@@ -98,6 +101,9 @@ MinGW-w64 on Windows). Presets in `CMakePresets.json`:
 | `tvos-host` | `build-tvos-host` | Native `bgdc` for tvOS demo DCBs |
 | `tvos-arm64` | `build-tvos-arm64` | Xcode `bgdi.app` (Apple TV device) |
 | `tvos-simulator` | `build-tvos-simulator` | Xcode `bgdi.app` (tvOS Simulator) |
+| `ios-host` | `build-ios-host` | Native `bgdc` for iOS demo DCBs |
+| `ios-arm64` | `build-ios-arm64` | Xcode `bgdi.app` (iPhone/iPad device) |
+| `ios-simulator` | `build-ios-simulator` | Xcode `bgdi.app` (iOS Simulator) |
 | `ps2-host` | `build-ps2-host` | Native `bgdc` for PS2 demo DCBs |
 | `ps2-mips` | `build-ps2-mips` | ps2dev `bgdi.elf` (needs `PS2DEV`) |
 | `ps3-host` | `build-ps3-host` | Native `bgdc` for PS3 demo DCBs |
@@ -178,7 +184,7 @@ Docker builds already install into `dist/<target>/`.
 | `STATIC_MODULES` | ON | Link modules into `bgdi` (`OFF` builds shared `.so`/`.dll`) |
 | `NO_SOUND` | OFF | Build without SDL3_mixer |
 | `COMPILER_ONLY` | OFF | Build only `bgdc` (no `bgdi` / modules). Forced ON for WASI |
-| `INTERPRETER_ONLY` | OFF | Build only `bgdi` (no `bgdc`). Used by the Emscripten, Android, and tvOS player builds |
+| `INTERPRETER_ONLY` | OFF | Build only `bgdi` (no `bgdc`). Used by the Emscripten, Android, tvOS, and iOS player builds |
 | `BENNUGD_WASI` | OFF | Cross-compile `bgdc` to wasm32-wasip1 (downloads wasi-sdk if needed) |
 | `BENNUGD_WASI_SDK_VERSION` | `33` | wasi-sdk major version to fetch when `BENNUGD_WASI=ON` |
 | `BENNUGD_WASI_SDK_VERSION_FULL` | `33.0` | wasi-sdk full version (tarball name) |
@@ -368,6 +374,39 @@ Siri Remote / Game Controller: D-pad is arrows, click/A is Space, Play/Pause is 
 
 SDL3 is FetchContent (Metal). Modules are linked into `bgdi.app`. Deployment target is tvOS 17.0. Simulator CI skips the layered App Icon (`tvos/Assets.xcassets`) because `actool` needs a tvOS Simulator runtime; device builds include it.
 
+## Apple iOS
+
+Needs **macOS and Xcode** (not Docker). CMake 3.19+, Ninja (`brew install ninja`), and the iOS SDK. The interpreter is a flat `bgdi.app`; compile `.prg` on the Mac with `ios-host` `bgdc`.
+
+```shell
+bash scripts/build.sh ios
+bash scripts/build.sh ios simulator
+```
+
+That configures native `bgdc` (`ios-host`), compiles `web/demo/*.prg`, copies `hello.dcb` to `ios/contents/main.dcb`, and builds an unsigned Simulator `bgdi.app` (`ios-simulator`) into `dist/ios-simulator-arm64-static/`. Open it with:
+
+```shell
+open -a Simulator
+xcrun simctl install booted dist/ios-simulator-arm64-static/bgdi.app
+xcrun simctl launch booted org.bennugd64.player
+```
+
+Or open `build-ios-simulator/*.xcodeproj` in Xcode and run on a simulated iPhone or iPad.
+
+Device build (signing required):
+
+```shell
+BENNUGD_DEVELOPMENT_TEAM=YOUR_TEAM_ID bash scripts/build.sh ios device
+```
+
+If only one development team is on the Mac, `build.sh` detects it. Optional: `BENNUGD_BUNDLE_IDENTIFIER` (default `org.bennugd64.player`) and `BENNUGD_BUNDLE_NAME` (default `BennuGD64`). Output is `dist/ios-arm64-static/bgdi.app`.
+
+**Where `main.dcb` goes:** files in `ios/contents/` are copied to the `.app` root. `bgdi` looks for `main.dcb` in Documents (`SDL_GetPrefPath("bennugd64", "bgdi")`) first, then next to the executable via `SDL_GetBasePath()`. Relative `fopen` (SoRR `palettes/enemies/galsia.pal`) is prefixed with that DCB directory; PATH also includes `palettes/` and its children. Finder file sharing is on (`UIFileSharingEnabled`), so you can drop a DCB plus its asset folders into the app's Documents folder. Compile with the matching `ios-host` `bgdc`, not a random desktop Bennu.
+
+Gamepad / touch: D-pad and left-side stick are arrows, A / right-lower tap is Space, Start / right-upper tap is Enter, B is Escape. The system Home / Guide button is not mapped. Phantom SDL Escape is cleared so `hello.prg` does not exit immediately. Landscape only.
+
+SDL3 is FetchContent (Metal). Modules are linked into `bgdi.app`. Deployment target is iOS 17.0.
+
 ## PlayStation 2
 
 Needs Docker. `docker/Dockerfile.ps2` is a toolchain image built for **linux/amd64** (Emotion Engine host tools are x86_64; on Apple Silicon Docker uses qemu). It does not clone this repo or bake Bennu into the image.
@@ -504,5 +543,6 @@ GitHub Actions (`.github/workflows/ci.yml`):
 - Docker platforms share one `build` job keyed by `matrix.platform` (`linux`, `windows`, `macos`/osxcross, `wasm`, `android`, `switch`, `dreamcast`, `psp`, `vita`, `ps2`, `ps3`, `pandora`, `wii`): `docker/Dockerfile.$platform` then `scripts/build.sh`. Linux, Windows, and osxcross (x86_64 and arm64) also build shared modules. Pages deploys the `web-wasm32-static` artifact.
 - WASI — host `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
 - tvOS — `macos-latest` + Xcode, unsigned Simulator (`scripts/build.sh tvos simulator`) → `bennugd64-<tag>-tvos-simulator-arm64-static.zip`
+- iOS — `macos-latest` + Xcode, unsigned Simulator (`scripts/build.sh ios simulator`) → `bennugd64-<tag>-ios-simulator-arm64-static.zip`
 
-On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`; Switch zip for `switch-aarch64-static`; Dreamcast zip for `dreamcast-sh4-static`; PSP zip for `psp-mips-static`; Vita zip for `vita-arm-static`; tvOS zip for `tvos-simulator-arm64-static`; PS2 zip for `ps2-mips-static`; PS3 zip for `ps3-ppu-static`; Pandora zip for `pandora-arm-static`; Wii zip for `wii-powerpc-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`; the Switch NRO links SDL3 statically from the devkitPro fork; the Dreamcast CDI links SDL3 statically from the GPF Dreamcast fork; the PSP PBP links SDL3 statically from the pspdev packages; the Vita VPK links official SDL3 statically from FetchContent; the tvOS `.app` links official SDL3 statically with Metal; the PS2 ISO links official SDL3 statically from FetchContent; the PS3 PKG links SDL3 statically from the onesixromcom PSL1GHT fork; the Pandora PND links official SDL3 statically against the Ångström sysroot; the Wii DOL links SDL3 statically from the libogc2 fork). OS graphics/audio libraries may still be required at runtime on native builds.
+On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`; Switch zip for `switch-aarch64-static`; Dreamcast zip for `dreamcast-sh4-static`; PSP zip for `psp-mips-static`; Vita zip for `vita-arm-static`; tvOS zip for `tvos-simulator-arm64-static`; iOS zip for `ios-simulator-arm64-static`; PS2 zip for `ps2-mips-static`; PS3 zip for `ps3-ppu-static`; Pandora zip for `pandora-arm-static`; Wii zip for `wii-powerpc-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`; the Switch NRO links SDL3 statically from the devkitPro fork; the Dreamcast CDI links SDL3 statically from the GPF Dreamcast fork; the PSP PBP links SDL3 statically from the pspdev packages; the Vita VPK links official SDL3 statically from FetchContent; the tvOS `.app` links official SDL3 statically with Metal; the iOS `.app` links official SDL3 statically with Metal; the PS2 ISO links official SDL3 statically from FetchContent; the PS3 PKG links SDL3 statically from the onesixromcom PSL1GHT fork; the Pandora PND links official SDL3 statically against the Ångström sysroot; the Wii DOL links SDL3 statically from the libogc2 fork). OS graphics/audio libraries may still be required at runtime on native builds.

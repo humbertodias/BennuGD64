@@ -572,7 +572,7 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_PS3
     gr_video_ps3_apply_mode();
-    depth = 32;
+    GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
 #endif
 #ifdef TARGET_PANDORA
     gr_video_pandora_apply_mode();

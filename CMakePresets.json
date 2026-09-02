@@ -192,6 +192,100 @@
       }
     },
     {
+      "name": "tvos-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile tvOS demo DCBs",
+      "binaryDir": "${sourceDir}/build-tvos-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "tvos-arm64",
+      "inherits": "base",
+      "displayName": "tvOS arm64 interpreter (bgdi.app)",
+      "binaryDir": "${sourceDir}/build-tvos-arm64",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-tvos.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "tvos-simulator-arm64",
+      "inherits": "base",
+      "displayName": "tvOS Simulator arm64 interpreter (osxcross)",
+      "binaryDir": "${sourceDir}/build-tvos-simulator-arm64",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-tvos-simulator.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "tvos-simulator",
+      "inherits": "base",
+      "displayName": "tvOS Simulator arm64 interpreter (Xcode, macOS host)",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build-tvos-simulator",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "tvOS",
+        "CMAKE_SYSTEM_PROCESSOR": "aarch64",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "15.0",
+        "CMAKE_OSX_SYSROOT": "appletvsimulator",
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "ios-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile iOS demo DCBs",
+      "binaryDir": "${sourceDir}/build-ios-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "ios-arm64",
+      "inherits": "base",
+      "displayName": "iOS arm64 interpreter (bgdi.app)",
+      "binaryDir": "${sourceDir}/build-ios-arm64",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-ios.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "ios-simulator-arm64",
+      "inherits": "base",
+      "displayName": "iOS Simulator arm64 interpreter (osxcross)",
+      "binaryDir": "${sourceDir}/build-ios-simulator-arm64",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-ios-simulator.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "ios-simulator",
+      "inherits": "base",
+      "displayName": "iOS Simulator arm64 interpreter (Xcode, macOS host)",
+      "generator": "Xcode",
+      "binaryDir": "${sourceDir}/build-ios-simulator",
+      "cacheVariables": {
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_SYSTEM_PROCESSOR": "aarch64",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "17.0",
+        "CMAKE_OSX_SYSROOT": "iphonesimulator",
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
       "name": "ps3-host",
       "inherits": "static",
       "displayName": "Native bgdc used to compile PS3 demo DCBs",
@@ -299,6 +393,14 @@
     { "name": "psp-mips", "configurePreset": "psp-mips", "targets": ["bgdi"] },
     { "name": "vita-host", "configurePreset": "vita-host", "targets": ["bgdc"] },
     { "name": "vita-arm", "configurePreset": "vita-arm", "targets": ["bgdi"] },
+    { "name": "tvos-host", "configurePreset": "tvos-host", "targets": ["bgdc"] },
+    { "name": "tvos-arm64", "configurePreset": "tvos-arm64", "targets": ["bgdi"] },
+    { "name": "tvos-simulator-arm64", "configurePreset": "tvos-simulator-arm64", "targets": ["bgdi"] },
+    { "name": "tvos-simulator", "configurePreset": "tvos-simulator", "configuration": "Debug", "targets": ["bgdi"] },
+    { "name": "ios-host", "configurePreset": "ios-host", "targets": ["bgdc"] },
+    { "name": "ios-arm64", "configurePreset": "ios-arm64", "targets": ["bgdi"] },
+    { "name": "ios-simulator-arm64", "configurePreset": "ios-simulator-arm64", "targets": ["bgdi"] },
+    { "name": "ios-simulator", "configurePreset": "ios-simulator", "configuration": "Debug", "targets": ["bgdi"] },
     { "name": "ps3-host", "configurePreset": "ps3-host", "targets": ["bgdc"] },
     { "name": "ps3-ppu", "configurePreset": "ps3-ppu", "targets": ["bgdi"] },
     { "name": "pandora-host", "configurePreset": "pandora-host", "targets": ["bgdc"] },

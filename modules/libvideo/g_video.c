@@ -47,6 +47,12 @@
 #ifdef TARGET_VITA
 #include "g_video_vita.h"
 #endif
+#ifdef TARGET_TVOS
+#include "g_video_tvos.h"
+#endif
+#ifdef TARGET_IOS
+#include "g_video_ios.h"
+#endif
 #ifdef TARGET_PS2
 #include "g_video_ps2.h"
 #endif
@@ -272,6 +278,14 @@ void gr_video_present( SDL_Surface * src )
     gr_video_vita_present( src );
     return;
 #endif
+#ifdef TARGET_TVOS
+    gr_video_tvos_present( src );
+    return;
+#endif
+#ifdef TARGET_IOS
+    gr_video_ios_present( src );
+    return;
+#endif
 #ifdef TARGET_PS2
     gr_video_ps2_present( src );
     return;
@@ -323,6 +337,14 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 #endif
 #ifdef TARGET_VITA
     gr_video_vita_present_rects( src, rects, count );
+    return;
+#endif
+#ifdef TARGET_TVOS
+    gr_video_tvos_present_rects( src, rects, count );
+    return;
+#endif
+#ifdef TARGET_IOS
+    gr_video_ios_present_rects( src, rects, count );
     return;
 #endif
 #ifdef TARGET_PS2
@@ -407,6 +429,12 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 #endif
 #ifdef TARGET_VITA
     gr_video_vita_adjust_window( &width, &height, &window_flags );
+#endif
+#ifdef TARGET_TVOS
+    gr_video_tvos_adjust_window( &width, &height, &window_flags );
+#endif
+#ifdef TARGET_IOS
+    gr_video_ios_adjust_window( &width, &height, &window_flags );
 #endif
 #ifdef TARGET_PS2
     gr_video_ps2_adjust_window( &width, &height, &window_flags );
@@ -563,6 +591,14 @@ int gr_set_mode( int width, int height, int depth )
     gr_video_vita_apply_mode();
     GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
 #endif
+#ifdef TARGET_TVOS
+    gr_video_tvos_apply_mode();
+    GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
+#endif
+#ifdef TARGET_IOS
+    gr_video_ios_apply_mode();
+    GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
+#endif
 #ifdef TARGET_PS2
     gr_video_ps2_apply_mode();
     GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
@@ -586,7 +622,7 @@ int gr_set_mode( int width, int height, int depth )
     if ( GLOEXISTS( libvideo, SCALE_RESOLUTION_ASPECTRATIO ) ) scale_resolution_aspectratio = GLODWORD( libvideo, SCALE_RESOLUTION_ASPECTRATIO );
     if ( GLOEXISTS( libvideo, SCALE_RESOLUTION_ORIENTATION ) ) scale_resolution_orientation = GLODWORD( libvideo, SCALE_RESOLUTION_ORIENTATION );
 
-#if !defined(TARGET_PS2) && !defined(TARGET_VITA)
+#if !defined(TARGET_PS2) && !defined(TARGET_VITA) && !defined(TARGET_TVOS) && !defined(TARGET_IOS)
     /* Overwrite all params */
     if ( ( e = getenv( "SCALE_RESOLUTION"             ) ) ) scale_resolution = atol( e );
     if ( ( e = getenv( "SCALE_RESOLUTION_ASPECTRATIO" ) ) ) scale_resolution_aspectratio = atol( e );
@@ -945,6 +981,10 @@ void __bgdexport( libvideo, module_initialize )()
     gr_video_psp_module_initialize();
 #elif defined(TARGET_VITA)
     gr_video_vita_module_initialize();
+#elif defined(TARGET_TVOS)
+    gr_video_tvos_module_initialize();
+#elif defined(TARGET_IOS)
+    gr_video_ios_module_initialize();
 #elif defined(TARGET_PS3)
     gr_video_ps3_module_initialize();
 #elif defined(TARGET_PANDORA)

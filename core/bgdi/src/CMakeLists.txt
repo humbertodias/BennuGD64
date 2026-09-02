@@ -23,6 +23,12 @@ endif ()
 if (PLATFORM_VITA OR VITA)
   target_sources (bgdi PRIVATE main_vita.c)
 endif ()
+if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
+  target_sources (bgdi PRIVATE main_tvos.c)
+endif ()
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  target_sources (bgdi PRIVATE main_ios.c)
+endif ()
 if (PLATFORM_PS3 OR PS3)
   target_sources (bgdi PRIVATE main_ps3.c)
 endif ()
@@ -188,6 +194,158 @@ if (PLATFORM_VITA OR VITA)
       NAME BennuGD64
     )
   endif ()
+endif ()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+  )
+  if (NOT BENNUGD_PACKAGE_VERSION)
+    set (BENNUGD_PACKAGE_VERSION "dev")
+  endif ()
+  if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+    set (BENNUGD_BUNDLE_SUPPORTED_PLATFORM "AppleTVSimulator")
+  else ()
+    set (BENNUGD_BUNDLE_SUPPORTED_PLATFORM "AppleTVOS")
+  endif ()
+  if (CMAKE_GENERATOR STREQUAL "Xcode")
+    set (_tvos_plist "${CMAKE_SOURCE_DIR}/tvos/Info.plist")
+  else ()
+    configure_file (
+      "${CMAKE_SOURCE_DIR}/tvos/Info.plist.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/Info.plist"
+      @ONLY
+    )
+    set (_tvos_plist "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
+  endif ()
+  set_target_properties (bgdi PROPERTIES
+    MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE_GUI_IDENTIFIER "${BENNUGD_BUNDLE_IDENTIFIER}"
+    MACOSX_BUNDLE_BUNDLE_VERSION "${BENNUGD_PACKAGE_VERSION}"
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "${BENNUGD_PACKAGE_VERSION}"
+    MACOSX_BUNDLE_INFO_PLIST "${_tvos_plist}"
+    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BENNUGD_BUNDLE_IDENTIFIER}"
+    XCODE_ATTRIBUTE_BENNUGD_BUNDLE_DISPLAY_NAME "${BENNUGD_BUNDLE_NAME}"
+    XCODE_ATTRIBUTE_MARKETING_VERSION "${BENNUGD_PACKAGE_VERSION}"
+    XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION "1"
+    XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
+    XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
+    XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
+    XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "3"
+  )
+  # actool is Xcode-only. Docker/Ninja ships without a catalog.
+  # appletvsimulator CompileAssetCatalogVariant (ibtoold → CoreSimulator)
+  # fails on this brandassets set; Simulator does not need Assets.car.
+  if (CMAKE_GENERATOR STREQUAL "Xcode" AND NOT CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+    target_sources (bgdi PRIVATE
+      ${CMAKE_SOURCE_DIR}/tvos/Assets.xcassets
+    )
+    set_source_files_properties (
+      ${CMAKE_SOURCE_DIR}/tvos/Assets.xcassets
+      PROPERTIES MACOSX_PACKAGE_LOCATION Resources
+    )
+    set_target_properties (bgdi PROPERTIES
+      XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+    )
+  endif ()
+  if (CMAKE_GENERATOR STREQUAL "Xcode" AND DEFINED BENNUGD_DEVELOPMENT_TEAM AND NOT BENNUGD_DEVELOPMENT_TEAM STREQUAL "")
+    set_target_properties (bgdi PROPERTIES
+      XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${BENNUGD_DEVELOPMENT_TEAM}"
+      XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
+      XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+    )
+  else ()
+    set_target_properties (bgdi PROPERTIES
+      XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+      XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+    )
+  endif ()
+  add_custom_command (TARGET bgdi POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${CMAKE_SOURCE_DIR}/tvos/contents"
+      "$<TARGET_BUNDLE_DIR:bgdi>"
+    COMMAND ${CMAKE_COMMAND} -E remove -f
+      "$<TARGET_BUNDLE_DIR:bgdi>/.gitkeep"
+    COMMENT "Copy tvos/contents into bgdi.app"
+  )
+endif ()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+  )
+  if (NOT BENNUGD_PACKAGE_VERSION)
+    set (BENNUGD_PACKAGE_VERSION "dev")
+  endif ()
+  if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+    set (BENNUGD_BUNDLE_SUPPORTED_PLATFORM "iPhoneSimulator")
+  else ()
+    set (BENNUGD_BUNDLE_SUPPORTED_PLATFORM "iPhoneOS")
+  endif ()
+  if (CMAKE_GENERATOR STREQUAL "Xcode")
+    set (_ios_plist "${CMAKE_SOURCE_DIR}/ios/Info.plist")
+  else ()
+    configure_file (
+      "${CMAKE_SOURCE_DIR}/ios/Info.plist.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/Info.plist"
+      @ONLY
+    )
+    set (_ios_plist "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
+  endif ()
+  set_target_properties (bgdi PROPERTIES
+    MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE_GUI_IDENTIFIER "${BENNUGD_BUNDLE_IDENTIFIER}"
+    MACOSX_BUNDLE_BUNDLE_VERSION "${BENNUGD_PACKAGE_VERSION}"
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "${BENNUGD_PACKAGE_VERSION}"
+    MACOSX_BUNDLE_INFO_PLIST "${_ios_plist}"
+    XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BENNUGD_BUNDLE_IDENTIFIER}"
+    XCODE_ATTRIBUTE_BENNUGD_BUNDLE_DISPLAY_NAME "${BENNUGD_BUNDLE_NAME}"
+    XCODE_ATTRIBUTE_MARKETING_VERSION "${BENNUGD_PACKAGE_VERSION}"
+    XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION "1"
+    XCODE_ATTRIBUTE_SKIP_INSTALL "NO"
+    XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
+    XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
+    XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
+    XCODE_ATTRIBUTE_INFOPLIST_KEY_UILaunchScreen_Generation "YES"
+  )
+  # Same as tvOS: CompileAssetCatalogVariant for iphonesimulator fails
+  # (ibtoold → CoreSimulator). Simulator does not need Assets.car.
+  if (CMAKE_GENERATOR STREQUAL "Xcode" AND NOT CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+    target_sources (bgdi PRIVATE
+      ${CMAKE_SOURCE_DIR}/ios/Assets.xcassets
+    )
+    set_source_files_properties (
+      ${CMAKE_SOURCE_DIR}/ios/Assets.xcassets
+      PROPERTIES MACOSX_PACKAGE_LOCATION Resources
+    )
+    set_target_properties (bgdi PROPERTIES
+      XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+    )
+  endif ()
+  if (CMAKE_GENERATOR STREQUAL "Xcode" AND DEFINED BENNUGD_DEVELOPMENT_TEAM AND NOT BENNUGD_DEVELOPMENT_TEAM STREQUAL "")
+    set_target_properties (bgdi PROPERTIES
+      XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${BENNUGD_DEVELOPMENT_TEAM}"
+      XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
+      XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+    )
+  else ()
+    set_target_properties (bgdi PROPERTIES
+      XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
+      XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
+    )
+  endif ()
+  add_custom_command (TARGET bgdi POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+      "${CMAKE_SOURCE_DIR}/ios/contents"
+      "$<TARGET_BUNDLE_DIR:bgdi>"
+    COMMAND ${CMAKE_COMMAND} -E remove -f
+      "$<TARGET_BUNDLE_DIR:bgdi>/.gitkeep"
+    COMMENT "Copy ios/contents into bgdi.app"
+  )
 endif ()
 
 if (PLATFORM_PS2 OR PS2)

@@ -1,0 +1,2 @@
+# Drop main.dcb (and palettes/, mod/, …) here. The interpreter copies this
+# folder to the .app root. scripts/build.sh tvos installs hello.dcb as main.dcb.

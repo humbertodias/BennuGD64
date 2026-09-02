@@ -343,6 +343,12 @@ if (PLATFORM_VITA OR VITA)
   set (HAVE_FDATASYNC OFF CACHE BOOL "" FORCE)
   set (HAVE_GETHOSTNAME OFF CACHE BOOL "" FORCE)
 endif ()
+if (CMAKE_SYSTEM_NAME STREQUAL "tvOS" OR CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+  set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
+endif ()
 if (PLATFORM_PANDORA OR OPENPANDORA)
   # Ångström sysroot is glibc 2.9 + X11 + ALSA; no Wayland/GLES/Pulse.
   # X11 extras: only Xext/Xrandr/Xrender are in the sysroot (no Xi/Xcursor).
@@ -388,6 +394,23 @@ FetchContent_GetProperties (sdl3)
 if (NOT sdl3_POPULATED)
   FetchContent_Populate (sdl3)
   add_subdirectory (${sdl3_SOURCE_DIR} ${sdl3_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif ()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
+  # Docker AppleTVOS.sdk is iPhoneOS.sdk retargeted: Metal declares
+  # MTLFeatureSet_tvOS_GPUFamily1_* but omits GPUFamily2_v1 (value 30003).
+  # Apple3 is the same 16384-tex path as GPUFamily2 (Apple TV 4K / A10X).
+  set (_metal_m "${sdl3_SOURCE_DIR}/src/render/metal/SDL_render_metal.m")
+  if (EXISTS "${_metal_m}")
+    file (READ "${_metal_m}" _metal_txt)
+    if (_metal_txt MATCHES "supportsFeatureSet:MTLFeatureSet_tvOS_GPUFamily2_v1")
+      string (REPLACE
+        "if ([mtldevice supportsFeatureSet:MTLFeatureSet_tvOS_GPUFamily2_v1])"
+        "if ([mtldevice supportsFamily:MTLGPUFamilyApple3])"
+        _metal_txt "${_metal_txt}")
+      file (WRITE "${_metal_m}" "${_metal_txt}")
+    endif ()
+  endif ()
 endif ()
 
 if (PLATFORM_PS2 OR PS2)

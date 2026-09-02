@@ -1,8 +1,8 @@
 /*
  * Clang emits __isPlatformVersionAtLeast for ObjC @available / __builtin_available.
- * Native Xcode links compiler-rt; osxcross often does not, so SDL's Cocoa/camera
- * objects fail to link on arm64. Always-true is OK when MACOSX_DEPLOYMENT_TARGET
- * is already our floor (see cmake/osxcross-common.cmake).
+ * Native Xcode links compiler-rt; osxcross often does not, so SDL's Cocoa/Metal
+ * objects fail to link on arm64 (macOS, iOS, and tvOS). Always-true is OK when
+ * the deployment target is already our floor.
  */
 #include <stdint.h>
 

@@ -52,6 +52,12 @@
 #ifdef TARGET_VITA
 #include "misc_vita.h"
 #endif
+#ifdef TARGET_TVOS
+#include "misc_tvos.h"
+#endif
+#ifdef TARGET_IOS
+#include "misc_ios.h"
+#endif
 #ifdef TARGET_PS2
 #include "misc_ps2.h"
 #endif
@@ -206,6 +212,13 @@ int debug = 0;  /* 1 if running in debug mode      */
 #define _OS_ID          OS_IOS
 #endif
 
+#ifdef TARGET_TVOS
+#ifdef _OS_ID
+#undef _OS_ID
+#endif
+#define _OS_ID          OS_LINUX
+#endif
+
 /* --------------------------------------------------------------------------- */
 
 #if defined(TARGET_GP2X_WIZ) || defined(TARGET_CAANOO)
@@ -323,6 +336,12 @@ void bgdrtm_entry( int argc, char * argv[] )
 #endif
 #ifdef TARGET_VITA
     bgdrtm_vita_entry();
+#endif
+#ifdef TARGET_TVOS
+    bgdrtm_tvos_entry();
+#endif
+#ifdef TARGET_IOS
+    bgdrtm_ios_entry();
 #endif
 #ifdef TARGET_PS3
     bgdrtm_ps3_entry();

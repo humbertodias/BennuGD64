@@ -46,7 +46,7 @@ It will install two tools: `bgdc` *compiler* and `bgdi` *interpreter*. Shared bu
 
 ## Build
 
-Only Docker is required for Linux, Windows, macOS (osxcross), the web player, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, PlayStation Vita, PlayStation 2, PlayStation 3, OpenPandora, and Nintendo Wii (no local compiler or CMake). Apple tvOS and iOS need Xcode on a Mac.
+Only Docker is required for Linux, Windows, macOS (osxcross), the web player, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, PlayStation Vita, PlayStation 2, PlayStation 3, OpenPandora, Nintendo Wii, Apple tvOS, and Apple iOS (no local compiler or CMake).
 
 ```shell
 bash scripts/build.sh windows

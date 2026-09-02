@@ -41,7 +41,7 @@ endif()
 
 # osxcross: SDL @available needs compiler-rt. Do not link_libraries() globally —
 # SDL3's export(SDL3-static) would then require this target in an export set.
-if (APPLE AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND NOT BENNUGD_OSXCROSS_COMPILER_RT AND NOT CMAKE_SYSTEM_NAME STREQUAL "tvOS" AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS")
+if (APPLE AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux" AND NOT BENNUGD_OSXCROSS_COMPILER_RT)
   add_library (bennugd_osxcross_rt STATIC cmake/osxcross_isplatformversion.c)
   set_target_properties (bennugd_osxcross_rt PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif ()

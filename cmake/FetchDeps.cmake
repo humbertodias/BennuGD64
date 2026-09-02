@@ -396,6 +396,23 @@ if (NOT sdl3_POPULATED)
   add_subdirectory (${sdl3_SOURCE_DIR} ${sdl3_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif ()
 
+if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
+  # Docker AppleTVOS.sdk is iPhoneOS.sdk retargeted: Metal declares
+  # MTLFeatureSet_tvOS_GPUFamily1_* but omits GPUFamily2_v1 (value 30003).
+  # Apple3 is the same 16384-tex path as GPUFamily2 (Apple TV 4K / A10X).
+  set (_metal_m "${sdl3_SOURCE_DIR}/src/render/metal/SDL_render_metal.m")
+  if (EXISTS "${_metal_m}")
+    file (READ "${_metal_m}" _metal_txt)
+    if (_metal_txt MATCHES "supportsFeatureSet:MTLFeatureSet_tvOS_GPUFamily2_v1")
+      string (REPLACE
+        "if ([mtldevice supportsFeatureSet:MTLFeatureSet_tvOS_GPUFamily2_v1])"
+        "if ([mtldevice supportsFamily:MTLGPUFamilyApple3])"
+        _metal_txt "${_metal_txt}")
+      file (WRITE "${_metal_m}" "${_metal_txt}")
+    endif ()
+  endif ()
+endif ()
+
 if (PLATFORM_PS2 OR PS2)
   # ps2dev gcc defines _MIPS_ARCH_R5900, not PS2/__PS2__/_EE. Without those,
   # SDL_PLATFORM_PS2 is off, gcc __atomic_* builtins stay on, and spinlocks

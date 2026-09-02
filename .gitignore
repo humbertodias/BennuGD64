@@ -92,3 +92,4 @@ local.properties
 /tvos/contents/*.dcb
 # Apple iOS demo bytecode copied into the bundle
 /ios/contents/*.dcb
+docker/__pycache__/

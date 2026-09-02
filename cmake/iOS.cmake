@@ -1,6 +1,7 @@
 # Apple iOS: static modules, interpreter-only app bundle (bgdi.app).
-# Compile .prg on a host with the ios-host preset (native macOS bgdc).
-# Needs Xcode; CMAKE_SYSTEM_NAME=iOS is set by the CMake preset.
+# Compile .prg with the ios-host preset (native Linux/macOS bgdc).
+# Docker: osxcross + iPhoneOS.sdk (cmake/osxcross-ios.cmake). Native Mac
+# can still pass -G Xcode without a toolchain file.
 
 set (PLATFORM_IOS ON)
 set (IOS ON)
@@ -33,8 +34,8 @@ if (NOT DEFINED BENNUGD_DEVELOPMENT_TEAM)
   set (BENNUGD_DEVELOPMENT_TEAM "" CACHE STRING "Apple Development Team ID (device builds)")
 endif ()
 
-# Simulator CI / local runs must not wait on a signing identity.
-if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+# Unsigned Docker / Simulator runs must not wait on a signing identity.
+if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator" OR CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
   set (CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO")
 endif ()
 

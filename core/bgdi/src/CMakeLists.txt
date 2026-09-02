@@ -202,12 +202,30 @@ if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
     ${BENNUGD_SDL3_TARGET}
     ${BENNUGD_SDL3_MIXER_TARGET}
   )
+  if (NOT BENNUGD_PACKAGE_VERSION)
+    set (BENNUGD_PACKAGE_VERSION "dev")
+  endif ()
+  if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+    set (BENNUGD_BUNDLE_SUPPORTED_PLATFORM "AppleTVSimulator")
+  else ()
+    set (BENNUGD_BUNDLE_SUPPORTED_PLATFORM "AppleTVOS")
+  endif ()
+  if (CMAKE_GENERATOR STREQUAL "Xcode")
+    set (_tvos_plist "${CMAKE_SOURCE_DIR}/tvos/Info.plist")
+  else ()
+    configure_file (
+      "${CMAKE_SOURCE_DIR}/tvos/Info.plist.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/Info.plist"
+      @ONLY
+    )
+    set (_tvos_plist "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
+  endif ()
   set_target_properties (bgdi PROPERTIES
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_GUI_IDENTIFIER "${BENNUGD_BUNDLE_IDENTIFIER}"
     MACOSX_BUNDLE_BUNDLE_VERSION "${BENNUGD_PACKAGE_VERSION}"
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${BENNUGD_PACKAGE_VERSION}"
-    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/tvos/Info.plist"
+    MACOSX_BUNDLE_INFO_PLIST "${_tvos_plist}"
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BENNUGD_BUNDLE_IDENTIFIER}"
     XCODE_ATTRIBUTE_BENNUGD_BUNDLE_DISPLAY_NAME "${BENNUGD_BUNDLE_NAME}"
     XCODE_ATTRIBUTE_MARKETING_VERSION "${BENNUGD_PACKAGE_VERSION}"
@@ -217,9 +235,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
     XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf-with-dsym"
     XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "3"
   )
-  # actool for appletvsimulator needs a tvOS Simulator runtime (often not
-  # installed). Device SDK compiles the layered App Icon without that runtime.
-  if (NOT CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+  # actool is Xcode-only. Docker/Ninja ships without a catalog.
+  # appletvsimulator CompileAssetCatalogVariant (ibtoold → CoreSimulator)
+  # fails on this brandassets set; Simulator does not need Assets.car.
+  if (CMAKE_GENERATOR STREQUAL "Xcode" AND NOT CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
     target_sources (bgdi PRIVATE
       ${CMAKE_SOURCE_DIR}/tvos/Assets.xcassets
     )
@@ -231,13 +250,13 @@ if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
       XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
     )
   endif ()
-  if (DEFINED BENNUGD_DEVELOPMENT_TEAM AND NOT BENNUGD_DEVELOPMENT_TEAM STREQUAL "")
+  if (CMAKE_GENERATOR STREQUAL "Xcode" AND DEFINED BENNUGD_DEVELOPMENT_TEAM AND NOT BENNUGD_DEVELOPMENT_TEAM STREQUAL "")
     set_target_properties (bgdi PROPERTIES
       XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${BENNUGD_DEVELOPMENT_TEAM}"
       XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
       XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
     )
-  elseif (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+  else ()
     set_target_properties (bgdi PROPERTIES
       XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
       XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""
@@ -259,12 +278,30 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     ${BENNUGD_SDL3_TARGET}
     ${BENNUGD_SDL3_MIXER_TARGET}
   )
+  if (NOT BENNUGD_PACKAGE_VERSION)
+    set (BENNUGD_PACKAGE_VERSION "dev")
+  endif ()
+  if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+    set (BENNUGD_BUNDLE_SUPPORTED_PLATFORM "iPhoneSimulator")
+  else ()
+    set (BENNUGD_BUNDLE_SUPPORTED_PLATFORM "iPhoneOS")
+  endif ()
+  if (CMAKE_GENERATOR STREQUAL "Xcode")
+    set (_ios_plist "${CMAKE_SOURCE_DIR}/ios/Info.plist")
+  else ()
+    configure_file (
+      "${CMAKE_SOURCE_DIR}/ios/Info.plist.in"
+      "${CMAKE_CURRENT_BINARY_DIR}/Info.plist"
+      @ONLY
+    )
+    set (_ios_plist "${CMAKE_CURRENT_BINARY_DIR}/Info.plist")
+  endif ()
   set_target_properties (bgdi PROPERTIES
     MACOSX_BUNDLE TRUE
     MACOSX_BUNDLE_GUI_IDENTIFIER "${BENNUGD_BUNDLE_IDENTIFIER}"
     MACOSX_BUNDLE_BUNDLE_VERSION "${BENNUGD_PACKAGE_VERSION}"
     MACOSX_BUNDLE_SHORT_VERSION_STRING "${BENNUGD_PACKAGE_VERSION}"
-    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/ios/Info.plist"
+    MACOSX_BUNDLE_INFO_PLIST "${_ios_plist}"
     XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${BENNUGD_BUNDLE_IDENTIFIER}"
     XCODE_ATTRIBUTE_BENNUGD_BUNDLE_DISPLAY_NAME "${BENNUGD_BUNDLE_NAME}"
     XCODE_ATTRIBUTE_MARKETING_VERSION "${BENNUGD_PACKAGE_VERSION}"
@@ -275,23 +312,27 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2"
     XCODE_ATTRIBUTE_INFOPLIST_KEY_UILaunchScreen_Generation "YES"
   )
-  target_sources (bgdi PRIVATE
-    ${CMAKE_SOURCE_DIR}/ios/Assets.xcassets
-  )
-  set_source_files_properties (
-    ${CMAKE_SOURCE_DIR}/ios/Assets.xcassets
-    PROPERTIES MACOSX_PACKAGE_LOCATION Resources
-  )
-  set_target_properties (bgdi PROPERTIES
-    XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
-  )
-  if (DEFINED BENNUGD_DEVELOPMENT_TEAM AND NOT BENNUGD_DEVELOPMENT_TEAM STREQUAL "")
+  # Same as tvOS: CompileAssetCatalogVariant for iphonesimulator fails
+  # (ibtoold → CoreSimulator). Simulator does not need Assets.car.
+  if (CMAKE_GENERATOR STREQUAL "Xcode" AND NOT CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+    target_sources (bgdi PRIVATE
+      ${CMAKE_SOURCE_DIR}/ios/Assets.xcassets
+    )
+    set_source_files_properties (
+      ${CMAKE_SOURCE_DIR}/ios/Assets.xcassets
+      PROPERTIES MACOSX_PACKAGE_LOCATION Resources
+    )
+    set_target_properties (bgdi PROPERTIES
+      XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+    )
+  endif ()
+  if (CMAKE_GENERATOR STREQUAL "Xcode" AND DEFINED BENNUGD_DEVELOPMENT_TEAM AND NOT BENNUGD_DEVELOPMENT_TEAM STREQUAL "")
     set_target_properties (bgdi PROPERTIES
       XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${BENNUGD_DEVELOPMENT_TEAM}"
       XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Apple Development"
       XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
     )
-  elseif (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+  else ()
     set_target_properties (bgdi PROPERTIES
       XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO"
       XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ""

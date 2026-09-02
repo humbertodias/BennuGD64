@@ -34,8 +34,8 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 dreamcast [shell]
        $0 psp [shell]
        $0 vita [shell]
-       $0 tvos [simulator|device]
-       $0 ios [simulator|device]
+       $0 tvos [device|simulator|shell]
+       $0 ios [device|simulator|shell]
        $0 ps2 [shell]
        $0 ps3 [shell]
        $0 pandora [shell]
@@ -47,11 +47,6 @@ if [[ -f "${ROOT}/versions.env" ]]; then
   # shellcheck disable=SC1091
   source "${ROOT}/versions.env"
   set +a
-fi
-
-if [[ "${1:-}" != "tvos" && "${1:-}" != "ios" ]] && ! command -v docker >/dev/null 2>&1; then
-  echo "Docker is required (https://docs.docker.com/get-docker/)." >&2
-  exit 1
 fi
 
 PLATFORM="${1:-linux}"
@@ -69,9 +64,23 @@ case "${PLATFORM}" in
     ;;
 esac
 
+APPLE_SIM=0
+if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]] && [[ "${SECOND}" == "simulator" ]]; then
+  APPLE_SIM=1
+fi
+NATIVE_APPLE_SIM=0
+if [[ "${APPLE_SIM}" == "1" && "$(uname -s)" == "Darwin" ]]; then
+  NATIVE_APPLE_SIM=1
+fi
+
+if [[ "${NATIVE_APPLE_SIM}" != "1" ]] && ! command -v docker >/dev/null 2>&1; then
+  echo "Docker is required (https://docs.docker.com/get-docker/)." >&2
+  exit 1
+fi
+
 IMAGE="bennugd64-${PLATFORM}"
 
-if [[ "${PLATFORM}" != "tvos" && "${PLATFORM}" != "ios" && "${SKIP_DOCKER_BUILD:-}" != "1" ]]; then
+if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
   if [[ "${PLATFORM}" == "wasm" ]]; then
     docker build \
       --build-arg EMSCRIPTEN_VERSION="${EMSCRIPTEN_VERSION:-6.0.6}" \
@@ -147,16 +156,24 @@ if [[ "${PLATFORM}" != "tvos" && "${PLATFORM}" != "ios" && "${SKIP_DOCKER_BUILD:
       -t bennugd64-macos \
       -f docker/Dockerfile.macos \
       docker/
+  elif [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
+    docker build \
+      --build-arg MACOSX_SDK="${MACOSX_SDK:-15.5}" \
+      --build-arg MACOSX_SDK_SHA256="${MACOSX_SDK_SHA256:-c15cf0f3f17d714d1aa5a642da8e118db53d79429eb015771ba816aa7c6c1cbd}" \
+      --build-arg OSX_VERSION_MIN="${OSXCROSS_OSX_VERSION_MIN:-11.0}" \
+      --build-arg CMAKE_VERSION="${CMAKE_VERSION:-3.28.6}" \
+      --build-arg IPHONEOS_SDK_NAME="${IPHONEOS_SDK_NAME:-iPhoneOS17.5.sdk}" \
+      --build-arg IPHONEOS_SDK_REPO="${IPHONEOS_SDK_REPO:-https://github.com/xybp888/iOS-SDKs.git}" \
+      --build-arg IPHONEOS_SDK_REF="${IPHONEOS_SDK_REF:-1b92ff4a8928f582876e1d388d1381c6a0c59eb9}" \
+      -t "${IMAGE}" \
+      -f "docker/Dockerfile.${PLATFORM}" \
+      "${ROOT}"
   else
     docker build -t "${IMAGE}" -f "docker/Dockerfile.${PLATFORM}" docker/
   fi
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
-  if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
-    echo "${PLATFORM} has no Docker shell; it needs Xcode on macOS." >&2
-    exit 1
-  fi
   if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "ps3" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
@@ -236,241 +253,211 @@ prefetch_github_archive() {
   rm -rf "${tmp}"
 }
 
-if [[ "${PLATFORM}" == "tvos" ]]; then
-  if [[ "$(uname -s)" != "Darwin" ]]; then
-    echo "tvOS needs macOS and Xcode (not Docker)." >&2
-    exit 1
-  fi
-  if ! command -v cmake >/dev/null 2>&1; then
-    echo "cmake is required." >&2
-    exit 1
-  fi
-  if ! command -v ninja >/dev/null 2>&1; then
-    echo "ninja is required (brew install ninja)." >&2
-    exit 1
-  fi
-  if ! command -v xcodebuild >/dev/null 2>&1; then
-    echo "Xcode is required (install Xcode, then xcode-select --install)." >&2
-    exit 1
-  fi
-
-  TVOS_KIND="${SECOND}"
-  case "${TVOS_KIND}" in
-    static|shared|simulator|"") TVOS_KIND="simulator" ;;
-    device|tvos) TVOS_KIND="device" ;;
+if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
+  case "${SECOND}" in
+    static|shared|device|"") ;;
+    simulator)
+      if [[ "$(uname -s)" == "Darwin" ]]; then
+      if ! command -v cmake >/dev/null 2>&1 || ! xcrun --find xcodebuild >/dev/null 2>&1; then
+        echo "cmake and Xcode are required for ${PLATFORM} Simulator builds." >&2
+        exit 1
+      fi
+      HOST_PRESET="${PLATFORM}-host"
+      SIM_PRESET="${PLATFORM}-simulator"
+      HOST_BUILD="${ROOT}/build-${PLATFORM}-host"
+      SIM_BUILD="${ROOT}/build-${PLATFORM}-simulator"
+      STAGE="${ROOT}/dist/${PLATFORM}-simulator-arm64-static"
+      CONTENTS="${ROOT}/${PLATFORM}/contents"
+      echo "preset: ${HOST_PRESET} + ${SIM_PRESET} (Xcode, not Docker)"
+      echo "version: ${BENNUGD_VERSION}"
+      rm -f "${HOST_BUILD}/CMakeCache.txt"
+      rm -rf "${HOST_BUILD}/CMakeFiles"
+      rm -f "${SIM_BUILD}/CMakeCache.txt"
+      rm -rf "${SIM_BUILD}/CMakeFiles"
+      scrub_fetchcontent "${HOST_BUILD}/_deps"
+      scrub_fetchcontent "${SIM_BUILD}/_deps"
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF:-release-3.4.14}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}"
+      )
+      if [[ -n "${BENNUGD_BUNDLE_IDENTIFIER:-}" ]]; then
+        COMMON+=(-DBENNUGD_BUNDLE_IDENTIFIER="${BENNUGD_BUNDLE_IDENTIFIER}")
+      fi
+      if [[ -n "${BENNUGD_BUNDLE_NAME:-}" ]]; then
+        COMMON+=(-DBENNUGD_BUNDLE_NAME="${BENNUGD_BUNDLE_NAME}")
+      fi
+      cmake --preset "${HOST_PRESET}" "${COMMON[@]}"
+      cmake --build --preset "${HOST_PRESET}"
+      BGDC="${HOST_BUILD}/core/bgdc/src/bgdc"
+      test -x "${BGDC}"
+      for prg in "${ROOT}/web/demo/"*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${BGDC}" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      mkdir -p "${CONTENTS}"
+      cp "${ROOT}/web/demo/hello.dcb" "${CONTENTS}/main.dcb"
+      cmake --preset "${SIM_PRESET}" "${COMMON[@]}"
+      cmake --build --preset "${SIM_PRESET}"
+      mkdir -p "${STAGE}"
+      cmake --install "${SIM_BUILD}" --prefix "${STAGE}" --config Debug
+      if [[ ! -f "${STAGE}/bgdi.app/bgdi" ]]; then
+        APP=""
+        for cand in \
+          "${SIM_BUILD}/core/bgdi/src/Debug-appletvsimulator/bgdi.app" \
+          "${SIM_BUILD}/core/bgdi/src/Debug-iphonesimulator/bgdi.app" \
+          "${SIM_BUILD}/core/bgdi/src/Debug/bgdi.app"
+        do
+          if [[ -d "${cand}" ]]; then
+            APP="${cand}"
+            break
+          fi
+        done
+        if [[ -z "${APP}" ]]; then
+          APP="$(find "${SIM_BUILD}/core/bgdi" -name bgdi.app -type d | grep -v /CMakeFiles/ | head -n 1 || true)"
+        fi
+        test -n "${APP}"
+        rm -rf "${STAGE}/bgdi.app"
+        cp -R "${APP}" "${STAGE}/"
+      fi
+      test -d "${STAGE}/bgdi.app"
+      test -f "${STAGE}/bgdi.app/bgdi"
+      test -s "${STAGE}/bgdi.app/main.dcb"
+      echo "Install ${STAGE}/bgdi.app in the ${PLATFORM} Simulator."
+      echo "dist/${PLATFORM}-arm64-static/bgdi.app is a device binary and will not run there."
+      exit 0
+      fi
+      ;;
     *)
       echo "${USAGE}" >&2
       exit 1
       ;;
   esac
-
-  if [[ "${TVOS_KIND}" == "simulator" ]]; then
-    TVOS_PRESET="tvos-simulator"
-    TVOS_BUILD="${ROOT}/build-tvos-simulator"
-    TVOS_CONFIG="Debug"
-    STAGE="${ROOT}/dist/tvos-simulator-arm64-static"
-  else
-    TVOS_PRESET="tvos-arm64"
-    TVOS_BUILD="${ROOT}/build-tvos-arm64"
-    TVOS_CONFIG="Release"
-    STAGE="${ROOT}/dist/tvos-arm64-static"
-    TEAM="${BENNUGD_DEVELOPMENT_TEAM:-}"
-    if [[ -z "${TEAM}" ]]; then
-      TEAMS="$(security find-identity -v -p codesigning 2>/dev/null \
-        | grep -oE '\([A-Z0-9]+\)"$' | tr -d '()"' | sort -u || true)"
-      NUM_TEAMS="$(printf '%s\n' "${TEAMS}" | grep -c . || true)"
-      if [[ "${NUM_TEAMS}" -eq 1 ]]; then
-        TEAM="${TEAMS}"
-        echo "auto-detected signing team: ${TEAM}"
-      elif [[ "${NUM_TEAMS}" -gt 1 ]]; then
-        echo "Multiple signing teams; set BENNUGD_DEVELOPMENT_TEAM." >&2
-        printf '%s\n' "${TEAMS}" >&2
-        exit 1
-      else
-        echo "No signing identity. Set BENNUGD_DEVELOPMENT_TEAM or use: $0 tvos simulator" >&2
-        exit 1
-      fi
+  HOST_PRESET="${PLATFORM}-host"
+  CROSS_PRESET="${PLATFORM}-arm64"
+  HOST_BUILD="/src/build-${PLATFORM}-host"
+  CROSS_BUILD="/src/build-${PLATFORM}-arm64"
+  STAGE="/src/dist/${PLATFORM}-arm64-static"
+  CONTENTS="/src/${PLATFORM}/contents"
+  SDK_ENV="APPLETVOS_SDK"
+  SDK_PATH="/opt/apple/AppleTVOS.sdk"
+  if [[ "${PLATFORM}" == "ios" ]]; then
+    SDK_ENV="IPHONEOS_SDK"
+    SDK_PATH="/opt/apple/iPhoneOS.sdk"
+  fi
+  if [[ "${SECOND}" == "simulator" ]]; then
+    CROSS_PRESET="${PLATFORM}-simulator-arm64"
+    CROSS_BUILD="/src/build-${PLATFORM}-simulator-arm64"
+    STAGE="/src/dist/${PLATFORM}-simulator-arm64-static"
+    SDK_ENV="APPLETVSIMULATOR_SDK"
+    SDK_PATH="/opt/apple/AppleTVSimulator.sdk"
+    if [[ "${PLATFORM}" == "ios" ]]; then
+      SDK_ENV="IPHONESIMULATOR_SDK"
+      SDK_PATH="/opt/apple/iPhoneSimulator.sdk"
     fi
   fi
-
-  HOST_BUILD="${ROOT}/build-tvos-host"
-  echo "preset: tvos-host + ${TVOS_PRESET}"
+  echo "image: ${IMAGE}"
+  echo "preset: ${HOST_PRESET} + ${CROSS_PRESET}"
   echo "version: ${BENNUGD_VERSION}"
-  scrub_fetchcontent "${HOST_BUILD}/_deps"
-  scrub_fetchcontent "${TVOS_BUILD}/_deps"
-
-  COMMON=(
-    -DBENNUGD_VERSION="${BENNUGD_VERSION}"
-    -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}"
-    -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}"
-    -DBENNUGD_SDL3_REF="${SDL3_REF:-release-3.4.14}"
-    -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}"
-  )
-  if [[ -n "${BENNUGD_BUNDLE_IDENTIFIER:-}" ]]; then
-    COMMON+=(-DBENNUGD_BUNDLE_IDENTIFIER="${BENNUGD_BUNDLE_IDENTIFIER}")
-  fi
-  if [[ -n "${BENNUGD_BUNDLE_NAME:-}" ]]; then
-    COMMON+=(-DBENNUGD_BUNDLE_NAME="${BENNUGD_BUNDLE_NAME}")
-  fi
-  if [[ "${TVOS_KIND}" == "device" ]]; then
-    COMMON+=(-DBENNUGD_DEVELOPMENT_TEAM="${TEAM}")
-  fi
-
-  cmake --preset tvos-host "${COMMON[@]}"
-  cmake --build --preset tvos-host
-  BGDC="${HOST_BUILD}/core/bgdc/src/bgdc"
-  test -x "${BGDC}"
-  for prg in "${ROOT}/web/demo/"*.prg; do
-    dcb="${prg%.prg}.dcb"
-    "${BGDC}" -o "${dcb}" "${prg}"
-    test -s "${dcb}"
-  done
-  mkdir -p "${ROOT}/tvos/contents"
-  cp "${ROOT}/web/demo/hello.dcb" "${ROOT}/tvos/contents/main.dcb"
-
-  cmake --preset "${TVOS_PRESET}" "${COMMON[@]}"
-  cmake --build --preset "${TVOS_PRESET}"
-  mkdir -p "${STAGE}"
-  cmake --install "${TVOS_BUILD}" --config "${TVOS_CONFIG}" --prefix "${STAGE}"
-  if [[ ! -d "${STAGE}/bgdi.app" ]]; then
-    APP=""
-    for cand in \
-      "${TVOS_BUILD}/core/bgdi/src/${TVOS_CONFIG}/bgdi.app" \
-      "${TVOS_BUILD}/core/bgdi/src/bgdi.app"
-    do
-      if [[ -d "${cand}" ]]; then
-        APP="${cand}"
-        break
+  # Host configure on macOS stores /Users/... in the cache; Docker mounts the
+  # repo at /src (same as macos/wasm).
+  rm -f "${ROOT}/build-${PLATFORM}-host/CMakeCache.txt"
+  rm -rf "${ROOT}/build-${PLATFORM}-host/CMakeFiles"
+  rm -f "${ROOT}/${CROSS_BUILD#/src/}/CMakeCache.txt"
+  rm -rf "${ROOT}/${CROSS_BUILD#/src/}/CMakeFiles"
+  scrub_fetchcontent "${ROOT}/build-${PLATFORM}-host/_deps"
+  scrub_fetchcontent "${ROOT}/${CROSS_BUILD#/src/}/_deps"
+  docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    -e BENNUGD_BUNDLE_IDENTIFIER="${BENNUGD_BUNDLE_IDENTIFIER:-}" \
+    -e BENNUGD_BUNDLE_NAME="${BENNUGD_BUNDLE_NAME:-}" \
+    -e HOST_PRESET="${HOST_PRESET}" \
+    -e CROSS_PRESET="${CROSS_PRESET}" \
+    -e HOST_BUILD="${HOST_BUILD}" \
+    -e CROSS_BUILD="${CROSS_BUILD}" \
+    -e STAGE="${STAGE}" \
+    -e CONTENTS="${CONTENTS}" \
+    -e "${SDK_ENV}=${SDK_PATH}" \
+    -e CROSS_SDKROOT="${SDK_PATH}" \
+    -e SDKROOT="${SDK_PATH}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      if [[ -n "${BENNUGD_BUNDLE_IDENTIFIER:-}" ]]; then
+        COMMON+=(-DBENNUGD_BUNDLE_IDENTIFIER="${BENNUGD_BUNDLE_IDENTIFIER}")
       fi
-    done
-    if [[ -z "${APP}" ]]; then
-      APP="$(find "${TVOS_BUILD}/core/bgdi" -name bgdi.app -type d | grep -v /CMakeFiles/ | head -n 1 || true)"
-    fi
-    test -n "${APP}"
-    cp -R "${APP}" "${STAGE}/"
-  fi
-  test -d "${STAGE}/bgdi.app"
-  test -x "${STAGE}/bgdi.app/bgdi"
-  test -s "${STAGE}/bgdi.app/main.dcb"
-  exit 0
-fi
-
-if [[ "${PLATFORM}" == "ios" ]]; then
-  if [[ "$(uname -s)" != "Darwin" ]]; then
-    echo "iOS needs macOS and Xcode (not Docker)." >&2
-    exit 1
-  fi
-  if ! command -v cmake >/dev/null 2>&1; then
-    echo "cmake is required." >&2
-    exit 1
-  fi
-  if ! command -v ninja >/dev/null 2>&1; then
-    echo "ninja is required (brew install ninja)." >&2
-    exit 1
-  fi
-  if ! command -v xcodebuild >/dev/null 2>&1; then
-    echo "Xcode is required (install Xcode, then xcode-select --install)." >&2
-    exit 1
-  fi
-
-  IOS_KIND="${SECOND}"
-  case "${IOS_KIND}" in
-    static|shared|simulator|"") IOS_KIND="simulator" ;;
-    device|ios) IOS_KIND="device" ;;
-    *)
-      echo "${USAGE}" >&2
-      exit 1
-      ;;
-  esac
-
-  if [[ "${IOS_KIND}" == "simulator" ]]; then
-    IOS_PRESET="ios-simulator"
-    IOS_BUILD="${ROOT}/build-ios-simulator"
-    IOS_CONFIG="Debug"
-    STAGE="${ROOT}/dist/ios-simulator-arm64-static"
+      if [[ -n "${BENNUGD_BUNDLE_NAME:-}" ]]; then
+        COMMON+=(-DBENNUGD_BUNDLE_NAME="${BENNUGD_BUNDLE_NAME}")
+      fi
+      cmake --preset "${HOST_PRESET}" "${COMMON[@]}"
+      cmake --build --preset "${HOST_PRESET}"
+      BGDC="${HOST_BUILD}/core/bgdc/src/bgdc"
+      test -x "${BGDC}"
+      for prg in /src/web/demo/*.prg; do
+        dcb="${prg%.prg}.dcb"
+        "${BGDC}" -o "${dcb}" "${prg}"
+        test -s "${dcb}"
+      done
+      mkdir -p "${CONTENTS}"
+      cp /src/web/demo/hello.dcb "${CONTENTS}/main.dcb"
+      if command -v osxcross-conf >/dev/null; then
+        eval "$(osxcross-conf)"
+      fi
+      export OSXCROSS_TARGET_DIR="${OSXCROSS_TARGET_DIR:-/opt/osxcross/target}"
+      unset MACOSX_DEPLOYMENT_TARGET || true
+      unset OSX_VERSION_MIN || true
+      export SDKROOT="${CROSS_SDKROOT:-${SDKROOT:-}}"
+      cmake --preset "${CROSS_PRESET}" "${COMMON[@]}"
+      cmake --build --preset "${CROSS_PRESET}"
+      mkdir -p "${STAGE}"
+      cmake --install "${CROSS_BUILD}" --prefix "${STAGE}"
+      if [[ ! -d "${STAGE}/bgdi.app" ]]; then
+        APP=""
+        for cand in \
+          "${CROSS_BUILD}/core/bgdi/src/bgdi.app" \
+          "${CROSS_BUILD}/core/bgdi/src/Release/bgdi.app"
+        do
+          if [[ -d "${cand}" ]]; then
+            APP="${cand}"
+            break
+          fi
+        done
+        if [[ -z "${APP}" ]]; then
+          APP="$(find "${CROSS_BUILD}/core/bgdi" -name bgdi.app -type d | grep -v /CMakeFiles/ | head -n 1 || true)"
+        fi
+        test -n "${APP}"
+        cp -R "${APP}" "${STAGE}/"
+      fi
+      test -d "${STAGE}/bgdi.app"
+      test -f "${STAGE}/bgdi.app/bgdi"
+      test -s "${STAGE}/bgdi.app/main.dcb"
+    '
+  test -d "${ROOT}/${STAGE#/src/}/bgdi.app"
+  if [[ "${SECOND}" == "simulator" ]]; then
+    echo "Simulator .app: ${STAGE#/src/}/bgdi.app (osxcross, appletvsimulator/iphonesimulator)."
   else
-    IOS_PRESET="ios-arm64"
-    IOS_BUILD="${ROOT}/build-ios-arm64"
-    IOS_CONFIG="Release"
-    STAGE="${ROOT}/dist/ios-arm64-static"
-    TEAM="${BENNUGD_DEVELOPMENT_TEAM:-}"
-    if [[ -z "${TEAM}" ]]; then
-      TEAMS="$(security find-identity -v -p codesigning 2>/dev/null \
-        | grep -oE '\([A-Z0-9]+\)"$' | tr -d '()"' | sort -u || true)"
-      NUM_TEAMS="$(printf '%s\n' "${TEAMS}" | grep -c . || true)"
-      if [[ "${NUM_TEAMS}" -eq 1 ]]; then
-        TEAM="${TEAMS}"
-        echo "auto-detected signing team: ${TEAM}"
-      elif [[ "${NUM_TEAMS}" -gt 1 ]]; then
-        echo "Multiple signing teams; set BENNUGD_DEVELOPMENT_TEAM." >&2
-        printf '%s\n' "${TEAMS}" >&2
-        exit 1
-      else
-        echo "No signing identity. Set BENNUGD_DEVELOPMENT_TEAM or use: $0 ios simulator" >&2
-        exit 1
-      fi
-    fi
+    echo "Device .app: dist/${PLATFORM}-arm64-static/bgdi.app (sign on a Mac)."
+    echo "That binary is appletvos/iphoneos — it will not run in Simulator."
+    echo "For Simulator: bash scripts/build.sh ${PLATFORM} simulator"
   fi
-
-  HOST_BUILD="${ROOT}/build-ios-host"
-  echo "preset: ios-host + ${IOS_PRESET}"
-  echo "version: ${BENNUGD_VERSION}"
-  scrub_fetchcontent "${HOST_BUILD}/_deps"
-  scrub_fetchcontent "${IOS_BUILD}/_deps"
-
-  COMMON=(
-    -DBENNUGD_VERSION="${BENNUGD_VERSION}"
-    -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}"
-    -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}"
-    -DBENNUGD_SDL3_REF="${SDL3_REF:-release-3.4.14}"
-    -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}"
-  )
-  if [[ -n "${BENNUGD_BUNDLE_IDENTIFIER:-}" ]]; then
-    COMMON+=(-DBENNUGD_BUNDLE_IDENTIFIER="${BENNUGD_BUNDLE_IDENTIFIER}")
-  fi
-  if [[ -n "${BENNUGD_BUNDLE_NAME:-}" ]]; then
-    COMMON+=(-DBENNUGD_BUNDLE_NAME="${BENNUGD_BUNDLE_NAME}")
-  fi
-  if [[ "${IOS_KIND}" == "device" ]]; then
-    COMMON+=(-DBENNUGD_DEVELOPMENT_TEAM="${TEAM}")
-  fi
-
-  cmake --preset ios-host "${COMMON[@]}"
-  cmake --build --preset ios-host
-  BGDC="${HOST_BUILD}/core/bgdc/src/bgdc"
-  test -x "${BGDC}"
-  for prg in "${ROOT}/web/demo/"*.prg; do
-    dcb="${prg%.prg}.dcb"
-    "${BGDC}" -o "${dcb}" "${prg}"
-    test -s "${dcb}"
-  done
-  mkdir -p "${ROOT}/ios/contents"
-  cp "${ROOT}/web/demo/hello.dcb" "${ROOT}/ios/contents/main.dcb"
-
-  cmake --preset "${IOS_PRESET}" "${COMMON[@]}"
-  cmake --build --preset "${IOS_PRESET}"
-  mkdir -p "${STAGE}"
-  cmake --install "${IOS_BUILD}" --config "${IOS_CONFIG}" --prefix "${STAGE}"
-  if [[ ! -d "${STAGE}/bgdi.app" ]]; then
-    APP=""
-    for cand in \
-      "${IOS_BUILD}/core/bgdi/src/${IOS_CONFIG}/bgdi.app" \
-      "${IOS_BUILD}/core/bgdi/src/bgdi.app"
-    do
-      if [[ -d "${cand}" ]]; then
-        APP="${cand}"
-        break
-      fi
-    done
-    if [[ -z "${APP}" ]]; then
-      APP="$(find "${IOS_BUILD}/core/bgdi" -name bgdi.app -type d | grep -v /CMakeFiles/ | head -n 1 || true)"
-    fi
-    test -n "${APP}"
-    cp -R "${APP}" "${STAGE}/"
-  fi
-  test -d "${STAGE}/bgdi.app"
-  test -x "${STAGE}/bgdi.app/bgdi"
-  test -s "${STAGE}/bgdi.app/main.dcb"
   exit 0
 fi
 

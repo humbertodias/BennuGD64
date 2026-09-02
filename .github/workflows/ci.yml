@@ -121,6 +121,40 @@ jobs:
             docker_target: ""
             shared: false
             timeout: 120
+          - platform: tvos
+            artifact: tvos-arm64
+            dist_static: dist/tvos-arm64-static
+            dist_shared: ""
+            docker_target: ""
+            docker_context: "."
+            shared: false
+            timeout: 180
+          - platform: ios
+            artifact: ios-arm64
+            dist_static: dist/ios-arm64-static
+            dist_shared: ""
+            docker_target: ""
+            docker_context: "."
+            shared: false
+            timeout: 180
+          - platform: tvos
+            extra: simulator
+            artifact: tvos-simulator-arm64
+            dist_static: dist/tvos-simulator-arm64-static
+            dist_shared: ""
+            docker_target: ""
+            docker_context: "."
+            shared: false
+            timeout: 180
+          - platform: ios
+            extra: simulator
+            artifact: ios-simulator-arm64
+            dist_static: dist/ios-simulator-arm64-static
+            dist_shared: ""
+            docker_target: ""
+            docker_context: "."
+            shared: false
+            timeout: 180
 
     steps:
       - name: Checkout
@@ -151,7 +185,7 @@ jobs:
             **/_deps
             .deps
             build-android-gradle
-          key: fetch-${{ matrix.artifact }}-${{ hashFiles('versions.env', 'CMakePresets.json', format('docker/Dockerfile.{0}', matrix.platform)) }}
+          key: fetch-${{ matrix.artifact }}-${{ hashFiles('versions.env', 'CMakePresets.json', format('docker/Dockerfile.{0}', matrix.platform), 'scripts/apple/**') }}
           restore-keys: |
             fetch-${{ matrix.artifact }}-
             fetch-${{ matrix.platform }}-
@@ -162,7 +196,7 @@ jobs:
       - name: Build toolchain image
         uses: docker/build-push-action@v6
         with:
-          context: docker
+          context: ${{ matrix.docker_context || 'docker' }}
           file: docker/Dockerfile.${{ matrix.platform }}
           target: ${{ matrix.docker_target }}
           tags: bennugd64-${{ matrix.platform }}
@@ -174,6 +208,9 @@ jobs:
             MACOSX_SDK_SHA256=${{ env.MACOSX_SDK_SHA256 }}
             OSX_VERSION_MIN=${{ env.OSXCROSS_OSX_VERSION_MIN }}
             CMAKE_VERSION=${{ env.CMAKE_VERSION }}
+            IPHONEOS_SDK_NAME=${{ env.IPHONEOS_SDK_NAME }}
+            IPHONEOS_SDK_REPO=${{ env.IPHONEOS_SDK_REPO }}
+            IPHONEOS_SDK_REF=${{ env.IPHONEOS_SDK_REF }}
             EMSCRIPTEN_VERSION=${{ env.EMSCRIPTEN_VERSION }}
             ANDROID_NDK_VERSION=${{ env.ANDROID_NDK_VERSION }}
             ANDROID_CMDLINE_TOOLS=${{ env.ANDROID_CMDLINE_TOOLS }}
@@ -188,7 +225,7 @@ jobs:
         env:
           SKIP_DOCKER_BUILD: "1"
           BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
-        run: bash scripts/build.sh ${{ matrix.platform }} ${{ matrix.arch }}
+        run: bash scripts/build.sh ${{ matrix.platform }} ${{ matrix.extra || matrix.arch }}
 
       - name: Build static
         if: ${{ matrix.shared }}
@@ -281,115 +318,9 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  build-tvos:
-    name: tvos-simulator-arm64-static
-    runs-on: macos-latest
-    timeout-minutes: 180
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Resolve version
-        id: meta
-        run: |
-          set -euo pipefail
-          if git describe --tags --exact-match HEAD >/dev/null 2>&1; then
-            VERSION="$(git describe --tags --exact-match HEAD)"
-          else
-            VERSION="$(git describe --tags --always --dirty)"
-          fi
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Install ninja
-        run: brew install ninja
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-tvos-host/_deps
-            build-tvos-simulator/_deps
-          key: fetch-tvos-simulator-${{ hashFiles('versions.env', 'CMakePresets.json', 'cmake/AppleTV.cmake', 'cmake/FetchDeps.cmake') }}
-          restore-keys: |
-            fetch-tvos-simulator-
-            fetch-tvos-
-
-      - name: Build
-        env:
-          BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
-        run: bash scripts/build.sh tvos simulator
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-tvos-simulator-arm64-static
-          path: dist/tvos-simulator-arm64-static/
-          if-no-files-found: error
-          retention-days: 14
-
-  build-ios:
-    name: ios-simulator-arm64-static
-    runs-on: macos-latest
-    timeout-minutes: 180
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-
-      - name: Load versions
-        run: grep -vE '^\s*(#|$)' versions.env >> "$GITHUB_ENV"
-
-      - name: Resolve version
-        id: meta
-        run: |
-          set -euo pipefail
-          if git describe --tags --exact-match HEAD >/dev/null 2>&1; then
-            VERSION="$(git describe --tags --exact-match HEAD)"
-          else
-            VERSION="$(git describe --tags --always --dirty)"
-          fi
-          [[ -n "$VERSION" ]] || VERSION="dev"
-          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-
-      - name: Install ninja
-        run: brew install ninja
-
-      - name: Cache FetchContent
-        uses: actions/cache@v6
-        with:
-          path: |
-            build-ios-host/_deps
-            build-ios-simulator/_deps
-          key: fetch-ios-simulator-${{ hashFiles('versions.env', 'CMakePresets.json', 'cmake/iOS.cmake', 'cmake/FetchDeps.cmake') }}
-          restore-keys: |
-            fetch-ios-simulator-
-            fetch-ios-
-
-      - name: Build
-        env:
-          BENNUGD_VERSION: ${{ steps.meta.outputs.version }}
-        run: bash scripts/build.sh ios simulator
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v7
-        with:
-          name: bennugd64-${{ steps.meta.outputs.version }}-ios-simulator-arm64-static
-          path: dist/ios-simulator-arm64-static/
-          if-no-files-found: error
-          retention-days: 14
-
   release:
     name: Publish GitHub Release
-    needs: [build, build-wasi, build-tvos, build-ios]
+    needs: [build, build-wasi]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
@@ -450,15 +381,17 @@ jobs:
             - **dreamcast-sh4-static** — homebrew CDI (`bennugd64.cdi`); burn or emulate, or send `bgdi.elf` with `dc-tool`
             - **psp-mips-static** — homebrew PBP (`EBOOT.PBP`); copy the folder to `ms0:/PSP/GAME/bennugd64/`
             - **vita-arm-static** — homebrew VPK (`bennugd64.vpk`); install on a jailbroken Vita, extra data in `ux0:/data/bennugd64/`
-            - **tvos-simulator-arm64-static** — `bgdi.app` for the tvOS Simulator (unsigned); put `main.dcb` in `tvos/contents/` before rebuild, or at the `.app` root
-            - **ios-simulator-arm64-static** — `bgdi.app` for the iOS Simulator (unsigned); put `main.dcb` in `ios/contents/` before rebuild, or at the `.app` root / Documents
+            - **tvos-arm64-static** — unsigned `bgdi.app` for Apple TV; put `main.dcb` in `tvos/contents/` before rebuild, or at the `.app` root
+            - **tvos-simulator-arm64-static** — unsigned `bgdi.app` for tvOS Simulator (osxcross); `simctl install`, not a device binary
+            - **ios-arm64-static** — unsigned `bgdi.app` for iPhone/iPad; put `main.dcb` in `ios/contents/` before rebuild, or at the `.app` root / Documents
+            - **ios-simulator-arm64-static** — unsigned `bgdi.app` for iOS Simulator (osxcross); `simctl install`, not a device binary
             - **ps2-mips-static** — homebrew ELF (`bgdi.elf`) and ISO (`bennugd64.iso`); PCSX2 File→Open the ISO, USB `mass:/`, or HostFS File→Open ELF
             - **ps3-ppu-static** — homebrew PKG (`bennugd64.pkg`); install on CFW, extra data in `/dev_usb000/bennugd64/` or USRDIR
             - **pandora-arm-static** — homebrew PND (`bennugd64.pnd`); copy to the Pandora SD card, or run `./bgdi` next to `main.dcb`
             - **wii-powerpc-static** — homebrew DOL (`apps/bennugd64/boot.dol`); copy the folder to the SD card and launch from the Homebrew Channel
 
             Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-            Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, PS2, PS3, Pandora, Wii, and macOS (x86_64 and arm64) CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.vita` (`vitasdk/vitasdk`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.ps3` (`hldtux/ps3dev`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), `docker/Dockerfile.wii` (`devkitpro/devkitppc`), and `docker/Dockerfile.macos` (osxcross). tvOS and iOS CI run natively on `macos-latest` (Xcode, unsigned Simulator).
+            Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, PS2, PS3, Pandora, Wii, macOS (x86_64 and arm64), tvOS, and iOS CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.vita` (`vitasdk/vitasdk`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.ps3` (`hldtux/ps3dev`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), `docker/Dockerfile.wii` (`devkitpro/devkitppc`), `docker/Dockerfile.macos` (osxcross), `docker/Dockerfile.tvos` (osxcross + AppleTVOS/AppleTVSimulator.sdk), and `docker/Dockerfile.ios` (osxcross + iPhoneOS/iPhoneSimulator.sdk).
             OS graphics/audio libraries may still be required at runtime.
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

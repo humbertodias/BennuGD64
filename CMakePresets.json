@@ -204,24 +204,38 @@
       "name": "tvos-arm64",
       "inherits": "base",
       "displayName": "tvOS arm64 interpreter (bgdi.app)",
-      "generator": "Xcode",
       "binaryDir": "${sourceDir}/build-tvos-arm64",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-tvos.cmake",
       "cacheVariables": {
-        "CMAKE_SYSTEM_NAME": "tvOS",
-        "CMAKE_SYSTEM_PROCESSOR": "aarch64",
-        "CMAKE_OSX_ARCHITECTURES": "arm64",
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "15.0",
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "tvos-simulator-arm64",
+      "inherits": "base",
+      "displayName": "tvOS Simulator arm64 interpreter (osxcross)",
+      "binaryDir": "${sourceDir}/build-tvos-simulator-arm64",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-tvos-simulator.cmake",
+      "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
       }
     },
     {
       "name": "tvos-simulator",
-      "inherits": "tvos-arm64",
-      "displayName": "tvOS Simulator arm64 interpreter (bgdi.app)",
+      "inherits": "base",
+      "displayName": "tvOS Simulator arm64 interpreter (Xcode, macOS host)",
+      "generator": "Xcode",
       "binaryDir": "${sourceDir}/build-tvos-simulator",
       "cacheVariables": {
-        "CMAKE_OSX_SYSROOT": "appletvsimulator"
+        "CMAKE_SYSTEM_NAME": "tvOS",
+        "CMAKE_SYSTEM_PROCESSOR": "aarch64",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "15.0",
+        "CMAKE_OSX_SYSROOT": "appletvsimulator",
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
       }
     },
     {
@@ -237,24 +251,38 @@
       "name": "ios-arm64",
       "inherits": "base",
       "displayName": "iOS arm64 interpreter (bgdi.app)",
-      "generator": "Xcode",
       "binaryDir": "${sourceDir}/build-ios-arm64",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-ios.cmake",
       "cacheVariables": {
-        "CMAKE_SYSTEM_NAME": "iOS",
-        "CMAKE_SYSTEM_PROCESSOR": "aarch64",
-        "CMAKE_OSX_ARCHITECTURES": "arm64",
-        "CMAKE_OSX_DEPLOYMENT_TARGET": "17.0",
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "ios-simulator-arm64",
+      "inherits": "base",
+      "displayName": "iOS Simulator arm64 interpreter (osxcross)",
+      "binaryDir": "${sourceDir}/build-ios-simulator-arm64",
+      "toolchainFile": "${sourceDir}/cmake/osxcross-ios-simulator.cmake",
+      "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
       }
     },
     {
       "name": "ios-simulator",
-      "inherits": "ios-arm64",
-      "displayName": "iOS Simulator arm64 interpreter (bgdi.app)",
+      "inherits": "base",
+      "displayName": "iOS Simulator arm64 interpreter (Xcode, macOS host)",
+      "generator": "Xcode",
       "binaryDir": "${sourceDir}/build-ios-simulator",
       "cacheVariables": {
-        "CMAKE_OSX_SYSROOT": "iphonesimulator"
+        "CMAKE_SYSTEM_NAME": "iOS",
+        "CMAKE_SYSTEM_PROCESSOR": "aarch64",
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "CMAKE_OSX_DEPLOYMENT_TARGET": "17.0",
+        "CMAKE_OSX_SYSROOT": "iphonesimulator",
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
       }
     },
     {
@@ -366,10 +394,12 @@
     { "name": "vita-host", "configurePreset": "vita-host", "targets": ["bgdc"] },
     { "name": "vita-arm", "configurePreset": "vita-arm", "targets": ["bgdi"] },
     { "name": "tvos-host", "configurePreset": "tvos-host", "targets": ["bgdc"] },
-    { "name": "tvos-arm64", "configurePreset": "tvos-arm64", "configuration": "Release", "targets": ["bgdi"] },
+    { "name": "tvos-arm64", "configurePreset": "tvos-arm64", "targets": ["bgdi"] },
+    { "name": "tvos-simulator-arm64", "configurePreset": "tvos-simulator-arm64", "targets": ["bgdi"] },
     { "name": "tvos-simulator", "configurePreset": "tvos-simulator", "configuration": "Debug", "targets": ["bgdi"] },
     { "name": "ios-host", "configurePreset": "ios-host", "targets": ["bgdc"] },
-    { "name": "ios-arm64", "configurePreset": "ios-arm64", "configuration": "Release", "targets": ["bgdi"] },
+    { "name": "ios-arm64", "configurePreset": "ios-arm64", "targets": ["bgdi"] },
+    { "name": "ios-simulator-arm64", "configurePreset": "ios-simulator-arm64", "targets": ["bgdi"] },
     { "name": "ios-simulator", "configurePreset": "ios-simulator", "configuration": "Debug", "targets": ["bgdi"] },
     { "name": "ps3-host", "configurePreset": "ps3-host", "targets": ["bgdc"] },
     { "name": "ps3-ppu", "configurePreset": "ps3-ppu", "targets": ["bgdi"] },

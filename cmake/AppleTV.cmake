@@ -1,6 +1,7 @@
 # Apple tvOS: static modules, interpreter-only app bundle (bgdi.app).
-# Compile .prg on a host with the tvos-host preset (native macOS bgdc).
-# Needs Xcode; CMAKE_SYSTEM_NAME=tvOS is set by the CMake preset.
+# Compile .prg with the tvos-host preset (native Linux/macOS bgdc).
+# Docker: osxcross + AppleTVOS.sdk (cmake/osxcross-tvos.cmake). Native Mac
+# can still pass -G Xcode without a toolchain file.
 
 set (PLATFORM_TVOS ON)
 set (TVOS ON)
@@ -33,8 +34,8 @@ if (NOT DEFINED BENNUGD_DEVELOPMENT_TEAM)
   set (BENNUGD_DEVELOPMENT_TEAM "" CACHE STRING "Apple Development Team ID (device builds)")
 endif ()
 
-# Simulator CI / local runs must not wait on a signing identity.
-if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
+# Unsigned Docker / Simulator runs must not wait on a signing identity.
+if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator" OR CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
   set (CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED "NO")
 endif ()
 

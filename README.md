@@ -39,10 +39,9 @@ irm https://raw.githubusercontent.com/humbertodias/BennuGD64/main/scripts/instal
 It installs `bgdc` (compiler) and `bgdi` (interpreter).
 Shared builds also include `libbgdrtm` and load plugins from `modules/`.
 
-
 ## Build
 
-Only Docker is required; no local compiler or CMake installation is needed
+Only Docker is required; no local compiler or CMake installation is needed. See [BUILDING.md](BUILDING.md)
 
 ```shell
 bash scripts/build.sh android
@@ -62,8 +61,6 @@ bash scripts/build.sh wasm
 bash scripts/build.sh wii
 bash scripts/build.sh windows
 ```
-
-See [BUILDING.md](BUILDING.md)
 
 ## Getting started
 

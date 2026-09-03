@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(__linux__) && defined(__x86_64__)
+#if defined(__linux__) && defined(__x86_64__) && !defined(TARGET_PS4)
 #include <sys/mman.h>
 #include <unistd.h>
 #endif
@@ -33,7 +33,7 @@ static void * bgd_low_alloc( size_t size, int zeroed )
 
     total = sizeof( bgd_low_hdr ) + size;
 
-#if defined(__linux__) && defined(__x86_64__)
+#if defined(__linux__) && defined(__x86_64__) && !defined(TARGET_PS4)
     {
         size_t page = ( size_t ) sysconf( _SC_PAGESIZE );
         size_t mapped = ( total + page - 1 ) & ~( page - 1 );
@@ -83,7 +83,7 @@ void bgd_low_free( void * ptr )
         return;
     }
 
-#if defined(__linux__) && defined(__x86_64__)
+#if defined(__linux__) && defined(__x86_64__) && !defined(TARGET_PS4)
     if ( hdr->magic == BGD_LOW_MAGIC_MMAP )
     {
         size_t total = hdr->total;

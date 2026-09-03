@@ -59,6 +59,9 @@
 #ifdef TARGET_PS3
 #include "g_video_ps3.h"
 #endif
+#ifdef TARGET_PS4
+#include "g_video_ps4.h"
+#endif
 #ifdef TARGET_SWITCH
 #include "g_video_switch.h"
 #endif
@@ -294,6 +297,10 @@ void gr_video_present( SDL_Surface * src )
     gr_video_ps3_present( src );
     return;
 #endif
+#ifdef TARGET_PS4
+    gr_video_ps4_present( src );
+    return;
+#endif
 #ifdef TARGET_DC
     gr_video_dc_present( src );
     return;
@@ -353,6 +360,10 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 #endif
 #ifdef TARGET_PS3
     gr_video_ps3_present_rects( src, rects, count );
+    return;
+#endif
+#ifdef TARGET_PS4
+    gr_video_ps4_present_rects( src, rects, count );
     return;
 #endif
 #ifdef TARGET_WII
@@ -443,6 +454,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 #ifdef TARGET_PS3
     gr_video_ps3_adjust_window( &width, &height, &window_flags );
 #endif
+#ifdef TARGET_PS4
+    gr_video_ps4_adjust_window( &width, &height, &window_flags );
+#endif
 #ifdef TARGET_PANDORA
     gr_video_pandora_adjust_window( &width, &height, &window_flags );
 #endif
@@ -480,6 +494,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 #endif
 #ifdef TARGET_PS3
             gr_video_ps3_destroy();
+#endif
+#ifdef TARGET_PS4
+            gr_video_ps4_destroy();
 #endif
 #ifdef TARGET_WII
             gr_video_wii_destroy();
@@ -608,6 +625,10 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_PS3
     gr_video_ps3_apply_mode();
+    GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
+#endif
+#ifdef TARGET_PS4
+    gr_video_ps4_apply_mode();
     GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
 #endif
 #ifdef TARGET_PANDORA
@@ -987,6 +1008,8 @@ void __bgdexport( libvideo, module_initialize )()
     gr_video_ios_module_initialize();
 #elif defined(TARGET_PS3)
     gr_video_ps3_module_initialize();
+#elif defined(TARGET_PS4)
+    gr_video_ps4_module_initialize();
 #elif defined(TARGET_PANDORA)
     gr_video_pandora_module_initialize();
 #else
@@ -1037,6 +1060,9 @@ void __bgdexport( libvideo, module_finalize )()
 #endif
 #ifdef TARGET_PS3
         gr_video_ps3_destroy();
+#endif
+#ifdef TARGET_PS4
+        gr_video_ps4_destroy();
 #endif
 #ifdef TARGET_WII
         gr_video_wii_destroy();

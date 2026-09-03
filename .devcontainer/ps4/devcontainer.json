@@ -1,0 +1,32 @@
+{
+  "name": "BennuGD64 PS4 (OpenOrbis)",
+  "build": {
+    "dockerfile": "../../docker/Dockerfile.ps4",
+    "context": "../../docker",
+    "options": ["--platform=linux/amd64"],
+    "args": {
+      "OO_PS4_TOOLCHAIN_VERSION": "v0.5.4",
+      "OO_PS4_TOOLCHAIN_ASSET": "toolchain-llvm-18.tar.gz"
+    }
+  },
+  "runArgs": ["--platform=linux/amd64"],
+  "workspaceFolder": "/src",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
+  "remoteUser": "root",
+  "containerEnv": {
+    "OO_PS4_TOOLCHAIN": "/opt/OpenOrbis/PS4Toolchain",
+    "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+      ]
+    },
+    "zed": {
+      "extensions": ["dockerfile", "make"]
+    }
+  }
+}

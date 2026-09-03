@@ -79,6 +79,7 @@ constants_def[] =
     { "OS_PS2"          , TYPE_DWORD, OS_PS2              },
     { "OS_VITA"         , TYPE_DWORD, OS_VITA             },
     { "OS_PS3"          , TYPE_DWORD, OS_PS3              },
+    { "OS_PS4"          , TYPE_DWORD, OS_PS4              },
 
     { "MIN_INT"         , TYPE_INT  , -2147483647L - 1    },
     { "MAX_INT"         , TYPE_INT  , 2147483647L         },

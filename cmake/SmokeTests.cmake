@@ -1,4 +1,4 @@
-# CTest smokes: banner text and compiling web/demo/hello.prg.
+# CTest smokes: banner text and compiling platforms/web/demo/hello.prg.
 # Cross-compiled Windows binaries cannot run on the Linux builder.
 
 enable_testing ()
@@ -8,7 +8,7 @@ if (NOT TARGET bgdc)
 endif ()
 
 set (_smoke_dir "${CMAKE_SOURCE_DIR}/cmake")
-set (_hello_prg "${CMAKE_SOURCE_DIR}/web/demo/hello.prg")
+set (_hello_prg "${CMAKE_SOURCE_DIR}/platforms/web/demo/hello.prg")
 set (_hello_dcb "${CMAKE_BINARY_DIR}/smoke-hello.dcb")
 
 set (_can_run_native TRUE)

@@ -382,9 +382,9 @@ jobs:
             - **dreamcast-sh4-static** — homebrew CDI (`bennugd64.cdi`); burn or emulate, or send `bgdi.elf` with `dc-tool`
             - **psp-mips-static** — homebrew PBP (`EBOOT.PBP`); copy the folder to `ms0:/PSP/GAME/bennugd64/`
             - **vita-arm-static** — homebrew VPK (`bennugd64.vpk`); install on a jailbroken Vita, extra data in `ux0:/data/bennugd64/`
-            - **tvos-arm64-static** — unsigned `bgdi.app` for Apple TV; put `main.dcb` in `tvos/contents/` before rebuild, or at the `.app` root
+            - **tvos-arm64-static** — unsigned `bgdi.app` for Apple TV; put `main.dcb` in `platforms/tvos/contents/` before rebuild, or at the `.app` root
             - **tvos-simulator-arm64-static** — `bgdi.app` for tvOS Simulator (osxcross). On a Mac run `./sim-install.sh` (unzip drops +x; the app must be ad-hoc signed)
-            - **ios-arm64-static** — unsigned `bgdi.app` for iPhone/iPad; put `main.dcb` in `ios/contents/` before rebuild, or at the `.app` root / Documents
+            - **ios-arm64-static** — unsigned `bgdi.app` for iPhone/iPad; put `main.dcb` in `platforms/ios/contents/` before rebuild, or at the `.app` root / Documents
             - **ios-simulator-arm64-static** — `bgdi.app` for iOS Simulator (osxcross). On a Mac run `./sim-install.sh`
             - **ps2-mips-static** — homebrew ELF (`bgdi.elf`) and ISO (`bennugd64.iso`); PCSX2 File→Open the ISO, USB `mass:/`, or HostFS File→Open ELF
             - **ps3-ppu-static** — homebrew PKG (`bennugd64.pkg`); install on CFW, extra data in `/dev_usb000/bennugd64/` or USRDIR

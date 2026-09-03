@@ -53,7 +53,7 @@ Makefile
 .DS_Store
 
 # Generated demo bytecode for the wasm spike
-/web/demo/*.dcb
+/platforms/web/demo/*.dcb
 
 # Doxygen (doc/generate.sh)
 /doc/.doxygen-extra
@@ -71,6 +71,8 @@ local.properties
 *.ap_
 *.aab
 *.dex
+/platforms/android/build/
+/platforms/android/app/build/
 
 # Nintendo Switch homebrew
 *.nro
@@ -89,7 +91,7 @@ local.properties
 *.dol
 
 # Apple tvOS demo bytecode copied into the bundle
-/tvos/contents/*.dcb
+/platforms/tvos/contents/*.dcb
 # Apple iOS demo bytecode copied into the bundle
-/ios/contents/*.dcb
+/platforms/ios/contents/*.dcb
 docker/__pycache__/

@@ -267,7 +267,7 @@ if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
       HOST_BUILD="${ROOT}/build-${PLATFORM}-host"
       SIM_BUILD="${ROOT}/build-${PLATFORM}-simulator"
       STAGE="${ROOT}/dist/${PLATFORM}-simulator-arm64-static"
-      CONTENTS="${ROOT}/${PLATFORM}/contents"
+      CONTENTS="${ROOT}/platforms/${PLATFORM}/contents"
       echo "preset: ${HOST_PRESET} + ${SIM_PRESET} (Xcode, not Docker)"
       echo "version: ${BENNUGD_VERSION}"
       rm -f "${HOST_BUILD}/CMakeCache.txt"
@@ -293,13 +293,13 @@ if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
       cmake --build --preset "${HOST_PRESET}"
       BGDC="${HOST_BUILD}/core/bgdc/src/bgdc"
       test -x "${BGDC}"
-      for prg in "${ROOT}/web/demo/"*.prg; do
+      for prg in "${ROOT}/platforms/web/demo/"*.prg; do
         dcb="${prg%.prg}.dcb"
         "${BGDC}" -o "${dcb}" "${prg}"
         test -s "${dcb}"
       done
       mkdir -p "${CONTENTS}"
-      cp "${ROOT}/web/demo/hello.dcb" "${CONTENTS}/main.dcb"
+      cp "${ROOT}/platforms/web/demo/hello.dcb" "${CONTENTS}/main.dcb"
       cmake --preset "${SIM_PRESET}" "${COMMON[@]}"
       cmake --build --preset "${SIM_PRESET}"
       mkdir -p "${STAGE}"
@@ -345,7 +345,7 @@ if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
   HOST_BUILD="/src/build-${PLATFORM}-host"
   CROSS_BUILD="/src/build-${PLATFORM}-arm64"
   STAGE="/src/dist/${PLATFORM}-arm64-static"
-  CONTENTS="/src/${PLATFORM}/contents"
+  CONTENTS="/src/platforms/${PLATFORM}/contents"
   SDK_ENV="APPLETVOS_SDK"
   SDK_PATH="/opt/apple/AppleTVOS.sdk"
   if [[ "${PLATFORM}" == "ios" ]]; then
@@ -415,13 +415,13 @@ if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
       cmake --build --preset "${HOST_PRESET}"
       BGDC="${HOST_BUILD}/core/bgdc/src/bgdc"
       test -x "${BGDC}"
-      for prg in /src/web/demo/*.prg; do
+      for prg in /src/platforms/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
         "${BGDC}" -o "${dcb}" "${prg}"
         test -s "${dcb}"
       done
       mkdir -p "${CONTENTS}"
-      cp /src/web/demo/hello.dcb "${CONTENTS}/main.dcb"
+      cp /src/platforms/web/demo/hello.dcb "${CONTENTS}/main.dcb"
       if command -v osxcross-conf >/dev/null; then
         eval "$(osxcross-conf)"
       fi
@@ -513,7 +513,7 @@ if [[ "${PLATFORM}" == "wasm" ]]; then
         "${COMMON[@]}" \
         -DFETCHCONTENT_BASE_DIR="${FETCH_DIR}"
       cmake --build --preset wasm-host
-      for prg in /src/web/demo/*.prg; do
+      for prg in /src/platforms/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
         "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
         test -s "${dcb}"
@@ -547,8 +547,8 @@ if [[ "${PLATFORM}" == "wasm" ]]; then
       cp "${SRC}/bgdi.html" "${STAGE}/index.html"
       cp "${SRC}/bgdi.html" "${SRC}/bgdi.js" "${SRC}/bgdi.wasm" "${SRC}/bgdi.data" "${STAGE}/"
       cp /src/build-wasi/core/bgdc/src/bgdc.wasm "${STAGE}/bgdc.wasm"
-      cp -a /src/web/ide/. "${STAGE}/ide/"
-      cp /src/web/demo/*.prg "${STAGE}/samples/"
+      cp -a /src/platforms/web/ide/. "${STAGE}/ide/"
+      cp /src/platforms/web/demo/*.prg "${STAGE}/samples/"
       cp /src/README.md "${STAGE}/"
       cp "${WASM_BUILD}/BUILD_INFO.txt" "${STAGE}/"
       cp "${SRC}/bgdi.wasm.map" "${STAGE}/" 2>/dev/null || true
@@ -602,7 +602,7 @@ if [[ "${PLATFORM}" == "android" ]]; then
       )
       cmake --preset android-host "${COMMON[@]}"
       cmake --build --preset android-host
-      for prg in /src/web/demo/*.prg; do
+      for prg in /src/platforms/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
         "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
         test -s "${dcb}"
@@ -618,7 +618,7 @@ if [[ "${PLATFORM}" == "android" ]]; then
       cmake --build --preset android-arm64
       rm -rf "${APK_WORK}"
       mkdir -p "${APK_WORK}" "${JNI}" "${APK_WORK}/app/src/main/assets" "${STAGE}"
-      cp -a /src/android/. "${APK_WORK}/"
+      cp -a /src/platforms/android/. "${APK_WORK}/"
       rm -rf "${APK_WORK}/.gradle" "${APK_WORK}/app/build" "${APK_WORK}/build"
       JAVA_SRC="${NDK_BUILD}/_deps/sdl3-src/android-project/app/src/main/java"
       test -d "${JAVA_SRC}"
@@ -679,8 +679,8 @@ if [[ "${PLATFORM}" == "android" ]]; then
       fi
       cp -L "${CXX_SO}" "${JNI}/"
       mkdir -p "${APK_WORK}/app/src/main/assets"
-      cp /src/web/demo/*.dcb "${APK_WORK}/app/src/main/assets/"
-      cp /src/web/demo/hello.dcb "${APK_WORK}/app/src/main/assets/main.dcb"
+      cp /src/platforms/web/demo/*.dcb "${APK_WORK}/app/src/main/assets/"
+      cp /src/platforms/web/demo/hello.dcb "${APK_WORK}/app/src/main/assets/main.dcb"
       printf "sdk.dir=%s\n" "${ANDROID_HOME}" > "${APK_WORK}/local.properties"
       mkdir -p "${GRADLE_USER_HOME}" "${HOME}" "${ANDROID_USER_HOME:-/tmp/android}"
       ( cd "${APK_WORK}" && gradle --no-daemon --no-watch-fs assembleDebug )
@@ -733,7 +733,7 @@ if [[ "${PLATFORM}" == "switch" ]]; then
       )
       cmake --preset switch-host "${COMMON[@]}"
       cmake --build --preset switch-host
-      for prg in /src/web/demo/*.prg; do
+      for prg in /src/platforms/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
         "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
         test -s "${dcb}"
@@ -759,8 +759,8 @@ if [[ "${PLATFORM}" == "switch" ]]; then
       test -s "${ELF}"
       rm -rf "${ROMFS}"
       mkdir -p "${ROMFS}" "${STAGE}"
-      cp /src/web/demo/*.dcb "${ROMFS}/"
-      cp /src/web/demo/hello.dcb "${ROMFS}/main.dcb"
+      cp /src/platforms/web/demo/*.dcb "${ROMFS}/"
+      cp /src/platforms/web/demo/hello.dcb "${ROMFS}/main.dcb"
       NACP="${NX_BUILD}/bennugd64.nacp"
       NRO="${STAGE}/bennugd64.nro"
       nacptool --create "BennuGD64" "BennuGD64" "${BENNUGD_VERSION}" "${NACP}"
@@ -816,7 +816,7 @@ if [[ "${PLATFORM}" == "dreamcast" ]]; then
       )
       cmake --preset dreamcast-host "${COMMON[@]}"
       cmake --build --preset dreamcast-host
-      for prg in /src/web/demo/*.prg; do
+      for prg in /src/platforms/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
         "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
         test -s "${dcb}"
@@ -842,8 +842,8 @@ if [[ "${PLATFORM}" == "dreamcast" ]]; then
       test -s "${ELF}"
       rm -rf "${ISODIR}"
       mkdir -p "${ISODIR}" "${STAGE}"
-      cp /src/web/demo/*.dcb "${ISODIR}/"
-      cp /src/web/demo/hello.dcb "${ISODIR}/main.dcb"
+      cp /src/platforms/web/demo/*.dcb "${ISODIR}/"
+      cp /src/platforms/web/demo/hello.dcb "${ISODIR}/main.dcb"
       CDI="${STAGE}/bennugd64.cdi"
       MKDCDISC="$(command -v mkdcdisc || true)"
       if [[ -z "${MKDCDISC}" ]]; then
@@ -898,7 +898,7 @@ if [[ "${PLATFORM}" == "psp" ]]; then
       )
       cmake --preset psp-host "${COMMON[@]}"
       cmake --build --preset psp-host
-      for prg in /src/web/demo/*.prg; do
+      for prg in /src/platforms/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
         "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
         test -s "${dcb}"
@@ -929,8 +929,8 @@ if [[ "${PLATFORM}" == "psp" ]]; then
       "${PSPDEV}/bin/mksfoex" -d MEMSIZE=1 -s "APP_VER=1.0" "BennuGD64" "${GAMEDIR}/PARAM.SFO"
       "${PSPDEV}/bin/pack-pbp" "${GAMEDIR}/EBOOT.PBP" "${GAMEDIR}/PARAM.SFO" \
         NULL NULL NULL NULL NULL "${GAMEDIR}/bgdi.elf" NULL
-      cp /src/web/demo/*.dcb "${GAMEDIR}/"
-      cp /src/web/demo/hello.dcb "${GAMEDIR}/main.dcb"
+      cp /src/platforms/web/demo/*.dcb "${GAMEDIR}/"
+      cp /src/platforms/web/demo/hello.dcb "${GAMEDIR}/main.dcb"
       cmake --install "${PSP_BUILD}" --prefix "${STAGE}"
       cp "${GAMEDIR}/EBOOT.PBP" "${GAMEDIR}/bgdi.elf" "${STAGE}/"
       cp "${GAMEDIR}/"* "${STAGE}/" 2>/dev/null || true
@@ -980,7 +980,7 @@ if [[ "${PLATFORM}" == "vita" ]]; then
       )
       cmake --preset vita-host "${COMMON[@]}"
       cmake --build --preset vita-host
-      for prg in /src/web/demo/*.prg; do
+      for prg in /src/platforms/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
         "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
         test -s "${dcb}"
@@ -1012,8 +1012,8 @@ if [[ "${PLATFORM}" == "vita" ]]; then
       "${VITASDK}/bin/vita-mksfoex" -s TITLE_ID=BGDV00001 \
         -d PARENTAL_LEVEL=1 -d ATTRIBUTE2=12 \
         "BennuGD64" "${GAMEDIR}/param.sfo"
-      cp /src/web/demo/*.dcb "${GAMEDIR}/"
-      cp /src/web/demo/hello.dcb "${GAMEDIR}/main.dcb"
+      cp /src/platforms/web/demo/*.dcb "${GAMEDIR}/"
+      cp /src/platforms/web/demo/hello.dcb "${GAMEDIR}/main.dcb"
       (
         cd "${GAMEDIR}"
         "${VITASDK}/bin/vita-pack-vpk" -s param.sfo -b eboot.bin \
@@ -1064,7 +1064,7 @@ if [[ "${PLATFORM}" == "ps2" ]]; then
       )
       cmake --preset ps2-host "${COMMON[@]}"
       cmake --build --preset ps2-host
-      for prg in /src/web/demo/*.prg; do
+      for prg in /src/platforms/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
         "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
         test -s "${dcb}"
@@ -1096,9 +1096,9 @@ if [[ "${PLATFORM}" == "ps2" ]]; then
       if [[ -x "${STRIP}" ]]; then
         "${STRIP}" "${STAGE}/bgdi.elf" || true
       fi
-      cp /src/web/demo/*.dcb "${STAGE}/"
-      cp /src/web/demo/hello.dcb "${STAGE}/main.dcb"
-      cp /src/ps2/SYSTEM.CNF "${STAGE}/"
+      cp /src/platforms/web/demo/*.dcb "${STAGE}/"
+      cp /src/platforms/web/demo/hello.dcb "${STAGE}/main.dcb"
+      cp /src/platforms/ps2/SYSTEM.CNF "${STAGE}/"
       ISODIR=/src/build-ps2-iso
       rm -rf "${ISODIR}"
       mkdir -p "${ISODIR}"
@@ -1183,7 +1183,7 @@ if [[ "${PLATFORM}" == "ps3" ]]; then
       )
       cmake --preset ps3-host "${COMMON[@]}"
       cmake --build --preset ps3-host
-      for prg in /src/web/demo/*.prg; do
+      for prg in /src/platforms/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
         "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
         test -s "${dcb}"
@@ -1246,10 +1246,10 @@ if [[ "${PLATFORM}" == "ps3" ]]; then
       test -n "${MAKE_SELF_NPDRM}"
       mkdir -p "${PKGDIR}/pkg/USRDIR"
       "${MAKE_SELF_NPDRM}" "${PKGDIR}/bgdi.stripped.elf" "${PKGDIR}/pkg/USRDIR/EBOOT.BIN" "${CONTENT_ID}"
-      cp /src/web/demo/*.dcb "${PKGDIR}/pkg/USRDIR/"
-      cp /src/web/demo/hello.dcb "${PKGDIR}/pkg/USRDIR/main.dcb"
+      cp /src/platforms/web/demo/*.dcb "${PKGDIR}/pkg/USRDIR/"
+      cp /src/platforms/web/demo/hello.dcb "${PKGDIR}/pkg/USRDIR/main.dcb"
       SFOXML=""
-      for cand in /src/ps3/sfo.xml "${PS3DEV}/bin/sfo.xml"; do
+      for cand in /src/platforms/ps3/sfo.xml "${PS3DEV}/bin/sfo.xml"; do
         if [[ -f "${cand}" ]]; then
           SFOXML="${cand}"
           break
@@ -1338,7 +1338,7 @@ if [[ "${PLATFORM}" == "pandora" ]]; then
       )
       cmake --preset pandora-host "${COMMON[@]}"
       cmake --build --preset pandora-host
-      for prg in /src/web/demo/*.prg; do
+      for prg in /src/platforms/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
         "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
         test -s "${dcb}"
@@ -1356,9 +1356,9 @@ if [[ "${PLATFORM}" == "pandora" ]]; then
       mkdir -p "${PNDDIR}" "${STAGE}"
       cp "${BGDI}" "${PNDDIR}/bgdi"
       chmod +x "${PNDDIR}/bgdi"
-      cp /src/web/demo/*.dcb "${PNDDIR}/"
-      cp /src/web/demo/hello.dcb "${PNDDIR}/main.dcb"
-      cp /src/pandora/PXML.xml "${PNDDIR}/PXML.xml"
+      cp /src/platforms/web/demo/*.dcb "${PNDDIR}/"
+      cp /src/platforms/web/demo/hello.dcb "${PNDDIR}/main.dcb"
+      cp /src/platforms/pandora/PXML.xml "${PNDDIR}/PXML.xml"
       PND="${STAGE}/bennugd64.pnd"
       mksquashfs "${PNDDIR}" "${PND}" -all-root -noappend -no-xattrs
       cmake --install "${PND_BUILD}" --prefix "${STAGE}"
@@ -1408,7 +1408,7 @@ if [[ "${PLATFORM}" == "wii" ]]; then
       )
       cmake --preset wii-host "${COMMON[@]}"
       cmake --build --preset wii-host
-      for prg in /src/web/demo/*.prg; do
+      for prg in /src/platforms/web/demo/*.prg; do
         dcb="${prg%.prg}.dcb"
         "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
         test -s "${dcb}"
@@ -1444,13 +1444,13 @@ if [[ "${PLATFORM}" == "wii" ]]; then
       test -n "${ELF2DOL}"
       rm -rf "${APPDIR}"
       mkdir -p "${APPDIR}" "${STAGE}/apps/bennugd64"
-      cp /src/web/demo/*.dcb "${APPDIR}/"
-      cp /src/web/demo/hello.dcb "${APPDIR}/main.dcb"
+      cp /src/platforms/web/demo/*.dcb "${APPDIR}/"
+      cp /src/platforms/web/demo/hello.dcb "${APPDIR}/main.dcb"
       sed "s|<version>dev</version>|<version>${BENNUGD_VERSION}</version>|" \
-        /src/wii/meta.xml > "${APPDIR}/meta.xml"
+        /src/platforms/wii/meta.xml > "${APPDIR}/meta.xml"
       DOL="${APPDIR}/boot.dol"
       "${ELF2DOL}" "${ELF}" "${DOL}"
-      python3 /src/scripts/pad-wii-dol.py "${DOL}"
+      python3 /src/scripts/wii/pad-wii-dol.py "${DOL}"
       cmake --install "${WII_BUILD}" --prefix "${STAGE}"
       # Debug sections sit at vaddr 0; strip so File→Open of the ELF cannot
       # map them over page 0 in Dolphin.
@@ -1517,7 +1517,7 @@ if [[ "${PLATFORM}" == "macos" ]]; then
         -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
       cmake --build --preset "${PRESET}"
       cmake --install "${BUILD_DIR}" --prefix "${STAGE}"
-      bash /src/scripts/osx/codesign.sh "${STAGE}"
+      bash /src/scripts/macos/codesign.sh "${STAGE}"
     '
   exit 0
 fi

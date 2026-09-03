@@ -1,5 +1,16 @@
 # Building BennuGD64
 
+## Layout
+
+| Path | Role |
+|------|------|
+| `core/`, `modules/`, `3rdparty/` | Engine sources |
+| `platforms/<target>/` | Packaging assets (Info.plist, Android project, web shell, SYSTEM.CNF, …) |
+| `cmake/platforms/` | Per-target CMake options |
+| `cmake/toolchains/` | Cross toolchains (osxcross, vitasdk, …) |
+| `docker/` | Toolchain images |
+| `scripts/` | `build.sh`, installers, and per-target helpers (`apple/`, `macos/`, `vita/`, `wii/`) |
+
 ## Docker (Linux, Windows, web, Android, Switch, Dreamcast, PSP, Vita, tvOS, iOS, PS2, PS3, Pandora, Wii, and macOS)
 
 No local compiler, CMake, MinGW, Emscripten, Android SDK, devkitPro, KallistiOS, pspdev, vitasdk, ps2dev, ps3dev, Ångström toolchain, or osxcross. Only [Docker](https://www.docker.com/get-started/).
@@ -149,7 +160,7 @@ Binaries (static preset):
 | bgdc | `build-static/core/bgdc/src/bgdc` |
 | bgdi | `build-static/core/bgdi/src/bgdi` |
 
-CTest (`ctest --preset static`) checks the `bgdc`/`bgdi` banners and compiles `web/demo/hello.prg` to a `.dcb`. Shared presets skip the hello compile (modules live under `modules/` only after install). Windows cross-builds skip CTest (the `.exe` files cannot run on Linux).
+CTest (`ctest --preset static`) checks the `bgdc`/`bgdi` banners and compiles `platforms/web/demo/hello.prg` to a `.dcb`. Shared presets skip the hello compile (modules live under `modules/` only after install). Windows cross-builds skip CTest (the `.exe` files cannot run on Linux).
 
 ## Version
 
@@ -220,7 +231,7 @@ The binary is `bgdc.wasm`. This build is compiler-only: zlib + bundled DES, no S
 Run it with [Wasmtime](https://wasmtime.dev/). `--dir=.` preopens the current directory so the module can read `.prg` files and write the `.dcb`. Paths must stay under a preopened directory (a host `/tmp` is not visible unless you also pass `--dir=/tmp`):
 
 ```shell
-wasmtime --dir=. ./dist/wasi-wasm32-static/bgdc.wasm -- -o web/demo/hello.dcb web/demo/hello.prg
+wasmtime --dir=. ./dist/wasi-wasm32-static/bgdc.wasm -- -o platforms/web/demo/hello.dcb platforms/web/demo/hello.prg
 ```
 
 You can also pass an existing toolchain without `BENNUGD_WASI`:
@@ -240,7 +251,7 @@ bash scripts/build.sh wasm
 python3 -m http.server 8080 --directory dist/web-wasm32-static
 ```
 
-Open `http://localhost:8080/`. Drop a `.dcb` plus assets (or a game folder) onto the page to run it. Every `web/demo/*.dcb` is preloaded and listed as a bundled demo. Asyncify lets `SDL_Delay` yield to the browser.
+Open `http://localhost:8080/`. Drop a `.dcb` plus assets (or a game folder) onto the page to run it. Every `platforms/web/demo/*.dcb` is preloaded and listed as a bundled demo. Asyncify lets `SDL_Delay` yield to the browser.
 
 Pushes to `main` run CI, then `.github/workflows/pages.yml` publishes the `web-wasm32-static` artifact as the site root and Doxygen API docs under `/docs/` (see `doc/pages.yml`). In the repo set **Settings → Pages → Source** to **GitHub Actions**.
 
@@ -265,9 +276,9 @@ Needs Docker. `docker/Dockerfile.android` is a toolchain image (JDK 17, Android 
 bash scripts/build.sh android
 ```
 
-That configures native `bgdc` (`android-host`), compiles `web/demo/*.prg`, cross-compiles `libmain.so` with the NDK (`android-arm64`, API 28, arm64-v8a), copies SDL3 Java from FetchContent, and runs Gradle to produce `dist/android-arm64-static/bennugd64.apk`.
+That configures native `bgdc` (`android-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `libmain.so` with the NDK (`android-arm64`, API 28, arm64-v8a), copies SDL3 Java from FetchContent, and runs Gradle to produce `dist/android-arm64-static/bennugd64.apk`.
 
-Install the debug APK on an arm64 device or emulator (Android 9+). The APK ships `hello.dcb` as `assets/main.dcb`. To ship your own game, replace `assets/main.dcb` (and any extra files) in a copy of `android/` or add them under the app files directory.
+Install the debug APK on an arm64 device or emulator (Android 9+). The APK ships `hello.dcb` as `assets/main.dcb`. To ship your own game, replace `assets/main.dcb` (and any extra files) in a copy of `platforms/android/` or add them under the app files directory.
 
 SDL3 is a shared `libSDL3.so` because `SDLActivity` loads it next to `libmain.so`. Modules are linked into `libmain.so`.
 
@@ -279,7 +290,7 @@ Needs Docker. `docker/Dockerfile.switch` is a toolchain image (`devkitpro/devkit
 bash scripts/build.sh switch
 ```
 
-That configures native `bgdc` (`switch-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi.elf` with libnx (`switch-aarch64`), and runs `nacptool` / `elf2nro` to produce `dist/switch-aarch64-static/bennugd64.nro`. The NRO RomFS ships `hello.dcb` as `main.dcb`. Copy the `.nro` to `sdmc:/switch/` on a homebrew Switch, or send it with `nxlink`. Extra files can go next to the NRO or under `sdmc:/switch/bennugd64`.
+That configures native `bgdc` (`switch-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi.elf` with libnx (`switch-aarch64`), and runs `nacptool` / `elf2nro` to produce `dist/switch-aarch64-static/bennugd64.nro`. The NRO RomFS ships `hello.dcb` as `main.dcb`. Copy the `.nro` to `sdmc:/switch/` on a homebrew Switch, or send it with `nxlink`. Extra files can go next to the NRO or under `sdmc:/switch/bennugd64`.
 
 SDL3 comes from the [devkitPro SDL `switch-sdl-3.4`](https://github.com/devkitPro/SDL/tree/switch-sdl-3.4) branch (homebrew video/audio). Modules are linked into `bgdi.elf`.
 
@@ -293,7 +304,7 @@ The toolchain image is [`kallistios/dc-kos-toolchain`](https://hub.docker.com/r/
 bash scripts/build.sh dreamcast
 ```
 
-That configures native `bgdc` (`dreamcast-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi.elf` with KallistiOS (`dreamcast-sh4`), and runs `mkdcdisc` to produce `dist/dreamcast-sh4-static/bennugd64.cdi`. The ISO ships `hello.dcb` as `main.dcb` (loaded from `/cd/`). Burn or emulate the `.cdi`, or send `bgdi.elf` with `dc-tool`. Extra files can go on the ISO next to `main.dcb`.
+That configures native `bgdc` (`dreamcast-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi.elf` with KallistiOS (`dreamcast-sh4`), and runs `mkdcdisc` to produce `dist/dreamcast-sh4-static/bennugd64.cdi`. The ISO ships `hello.dcb` as `main.dcb` (loaded from `/cd/`). Burn or emulate the `.cdi`, or send `bgdi.elf` with `dc-tool`. Extra files can go on the ISO next to `main.dcb`.
 
 SDL3 comes from the [GPF SDL `dreamcastSDL3`](https://github.com/GPF/SDL/tree/dreamcastSDL3) branch (KallistiOS video/audio). Modules are linked into `bgdi.elf`.
 
@@ -307,7 +318,7 @@ The toolchain image is [`pspdev/pspdev`](https://hub.docker.com/r/pspdev/pspdev)
 bash scripts/build.sh psp
 ```
 
-That configures native `bgdc` (`psp-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi.elf` with pspdev (`psp-mips`), and runs `pack-pbp` to produce `dist/psp-mips-static/EBOOT.PBP`. The game folder ships `hello.dcb` as `main.dcb`. Copy the folder to `ms0:/PSP/GAME/bennugd64/` on a homebrew PSP (or open `EBOOT.PBP` in PPSSPP). Put your game's `main.dcb` next to `EBOOT.PBP`.
+That configures native `bgdc` (`psp-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi.elf` with pspdev (`psp-mips`), and runs `pack-pbp` to produce `dist/psp-mips-static/EBOOT.PBP`. The game folder ships `hello.dcb` as `main.dcb`. Copy the folder to `ms0:/PSP/GAME/bennugd64/` on a homebrew PSP (or open `EBOOT.PBP` in PPSSPP). Put your game's `main.dcb` next to `EBOOT.PBP`.
 
 For **Streets of Rage Remake**, copy the **entire** SoRR install folder (not just the DCB): `mod/`, `palettes/`, etc., plus `SorR.dat` or `main.dcb` beside `EBOOT.PBP`. In `mod/system.txt`, set the first line after the comments to `PSP` (not `PC`) so menus and controls match handheld ports. SoRR is a large game (~300 MB DCB); it may run in PPSSPP on a PC but can run out of memory on real PSP hardware.
 
@@ -321,12 +332,12 @@ Needs Docker. `docker/Dockerfile.vita` is a toolchain image from [`vitasdk/vitas
 bash scripts/build.sh vita
 ```
 
-That configures native `bgdc` (`vita-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi` with vitasdk (`vita-arm`), and packs `dist/vita-arm-static/bennugd64.vpk` (title id `BGDV00001`). Install the VPK on a jailbroken Vita.
+That configures native `bgdc` (`vita-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi` with vitasdk (`vita-arm`), and packs `dist/vita-arm-static/bennugd64.vpk` (title id `BGDV00001`). Install the VPK on a jailbroken Vita.
 
 **Where `main.dcb` goes** (first match wins):
 
 1. `ux0:/data/bennugd64/main.dcb` — drop-in game (create the folder in VitaShell; name must be `main.dcb`)
-2. `app0:/main.dcb` — bundled in the VPK (`hello.dcb` from `web/demo/hello.prg`)
+2. `app0:/main.dcb` — bundled in the VPK (`hello.dcb` from `platforms/web/demo/hello.prg`)
 3. `app0:/` cwd as `main.dcb`
 
 Other assets (FPG, WAV, palettes, …) also go in `ux0:/data/bennugd64/` or next to the DCB in the VPK. Compile with the matching `vita-host` `bgdc`, not a random desktop Bennu.
@@ -355,7 +366,7 @@ Needs **Docker** (osxcross + an iPhoneOS.sdk retargeted at tvOS). The interprete
 bash scripts/build.sh tvos
 ```
 
-That configures Linux `bgdc` (`tvos-host`), compiles `web/demo/*.prg`, copies `hello.dcb` to `tvos/contents/main.dcb`, and builds `bgdi.app` (`tvos-arm64`) into `dist/tvos-arm64-static/`. Sign on a Mac before installing on an Apple TV (`codesign` / Xcode). **Do not install this `.app` in Simulator** — it is `appletvos`, so SpringBoard opens it and the process dies at once.
+That configures Linux `bgdc` (`tvos-host`), compiles `platforms/web/demo/*.prg`, copies `hello.dcb` to `platforms/tvos/contents/main.dcb`, and builds `bgdi.app` (`tvos-arm64`) into `dist/tvos-arm64-static/`. Sign on a Mac before installing on an Apple TV (`codesign` / Xcode). **Do not install this `.app` in Simulator** — it is `appletvos`, so SpringBoard opens it and the process dies at once.
 
 For the tvOS Simulator:
 
@@ -373,7 +384,7 @@ bash sim-install.sh
 
 That runs `chmod +x`, `codesign --sign -`, and `xcrun simctl install booted` if a Simulator is already booted.
 
-**Where `main.dcb` goes:** files in `tvos/contents/` are copied to the `.app` root (flat bundle, same as PixTudio). `bgdi` looks for `main.dcb` in Documents (`SDL_GetPrefPath("bennugd64", "bgdi")`) first, then next to the executable via `SDL_GetBasePath()`. Put the **entire** game tree next to the DCB (not only `main.dcb`). Relative paths are resolved against that directory; absolute paths are unchanged. Compile with the matching `tvos-host` `bgdc`, not a random desktop Bennu.
+**Where `main.dcb` goes:** files in `platforms/tvos/contents/` are copied to the `.app` root (flat bundle, same as PixTudio). `bgdi` looks for `main.dcb` in Documents (`SDL_GetPrefPath("bennugd64", "bgdi")`) first, then next to the executable via `SDL_GetBasePath()`. Put the **entire** game tree next to the DCB (not only `main.dcb`). Relative paths are resolved against that directory; absolute paths are unchanged. Compile with the matching `tvos-host` `bgdc`, not a random desktop Bennu.
 
 Siri Remote / Game Controller: D-pad is arrows, click/A is Space, Play/Pause is Enter, Menu/B is Escape. Phantom SDL Escape is cleared so `hello.prg` does not exit immediately.
 
@@ -389,7 +400,7 @@ Needs **Docker** (osxcross + iPhoneOS.sdk). The interpreter is a flat unsigned `
 bash scripts/build.sh ios
 ```
 
-That configures Linux `bgdc` (`ios-host`), compiles `web/demo/*.prg`, copies `hello.dcb` to `ios/contents/main.dcb`, and builds `bgdi.app` (`ios-arm64`) into `dist/ios-arm64-static/`. Sign on a Mac before installing on a device (`codesign` / Xcode). **Do not install this `.app` in Simulator** — it is `iphoneos`.
+That configures Linux `bgdc` (`ios-host`), compiles `platforms/web/demo/*.prg`, copies `hello.dcb` to `platforms/ios/contents/main.dcb`, and builds `bgdi.app` (`ios-arm64`) into `dist/ios-arm64-static/`. Sign on a Mac before installing on a device (`codesign` / Xcode). **Do not install this `.app` in Simulator** — it is `iphoneos`.
 
 For the iOS Simulator:
 
@@ -401,7 +412,7 @@ That uses osxcross (`ios-simulator-arm64`) in the same Docker image and installs
 
 Same as tvOS: unzip on a Mac and run `bash sim-install.sh` from the extracted folder (or `bash scripts/apple/sim-install.sh /path/to/bgdi.app`). Do not install the **device** zip in Simulator.
 
-**Where `main.dcb` goes:** files in `ios/contents/` are copied to the `.app` root. `bgdi` looks for `main.dcb` in Documents (`SDL_GetPrefPath("bennugd64", "bgdi")`) first, then next to the executable via `SDL_GetBasePath()`. Put the **entire** game tree next to the DCB. Relative paths are resolved against that directory; absolute paths are unchanged. Finder file sharing is on (`UIFileSharingEnabled`), so you can drop a DCB plus its asset folders into the app's Documents folder. Compile with the matching `ios-host` `bgdc`, not a random desktop Bennu.
+**Where `main.dcb` goes:** files in `platforms/ios/contents/` are copied to the `.app` root. `bgdi` looks for `main.dcb` in Documents (`SDL_GetPrefPath("bennugd64", "bgdi")`) first, then next to the executable via `SDL_GetBasePath()`. Put the **entire** game tree next to the DCB. Relative paths are resolved against that directory; absolute paths are unchanged. Finder file sharing is on (`UIFileSharingEnabled`), so you can drop a DCB plus its asset folders into the app's Documents folder. Compile with the matching `ios-host` `bgdc`, not a random desktop Bennu.
 
 Gamepad / touch: D-pad and left-side stick are arrows, A / right-lower tap is Space, Start / right-upper tap is Enter, B is Escape. The system Home / Guide button is not mapped. Phantom SDL Escape is cleared so `hello.prg` does not exit immediately. Landscape only.
 
@@ -419,7 +430,7 @@ The toolchain image is [`ps2dev/ps2dev`](https://hub.docker.com/r/ps2dev/ps2dev)
 bash scripts/build.sh ps2
 ```
 
-That configures native `bgdc` (`ps2-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi.elf` with ps2dev (`ps2-mips`), and stages `dist/ps2-mips-static/` (`bgdi.elf`, `main.dcb`, `SYSTEM.CNF`, `bennugd64.iso`).
+That configures native `bgdc` (`ps2-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi.elf` with ps2dev (`ps2-mips`), and stages `dist/ps2-mips-static/` (`bgdi.elf`, `main.dcb`, `SYSTEM.CNF`, `bennugd64.iso`).
 
 **Where `main.dcb` goes:** always in the **same folder as `bgdi.elf`**. The Docker build already copies `hello.dcb` there as `main.dcb`. The ISO has the same files as ISO 9660 `MAIN.DCB` / `BGDI.ELF`.
 
@@ -448,13 +459,13 @@ The image copies [`hldtux/ps3dev`](https://hub.docker.com/r/hldtux/ps3dev) (`pow
 bash scripts/build.sh ps3
 ```
 
-That configures native `bgdc` (`ps3-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi.elf` with PSL1GHT (`ps3-ppu`), then packs `dist/ps3-ppu-static/bennugd64.pkg` (title id `BGD300001`, content id `UP0000-BGD300001_00-0000000000000000`). Install the PKG on a CFW PS3 (Package Manager / MMCM).
+That configures native `bgdc` (`ps3-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi.elf` with PSL1GHT (`ps3-ppu`), then packs `dist/ps3-ppu-static/bennugd64.pkg` (title id `BGD300001`, content id `UP0000-BGD300001_00-0000000000000000`). Install the PKG on a CFW PS3 (Package Manager / MMCM).
 
 **Where `main.dcb` goes** (first match wins):
 
 1. `/dev_usb000/bennugd64/main.dcb` — USB drop-in
 2. `/dev_hdd0/tmp/bennugd64/main.dcb`
-3. `/dev_hdd0/game/BGD300001/USRDIR/main.dcb` — bundled in the PKG (`hello.dcb` from `web/demo/hello.prg`)
+3. `/dev_hdd0/game/BGD300001/USRDIR/main.dcb` — bundled in the PKG (`hello.dcb` from `platforms/web/demo/hello.prg`)
 4. `/app_home/main.dcb` — ps3load / debugger
 5. cwd as `main.dcb`
 
@@ -474,7 +485,7 @@ The toolchain image is [`scummvm/dockerized-toolchains:openpandora`](https://hub
 bash scripts/build.sh pandora
 ```
 
-That configures native `bgdc` (`pandora-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi` for Cortex-A8 (`pandora-arm`), and runs `mksquashfs` to produce `dist/pandora-arm-static/bennugd64.pnd`. The PND ships `hello.dcb` as `main.dcb`. Copy the `.pnd` to the Pandora SD card, or run `./bgdi` next to `main.dcb`. Extra files can go in the PND next to `main.dcb`.
+That configures native `bgdc` (`pandora-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi` for Cortex-A8 (`pandora-arm`), and runs `mksquashfs` to produce `dist/pandora-arm-static/bennugd64.pnd`. The PND ships `hello.dcb` as `main.dcb`. Copy the `.pnd` to the Pandora SD card, or run `./bgdi` next to `main.dcb`. Extra files can go in the PND next to `main.dcb`.
 
 SDL3 is the official Linux X11 software backend (the Ångström sysroot has no GLES). Modules are linked into `bgdi`.
 
@@ -486,7 +497,7 @@ Needs Docker. `docker/Dockerfile.wii` is a toolchain image (`devkitpro/devkitppc
 bash scripts/build.sh wii
 ```
 
-That configures native `bgdc` (`wii-host`), compiles `web/demo/*.prg`, cross-compiles `bgdi.elf` with libogc (`wii-powerpc`), and runs `elf2dol` to produce `dist/wii-powerpc-static/apps/bennugd64/boot.dol`. The folder ships `hello.dcb` as `main.dcb`. Copy `apps/bennugd64/` to a real SD card and launch from the Homebrew Channel. Put your game's `main.dcb` next to `boot.dol`.
+That configures native `bgdc` (`wii-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi.elf` with libogc (`wii-powerpc`), and runs `elf2dol` to produce `dist/wii-powerpc-static/apps/bennugd64/boot.dol`. The folder ships `hello.dcb` as `main.dcb`. Copy `apps/bennugd64/` to a real SD card and launch from the Homebrew Channel. Put your game's `main.dcb` next to `boot.dol`.
 
 In Dolphin, **File → Open** `dist/wii-powerpc-static/bgdi.elf` (not the game list, and not `boot.dol` from the SD). Opening a DOL/ELF that lives **on** the virtual SD is a black screen; the interpreter must stay on the host disk, and `main.dcb` must be on the SD image. Do **not** point **SD Card Path** at a folder — that path is the `.raw` file, and using a directory makes Dolphin report **Failed to init core**. Use **Options → Configuration → Wii**:
 

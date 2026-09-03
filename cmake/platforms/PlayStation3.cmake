@@ -44,7 +44,7 @@ endif ()
 
 # Cached CMAKE_C_FLAGS from a prior configure will not pick up toolchain
 # FLAGS_INIT. Keep the CELL-style PSL1GHT aliases on the PPU include path.
-set (_ps3_compat "${CMAKE_SOURCE_DIR}/cmake/ps3-compat")
+set (_ps3_compat "${CMAKE_SOURCE_DIR}/cmake/toolchains/ps3-compat")
 if (IS_DIRECTORY "${_ps3_compat}" AND NOT CMAKE_C_FLAGS MATCHES "ps3-compat")
   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -I${_ps3_compat}" CACHE STRING "" FORCE)
 endif ()

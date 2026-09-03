@@ -40,14 +40,14 @@
       "inherits": "static",
       "displayName": "MinGW-w64 Windows x86_64, static modules",
       "binaryDir": "${sourceDir}/build-windows-static",
-      "toolchainFile": "${sourceDir}/cmake/mingw-w64-x86_64.cmake"
+      "toolchainFile": "${sourceDir}/cmake/toolchains/mingw-w64-x86_64.cmake"
     },
     {
       "name": "windows-shared",
       "inherits": "shared",
       "displayName": "MinGW-w64 Windows x86_64, shared modules",
       "binaryDir": "${sourceDir}/build-windows-shared",
-      "toolchainFile": "${sourceDir}/cmake/mingw-w64-x86_64.cmake"
+      "toolchainFile": "${sourceDir}/cmake/toolchains/mingw-w64-x86_64.cmake"
     },
     {
       "name": "wasi",
@@ -105,7 +105,7 @@
       "inherits": "base",
       "displayName": "Nintendo Switch interpreter (bgdi.elf)",
       "binaryDir": "${sourceDir}/build-switch-aarch64",
-      "toolchainFile": "${sourceDir}/cmake/devkita64-libnx.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/devkita64-libnx.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -125,7 +125,7 @@
       "inherits": "base",
       "displayName": "Sega Dreamcast interpreter (bgdi.elf)",
       "binaryDir": "${sourceDir}/build-dreamcast-sh4",
-      "toolchainFile": "${sourceDir}/cmake/dreamcast-kos.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/dreamcast-kos.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -145,7 +145,7 @@
       "inherits": "base",
       "displayName": "PlayStation 2 interpreter (bgdi.elf)",
       "binaryDir": "${sourceDir}/build-ps2-mips",
-      "toolchainFile": "${sourceDir}/cmake/ps2dev.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/ps2dev.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -165,7 +165,7 @@
       "inherits": "base",
       "displayName": "PlayStation Portable interpreter (bgdi.elf)",
       "binaryDir": "${sourceDir}/build-psp-mips",
-      "toolchainFile": "${sourceDir}/cmake/pspdev.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/pspdev.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -185,7 +185,7 @@
       "inherits": "base",
       "displayName": "PlayStation Vita interpreter (bgdi / VPK)",
       "binaryDir": "${sourceDir}/build-vita-arm",
-      "toolchainFile": "${sourceDir}/cmake/vitasdk.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/vitasdk.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -205,7 +205,7 @@
       "inherits": "base",
       "displayName": "tvOS arm64 interpreter (bgdi.app)",
       "binaryDir": "${sourceDir}/build-tvos-arm64",
-      "toolchainFile": "${sourceDir}/cmake/osxcross-tvos.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/osxcross-tvos.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -216,7 +216,7 @@
       "inherits": "base",
       "displayName": "tvOS Simulator arm64 interpreter (osxcross)",
       "binaryDir": "${sourceDir}/build-tvos-simulator-arm64",
-      "toolchainFile": "${sourceDir}/cmake/osxcross-tvos-simulator.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/osxcross-tvos-simulator.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -252,7 +252,7 @@
       "inherits": "base",
       "displayName": "iOS arm64 interpreter (bgdi.app)",
       "binaryDir": "${sourceDir}/build-ios-arm64",
-      "toolchainFile": "${sourceDir}/cmake/osxcross-ios.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/osxcross-ios.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -263,7 +263,7 @@
       "inherits": "base",
       "displayName": "iOS Simulator arm64 interpreter (osxcross)",
       "binaryDir": "${sourceDir}/build-ios-simulator-arm64",
-      "toolchainFile": "${sourceDir}/cmake/osxcross-ios-simulator.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/osxcross-ios-simulator.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -299,7 +299,7 @@
       "inherits": "base",
       "displayName": "PlayStation 3 interpreter (bgdi.elf / PKG)",
       "binaryDir": "${sourceDir}/build-ps3-ppu",
-      "toolchainFile": "${sourceDir}/cmake/ps3dev.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/ps3dev.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -319,7 +319,7 @@
       "inherits": "base",
       "displayName": "OpenPandora interpreter (bgdi)",
       "binaryDir": "${sourceDir}/build-pandora-arm",
-      "toolchainFile": "${sourceDir}/cmake/openpandora.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/openpandora.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -339,7 +339,7 @@
       "inherits": "base",
       "displayName": "Nintendo Wii interpreter (bgdi.elf)",
       "binaryDir": "${sourceDir}/build-wii-powerpc",
-      "toolchainFile": "${sourceDir}/cmake/devkitppc-libogc.cmake",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/devkitppc-libogc.cmake",
       "cacheVariables": {
         "STATIC_MODULES": "ON",
         "INTERPRETER_ONLY": "ON"
@@ -350,28 +350,28 @@
       "inherits": "static",
       "displayName": "osxcross macOS x86_64, static modules",
       "binaryDir": "${sourceDir}/build-macos-x86_64-static",
-      "toolchainFile": "${sourceDir}/cmake/osxcross-x86_64.cmake"
+      "toolchainFile": "${sourceDir}/cmake/toolchains/osxcross-x86_64.cmake"
     },
     {
       "name": "macos-x86_64-shared",
       "inherits": "shared",
       "displayName": "osxcross macOS x86_64, shared modules",
       "binaryDir": "${sourceDir}/build-macos-x86_64-shared",
-      "toolchainFile": "${sourceDir}/cmake/osxcross-x86_64.cmake"
+      "toolchainFile": "${sourceDir}/cmake/toolchains/osxcross-x86_64.cmake"
     },
     {
       "name": "macos-arm64-static",
       "inherits": "static",
       "displayName": "osxcross macOS arm64, static modules",
       "binaryDir": "${sourceDir}/build-macos-arm64-static",
-      "toolchainFile": "${sourceDir}/cmake/osxcross-arm64.cmake"
+      "toolchainFile": "${sourceDir}/cmake/toolchains/osxcross-arm64.cmake"
     },
     {
       "name": "macos-arm64-shared",
       "inherits": "shared",
       "displayName": "osxcross macOS arm64, shared modules",
       "binaryDir": "${sourceDir}/build-macos-arm64-shared",
-      "toolchainFile": "${sourceDir}/cmake/osxcross-arm64.cmake"
+      "toolchainFile": "${sourceDir}/cmake/toolchains/osxcross-arm64.cmake"
     }
   ],
   "buildPresets": [

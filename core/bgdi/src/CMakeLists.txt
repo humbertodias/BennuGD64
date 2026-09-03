@@ -211,10 +211,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
     set (BENNUGD_BUNDLE_SUPPORTED_PLATFORM "AppleTVOS")
   endif ()
   if (CMAKE_GENERATOR STREQUAL "Xcode")
-    set (_tvos_plist "${CMAKE_SOURCE_DIR}/tvos/Info.plist")
+    set (_tvos_plist "${CMAKE_SOURCE_DIR}/platforms/tvos/Info.plist")
   else ()
     configure_file (
-      "${CMAKE_SOURCE_DIR}/tvos/Info.plist.in"
+      "${CMAKE_SOURCE_DIR}/platforms/tvos/Info.plist.in"
       "${CMAKE_CURRENT_BINARY_DIR}/Info.plist"
       @ONLY
     )
@@ -240,10 +240,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
   # fails on this brandassets set; Simulator does not need Assets.car.
   if (CMAKE_GENERATOR STREQUAL "Xcode" AND NOT CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
     target_sources (bgdi PRIVATE
-      ${CMAKE_SOURCE_DIR}/tvos/Assets.xcassets
+      ${CMAKE_SOURCE_DIR}/platforms/tvos/Assets.xcassets
     )
     set_source_files_properties (
-      ${CMAKE_SOURCE_DIR}/tvos/Assets.xcassets
+      ${CMAKE_SOURCE_DIR}/platforms/tvos/Assets.xcassets
       PROPERTIES MACOSX_PACKAGE_LOCATION Resources
     )
     set_target_properties (bgdi PROPERTIES
@@ -265,11 +265,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
   add_custom_command (TARGET bgdi POST_BUILD
     COMMAND chmod +x "$<TARGET_FILE:bgdi>"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-      "${CMAKE_SOURCE_DIR}/tvos/contents"
+      "${CMAKE_SOURCE_DIR}/platforms/tvos/contents"
       "$<TARGET_BUNDLE_DIR:bgdi>"
     COMMAND ${CMAKE_COMMAND} -E remove -f
       "$<TARGET_BUNDLE_DIR:bgdi>/.gitkeep"
-    COMMENT "Copy tvos/contents into bgdi.app"
+    COMMENT "Copy platforms/tvos/contents into bgdi.app"
   )
 endif ()
 
@@ -288,10 +288,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set (BENNUGD_BUNDLE_SUPPORTED_PLATFORM "iPhoneOS")
   endif ()
   if (CMAKE_GENERATOR STREQUAL "Xcode")
-    set (_ios_plist "${CMAKE_SOURCE_DIR}/ios/Info.plist")
+    set (_ios_plist "${CMAKE_SOURCE_DIR}/platforms/ios/Info.plist")
   else ()
     configure_file (
-      "${CMAKE_SOURCE_DIR}/ios/Info.plist.in"
+      "${CMAKE_SOURCE_DIR}/platforms/ios/Info.plist.in"
       "${CMAKE_CURRENT_BINARY_DIR}/Info.plist"
       @ONLY
     )
@@ -317,10 +317,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
   # (ibtoold → CoreSimulator). Simulator does not need Assets.car.
   if (CMAKE_GENERATOR STREQUAL "Xcode" AND NOT CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator")
     target_sources (bgdi PRIVATE
-      ${CMAKE_SOURCE_DIR}/ios/Assets.xcassets
+      ${CMAKE_SOURCE_DIR}/platforms/ios/Assets.xcassets
     )
     set_source_files_properties (
-      ${CMAKE_SOURCE_DIR}/ios/Assets.xcassets
+      ${CMAKE_SOURCE_DIR}/platforms/ios/Assets.xcassets
       PROPERTIES MACOSX_PACKAGE_LOCATION Resources
     )
     set_target_properties (bgdi PROPERTIES
@@ -342,11 +342,11 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
   add_custom_command (TARGET bgdi POST_BUILD
     COMMAND chmod +x "$<TARGET_FILE:bgdi>"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-      "${CMAKE_SOURCE_DIR}/ios/contents"
+      "${CMAKE_SOURCE_DIR}/platforms/ios/contents"
       "$<TARGET_BUNDLE_DIR:bgdi>"
     COMMAND ${CMAKE_COMMAND} -E remove -f
       "$<TARGET_BUNDLE_DIR:bgdi>/.gitkeep"
-    COMMENT "Copy ios/contents into bgdi.app"
+    COMMENT "Copy platforms/ios/contents into bgdi.app"
   )
 endif ()
 

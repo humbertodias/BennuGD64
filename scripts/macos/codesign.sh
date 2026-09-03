@@ -6,7 +6,7 @@ set -euo pipefail
 
 STAGE="${1:?usage: $0 <install-prefix>}"
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-ENTITLEMENTS="${ROOT}/cmake/macos-disable-library-validation.plist"
+ENTITLEMENTS="${ROOT}/scripts/macos/macos-disable-library-validation.plist"
 
 if command -v osxcross-codesign >/dev/null 2>&1; then
   sign_lib() { osxcross-codesign -s - -f "$1"; }

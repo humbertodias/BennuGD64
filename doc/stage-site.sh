@@ -29,12 +29,12 @@ fi
 if [[ -d "$WASM_SRC/ide" ]]; then
   cp -a "$WASM_SRC/ide/." "$DST/ide/"
 else
-  cp -a "$ROOT/web/ide/." "$DST/ide/"
+  cp -a "$ROOT/platforms/web/ide/." "$DST/ide/"
 fi
 if [[ -d "$WASM_SRC/samples" ]]; then
   cp -a "$WASM_SRC/samples/." "$DST/samples/"
 else
-  cp "$ROOT/web/demo/"*.prg "$DST/samples/"
+  cp "$ROOT/platforms/web/demo/"*.prg "$DST/samples/"
 fi
 
 cp -a "$ROOT/doc/html/." "$DST/docs/"

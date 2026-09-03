@@ -1,12 +1,12 @@
-# Apple tvOS: static modules, interpreter-only app bundle (bgdi.app).
-# Compile .prg with the tvos-host preset (native Linux/macOS bgdc).
-# Docker: osxcross + AppleTVOS.sdk (cmake/osxcross-tvos.cmake). Native Mac
+# Apple iOS: static modules, interpreter-only app bundle (bgdi.app).
+# Compile .prg with the ios-host preset (native Linux/macOS bgdc).
+# Docker: osxcross + iPhoneOS.sdk (cmake/toolchains/osxcross-ios.cmake). Native Mac
 # can still pass -G Xcode without a toolchain file.
 
-set (PLATFORM_TVOS ON)
-set (TVOS ON)
+set (PLATFORM_IOS ON)
+set (IOS ON)
 
-set (STATIC_MODULES ON CACHE BOOL "tvOS ships one app bundle" FORCE)
+set (STATIC_MODULES ON CACHE BOOL "iOS ships one app bundle" FORCE)
 set (INTERPRETER_ONLY ON CACHE BOOL "The .app ships the interpreter; compile .prg on a host" FORCE)
 
 # FetchContent zlib/libpng/SDL tools must not become .app bundles.
@@ -25,10 +25,10 @@ set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
 set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
 
 if (NOT DEFINED BENNUGD_BUNDLE_IDENTIFIER)
-  set (BENNUGD_BUNDLE_IDENTIFIER "org.bennugd64.player" CACHE STRING "tvOS CFBundleIdentifier")
+  set (BENNUGD_BUNDLE_IDENTIFIER "org.bennugd64.player" CACHE STRING "iOS CFBundleIdentifier")
 endif ()
 if (NOT DEFINED BENNUGD_BUNDLE_NAME)
-  set (BENNUGD_BUNDLE_NAME "BennuGD64" CACHE STRING "tvOS display name")
+  set (BENNUGD_BUNDLE_NAME "BennuGD64" CACHE STRING "iOS display name")
 endif ()
 if (NOT DEFINED BENNUGD_DEVELOPMENT_TEAM)
   set (BENNUGD_DEVELOPMENT_TEAM "" CACHE STRING "Apple Development Team ID (device builds)")
@@ -40,21 +40,21 @@ if (CMAKE_OSX_SYSROOT MATCHES "[Ss]imulator" OR CMAKE_HOST_SYSTEM_NAME STREQUAL 
 endif ()
 
 # libpng genout.cmake preprocesses with -isysroot ${CMAKE_OSX_SYSROOT}.
-# The short names appletvsimulator / appletvos are not directories.
+# The short names iphonesimulator / iphoneos are not directories.
 if (CMAKE_OSX_SYSROOT AND NOT IS_DIRECTORY "${CMAKE_OSX_SYSROOT}")
   execute_process (
     COMMAND xcrun --sdk "${CMAKE_OSX_SYSROOT}" --show-sdk-path
-    OUTPUT_VARIABLE _tvos_sdk
+    OUTPUT_VARIABLE _ios_sdk
     OUTPUT_STRIP_TRAILING_WHITESPACE
-    RESULT_VARIABLE _tvos_sdk_st
+    RESULT_VARIABLE _ios_sdk_st
   )
-  if (NOT _tvos_sdk_st EQUAL 0 OR _tvos_sdk STREQUAL "")
+  if (NOT _ios_sdk_st EQUAL 0 OR _ios_sdk STREQUAL "")
     message (FATAL_ERROR "xcrun could not resolve SDK '${CMAKE_OSX_SYSROOT}'")
   endif ()
-  set (CMAKE_OSX_SYSROOT "${_tvos_sdk}" CACHE STRING "tvOS SDK path" FORCE)
-  message (STATUS "tvOS SDK: ${CMAKE_OSX_SYSROOT}")
+  set (CMAKE_OSX_SYSROOT "${_ios_sdk}" CACHE STRING "iOS SDK path" FORCE)
+  message (STATUS "iOS SDK: ${CMAKE_OSX_SYSROOT}")
 endif ()
 
 if (NOT USE_LIBDES)
-  message (WARNING "tvOS builds should use -DUSE_LIBDES=ON (OpenSSL is not fetched for Apple TV)")
+  message (WARNING "iOS builds should use -DUSE_LIBDES=ON (OpenSSL is not fetched for iOS)")
 endif ()

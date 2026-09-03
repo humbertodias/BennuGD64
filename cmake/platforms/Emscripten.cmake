@@ -21,14 +21,14 @@ function (bennugd_emscripten_link target)
     -sMIN_WEBGL_VERSION=1
     -sMAX_WEBGL_VERSION=2
     "SHELL:-sEXPORTED_RUNTIME_METHODS=['FS','callMain']"
-    "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/web/shell.html"
+    "SHELL:--shell-file ${CMAKE_SOURCE_DIR}/platforms/web/shell.html"
   )
   set_target_properties (${target} PROPERTIES SUFFIX ".html")
   set_property (TARGET ${target} APPEND PROPERTY
-    LINK_DEPENDS "${CMAKE_SOURCE_DIR}/web/shell.html"
+    LINK_DEPENDS "${CMAKE_SOURCE_DIR}/platforms/web/shell.html"
   )
 
-  file (GLOB _demo_dcbs CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/web/demo/*.dcb")
+  file (GLOB _demo_dcbs CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/platforms/web/demo/*.dcb")
   foreach (_demo_dcb IN LISTS _demo_dcbs)
     get_filename_component (_demo_name "${_demo_dcb}" NAME)
     target_link_options (${target} PRIVATE

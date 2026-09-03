@@ -72,7 +72,7 @@ docker-pandora:
 	bash scripts/build.sh pandora
 
 wasi/run:
-	wasmtime --dir=. dist/wasi-wasm32-static/bgdc.wasm -- -o web/demo/hello.dcb web/demo/hello.prg
+	wasmtime --dir=. dist/wasi-wasm32-static/bgdc.wasm -- -o platforms/web/demo/hello.dcb platforms/web/demo/hello.prg
 
 install/wasmtime:
 	curl https://wasmtime.dev/install.sh -sSf | bash

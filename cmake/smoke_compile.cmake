@@ -1,4 +1,4 @@
-# cmake -P helper: compile web/demo/hello.prg to a non-empty .dcb.
+# cmake -P helper: compile platforms/web/demo/hello.prg to a non-empty .dcb.
 # Native:  -DBGDC=path -DPRG=hello.prg -DOUT=hello.dcb
 # WASI:    also -DWASMTIME=wasmtime (copies wasm + prg into a temp dir)
 

@@ -7,12 +7,6 @@
 
 A fork of [BennuGD](https://www.bennugd.org/) adapted to run on modern 64-bit architectures.
 
-## Web & docs
-
-- [Web player](https://humbertodias.github.io/BennuGD64/) - run `.dcb` games in the browser (WebAssembly). Drop a bytecode file plus assets, or pick a bundled demo.
-- [Web IDE](https://humbertodias.github.io/BennuGD64/ide/) - edit `.prg` in Monaco, compile with `bgdc.wasm`, detect the DCB version, run in `bgdi`.
-- [API reference](https://humbertodias.github.io/BennuGD64/docs/) - Doxygen docs for the C runtime, compiler, and modules (published from `main` via GitHub Pages).
-
 ## Install
 
 The installer defaults to a **static** build (modules linked into `bgdi`).
@@ -42,38 +36,42 @@ $env:BENNUGD_LINKAGE = "shared"
 irm https://raw.githubusercontent.com/humbertodias/BennuGD64/main/scripts/install.ps1 | iex
 ```
 
-It will install two tools: `bgdc` *compiler* and `bgdi` *interpreter*. Shared builds also place `libbgdrtm` next to the binaries and load plugins from `modules/`.
+It installs `bgdc` (compiler) and `bgdi` (interpreter).
+Shared builds also include `libbgdrtm` and load plugins from `modules/`.
+
 
 ## Build
 
-Only Docker is required for Linux, Windows, macOS (osxcross), the web player, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, PlayStation Vita, PlayStation 2, PlayStation 3, OpenPandora, Nintendo Wii, Apple tvOS, and Apple iOS (no local compiler or CMake).
+Only Docker is required; no local compiler or CMake installation is needed
 
 ```shell
-bash scripts/build.sh windows
+bash scripts/build.sh android
+bash scripts/build.sh dreamcast
+bash scripts/build.sh ios
 bash scripts/build.sh linux
 bash scripts/build.sh macos
 bash scripts/build.sh macos arm64
-bash scripts/build.sh wasm
-bash scripts/build.sh android
-bash scripts/build.sh switch
-bash scripts/build.sh dreamcast
-bash scripts/build.sh psp
-bash scripts/build.sh vita
-bash scripts/build.sh tvos
-bash scripts/build.sh ios
+bash scripts/build.sh pandora
 bash scripts/build.sh ps2
 bash scripts/build.sh ps3
-bash scripts/build.sh pandora
+bash scripts/build.sh psp
+bash scripts/build.sh switch
+bash scripts/build.sh tvos
+bash scripts/build.sh vita
+bash scripts/build.sh wasm
 bash scripts/build.sh wii
+bash scripts/build.sh windows
 ```
 
-See [BUILDING.md](BUILDING.md) for Windows, wasm, WASI, Android, Switch, Dreamcast, PSP, Vita, tvOS, iOS, PS2, PS3, Pandora, Wii, macOS (Docker osxcross and native), and native CMake.
-
+See [BUILDING.md](BUILDING.md)
 
 ## Getting started
 
-Learn the Bennu language with the [BennuGD documentation](https://divhub.github.io/bennugd-website/docs/). For engine internals, see the [API reference](https://humbertodias.github.io/BennuGD64/docs/).
+Learn the Bennu language with the [BennuGD documentation](https://divhub.github.io/bennugd-website/docs/).
 
-Use the [FPG Editor](https://github.com/humbertodias/fpg-editor/) to make it easier.
+* [Web player](https://humbertodias.github.io/BennuGD64/) - run `.dcb` games directly in the browser using WebAssembly.
+* [Web IDE](https://humbertodias.github.io/BennuGD64/ide/) - edit `.prg` files, compile with `bgdc.wasm`, and run them in the browser.
+* [API reference](https://humbertodias.github.io/BennuGD64/docs/) - Doxygen documentation for the C runtime, compiler, and modules.
+* [FPG Editor](https://github.com/humbertodias/fpg-editor/) - create and edit FPG files easily.
 
 Enjoy!

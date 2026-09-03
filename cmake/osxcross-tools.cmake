@@ -72,10 +72,19 @@ set (CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 set (BENNUGD_OSXCROSS ON CACHE BOOL "Cross-compiling with osxcross")
 
 # ld64 embeds an ad-hoc signature; osxcross install_name_tool does not
-# regenerate it, so dyld rejects @rpath dylibs.
+# regenerate it, so dyld rejects @rpath dylibs on macOS. iOS/tvOS Simulator
+# needs that linker signature (unsigned .app opens and dies immediately).
 set (CMAKE_EXE_LINKER_FLAGS
-  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-headerpad_max_install_names -Wl,-no_adhoc_codesign")
+  "${CMAKE_EXE_LINKER_FLAGS} -Wl,-headerpad_max_install_names")
 set (CMAKE_SHARED_LINKER_FLAGS
-  "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-headerpad_max_install_names -Wl,-no_adhoc_codesign")
+  "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-headerpad_max_install_names")
 set (CMAKE_MODULE_LINKER_FLAGS
-  "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-headerpad_max_install_names -Wl,-no_adhoc_codesign")
+  "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-headerpad_max_install_names")
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+  set (CMAKE_EXE_LINKER_FLAGS
+    "${CMAKE_EXE_LINKER_FLAGS} -Wl,-no_adhoc_codesign")
+  set (CMAKE_SHARED_LINKER_FLAGS
+    "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-no_adhoc_codesign")
+  set (CMAKE_MODULE_LINKER_FLAGS
+    "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-no_adhoc_codesign")
+endif ()

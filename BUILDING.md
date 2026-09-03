@@ -365,6 +365,14 @@ bash scripts/build.sh tvos simulator
 
 That uses osxcross (`tvos-simulator-arm64`) in the same Docker image and installs `dist/tvos-simulator-arm64-static/bgdi.app`. On a Mac, `scripts/build.sh tvos simulator` still uses the Xcode `tvos-simulator` preset. Optional: `BENNUGD_BUNDLE_IDENTIFIER` (default `org.bennugd64.player`) and `BENNUGD_BUNDLE_NAME` (default `BennuGD64`).
 
+A GitHub Simulator zip (or a Finder unzip of a Linux zip) drops the execute bit and has no ad-hoc signature, so SpringBoard opens `bgdi.app` and the process dies at once. On a Mac, from the extracted folder:
+
+```shell
+bash sim-install.sh
+```
+
+That runs `chmod +x`, `codesign --sign -`, and `xcrun simctl install booted` if a Simulator is already booted.
+
 **Where `main.dcb` goes:** files in `tvos/contents/` are copied to the `.app` root (flat bundle, same as PixTudio). `bgdi` looks for `main.dcb` in Documents (`SDL_GetPrefPath("bennugd64", "bgdi")`) first, then next to the executable via `SDL_GetBasePath()`. Put the **entire** game tree next to the DCB (not only `main.dcb`). Relative paths are resolved against that directory; absolute paths are unchanged. Compile with the matching `tvos-host` `bgdc`, not a random desktop Bennu.
 
 Siri Remote / Game Controller: D-pad is arrows, click/A is Space, Play/Pause is Enter, Menu/B is Escape. Phantom SDL Escape is cleared so `hello.prg` does not exit immediately.
@@ -390,6 +398,8 @@ bash scripts/build.sh ios simulator
 ```
 
 That uses osxcross (`ios-simulator-arm64`) in the same Docker image and installs `dist/ios-simulator-arm64-static/bgdi.app`. On a Mac, `scripts/build.sh ios simulator` still uses the Xcode `ios-simulator` preset. Optional: `BENNUGD_BUNDLE_IDENTIFIER` (default `org.bennugd64.player`) and `BENNUGD_BUNDLE_NAME` (default `BennuGD64`).
+
+Same as tvOS: unzip on a Mac and run `bash sim-install.sh` from the extracted folder (or `bash scripts/apple/sim-install.sh /path/to/bgdi.app`). Do not install the **device** zip in Simulator.
 
 **Where `main.dcb` goes:** files in `ios/contents/` are copied to the `.app` root. `bgdi` looks for `main.dcb` in Documents (`SDL_GetPrefPath("bennugd64", "bgdi")`) first, then next to the executable via `SDL_GetBasePath()`. Put the **entire** game tree next to the DCB. Relative paths are resolved against that directory; absolute paths are unchanged. Finder file sharing is on (`UIFileSharingEnabled`), so you can drop a DCB plus its asset folders into the app's Documents folder. Compile with the matching `ios-host` `bgdc`, not a random desktop Bennu.
 

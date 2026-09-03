@@ -325,8 +325,12 @@ if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
       fi
       test -d "${STAGE}/bgdi.app"
       test -f "${STAGE}/bgdi.app/bgdi"
+      chmod +x "${STAGE}/bgdi.app/bgdi"
       test -s "${STAGE}/bgdi.app/main.dcb"
+      cp "${ROOT}/scripts/apple/sim-install.sh" "${STAGE}/sim-install.sh"
+      chmod +x "${STAGE}/sim-install.sh"
       echo "Install ${STAGE}/bgdi.app in the ${PLATFORM} Simulator."
+      echo "If it opens and dies: bash scripts/apple/sim-install.sh ${STAGE}/bgdi.app"
       echo "dist/${PLATFORM}-arm64-static/bgdi.app is a device binary and will not run there."
       exit 0
       fi
@@ -448,11 +452,16 @@ if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
       fi
       test -d "${STAGE}/bgdi.app"
       test -f "${STAGE}/bgdi.app/bgdi"
+      chmod +x "${STAGE}/bgdi.app/bgdi"
       test -s "${STAGE}/bgdi.app/main.dcb"
+      if [[ "${STAGE}" == *simulator* ]]; then
+        cp /src/scripts/apple/sim-install.sh "${STAGE}/sim-install.sh"
+        chmod +x "${STAGE}/sim-install.sh"
+      fi
     '
   test -d "${ROOT}/${STAGE#/src/}/bgdi.app"
   if [[ "${SECOND}" == "simulator" ]]; then
-    echo "Simulator .app: ${STAGE#/src/}/bgdi.app (osxcross, appletvsimulator/iphonesimulator)."
+    echo "Simulator .app: ${STAGE#/src/}/bgdi.app (osxcross). On a Mac: bash sim-install.sh (in the extracted folder)."
   else
     echo "Device .app: dist/${PLATFORM}-arm64-static/bgdi.app (sign on a Mac)."
     echo "That binary is appletvos/iphoneos — it will not run in Simulator."

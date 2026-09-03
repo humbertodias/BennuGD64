@@ -263,6 +263,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
     )
   endif ()
   add_custom_command (TARGET bgdi POST_BUILD
+    COMMAND chmod +x "$<TARGET_FILE:bgdi>"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       "${CMAKE_SOURCE_DIR}/tvos/contents"
       "$<TARGET_BUNDLE_DIR:bgdi>"
@@ -339,6 +340,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     )
   endif ()
   add_custom_command (TARGET bgdi POST_BUILD
+    COMMAND chmod +x "$<TARGET_FILE:bgdi>"
     COMMAND ${CMAKE_COMMAND} -E copy_directory
       "${CMAKE_SOURCE_DIR}/ios/contents"
       "$<TARGET_BUNDLE_DIR:bgdi>"

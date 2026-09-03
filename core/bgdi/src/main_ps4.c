@@ -21,7 +21,7 @@
 #include "files_ps4.h"
 
 #ifndef BENNUGD_PS4_TITLE_ID
-#define BENNUGD_PS4_TITLE_ID "BGD400001"
+#define BENNUGD_PS4_TITLE_ID "BGDG00001"
 #endif
 
 static int ps4_pad_handle = -1;

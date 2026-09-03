@@ -490,7 +490,7 @@ The image unpacks [OpenOrbis PS4 Toolchain](https://github.com/OpenOrbis/OpenOrb
 bash scripts/build.sh ps4
 ```
 
-That configures native `bgdc` (`ps4-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi.elf` with OpenOrbis (`ps4-x86_64`), then packs `dist/ps4-x86_64-static/bennugd64.pkg` (title id `BGD400001`, content id `IV0000-BGD400001_00-0000000000000000`). Install the PKG on a jailbroken PS4.
+That configures native `bgdc` (`ps4-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi.elf` with OpenOrbis (`ps4-x86_64`), then packs `dist/ps4-x86_64-static/bennugd64.pkg` (title id `BGDG00001`, content id `IV0000-BGDG00001_00-BENNUGD640000000`). Install the PKG on a jailbroken PS4.
 
 **Where `main.dcb` goes** (first match wins):
 

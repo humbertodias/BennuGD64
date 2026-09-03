@@ -1298,10 +1298,13 @@ if [[ "${PLATFORM}" == "ps4" ]]; then
       PS4_BUILD=/src/build-ps4-x86_64
       PKGDIR=/src/build-ps4-pkg
       STAGE=/src/dist/ps4-x86_64-static
-      GAME_TITLE=BennuGD64
-      GAME_ID=BGD400001
-      CONTENT_ID=IV0000-BGD400001_00-0000000000000000
-      APPVERSION=01.00
+      # Keep PS4 IDs in one place; console install rejects mismatched
+      # CONTENT_IDs (SCE_BGFT_ERROR_INVALID_CONTENTID).
+      # platforms/ps4/pkg.env is documented alongside the PKG metadata.
+      source /src/platforms/ps4/pkg.env
+      GAME_TITLE="${TITLE}"
+      GAME_ID="${TITLE_ID}"
+      APPVERSION="${VERSION}"
       OO_BIN=""
       for cand in "${OO_PS4_TOOLCHAIN}/bin/linux" "${OO_PS4_TOOLCHAIN}/bin"; do
         if [[ -d "${cand}" ]]; then OO_BIN="${cand}"; break; fi

@@ -82,14 +82,16 @@ static void vita_join( char * out, size_t out_sz, const char * root, const char 
     snprintf( out + n, out_sz - n, "%s", sub );
 }
 
-/* SoRR loads galsia.pal by basename; PATH must include palettes/enemies/. */
-static void vita_add_dir_and_children( const char * dir )
+/* Register the DCB folder and nested dirs so basename opens resolve for any game. */
+static void vita_add_tree( const char * dir, int depth_left )
 {
     char child[ __MAX_PATH ];
     SceUID uid;
     SceIoDirent ent;
 
     file_addp( dir );
+    if ( depth_left <= 0 )
+        return;
 
     uid = sceIoDopen( dir );
     if ( uid < 0 )
@@ -103,42 +105,15 @@ static void vita_add_dir_and_children( const char * dir )
         if ( !( ent.d_stat.st_attr & SCE_SO_IFDIR ) )
             continue;
         vita_join( child, sizeof( child ), dir, ent.d_name );
-        file_addp( child );
+        vita_add_tree( child, depth_left - 1 );
         memset( &ent, 0, sizeof( ent ) );
     }
     sceIoDclose( uid );
 }
 
-static void vita_add_sorr_paths( const char * root )
+static void vita_add_search_paths( const char * root )
 {
-    static const char * subs[] = {
-        "palettes",
-        "palettes/enemies",
-        "palettes/players",
-        "palettes/stages",
-        "palettes/bonus",
-        "palettes/boss",
-        "palettes/misc",
-        "mod",
-        "data",
-        "fpg",
-        "fnt",
-        "maps",
-        "chars",
-        "char",
-        NULL
-    };
-    char path[ __MAX_PATH ];
-    int i;
-
-    file_addp( root );
-    for ( i = 0 ; subs[i] ; i++ )
-    {
-        vita_join( path, sizeof( path ), root, subs[i] );
-        file_addp( path );
-    }
-    vita_join( path, sizeof( path ), root, "palettes" );
-    vita_add_dir_and_children( path );
+    vita_add_tree( root, 4 );
 }
 
 static void vita_use_dcb( const char * dcb_path )
@@ -148,11 +123,11 @@ static void vita_use_dcb( const char * dcb_path )
     file_vita_bind_root( dcb_path );
     root = file_vita_root();
     chdir( root );
-    vita_add_sorr_paths( root );
+    vita_add_search_paths( root );
     if ( strcmp( root, "ux0:/data/bennugd64/" ) != 0 )
-        vita_add_sorr_paths( "ux0:/data/bennugd64/" );
+        vita_add_search_paths( "ux0:/data/bennugd64/" );
     if ( strcmp( root, "app0:/" ) != 0 )
-        vita_add_sorr_paths( "app0:/" );
+        vita_add_search_paths( "app0:/" );
     file_addp( "." );
     fprintf( stderr, "bgdi: data root %s\n", root );
 }

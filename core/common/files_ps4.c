@@ -1,8 +1,8 @@
 /*
  * PlayStation 4 file I/O. Linked instead of files_native.c.
  *
- * Games open relative names such as palettes/enemies/galsia.pal. Prefix with
- * the DCB directory; leave files.c unchanged. Absolute paths are POSIX
+ * Games open relative names (subdir/file or basename). Prefix with the DCB
+ * directory; leave files.c unchanged. Absolute paths are POSIX
  * (/app0/..., /data/..., /mnt/usb0/...).
  */
 

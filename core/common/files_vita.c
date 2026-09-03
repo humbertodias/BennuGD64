@@ -1,11 +1,10 @@
 /*
  * PlayStation Vita file I/O. Linked instead of files_native.c.
  *
- * Games (SoRR) open relative names such as palettes/enemies/galsia.pal.
- * Vita3K honours POSIX cwd after chdir("app0:/"); real hardware often does
- * not, so a bare fopen misses ux0:/data/bennugd64/palettes/enemies/galsia.pal
- * (or the same path under app0:/). Prefix with the DCB directory here; leave
- * files.c unchanged.
+ * Games open relative names (subdir/file or basename). Vita3K honours POSIX
+ * cwd after chdir("app0:/"); real hardware often does not, so a bare fopen
+ * misses files next to the DCB under ux0:/data/bennugd64/ or app0:/. Prefix
+ * with the DCB directory here; leave files.c unchanged.
  */
 
 #include <stdio.h>

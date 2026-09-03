@@ -105,7 +105,7 @@ static void ps4_join( char * out, size_t out_sz, const char * root, const char *
     snprintf( out + n, out_sz - n, "%s", sub );
 }
 
-static void ps4_add_dir_and_children( const char * dir )
+static void ps4_add_tree( const char * dir, int depth_left )
 {
     DIR * d;
     struct dirent * ent;
@@ -113,6 +113,8 @@ static void ps4_add_dir_and_children( const char * dir )
     char child[ __MAX_PATH ];
 
     file_addp( dir );
+    if ( depth_left <= 0 )
+        return;
 
     d = opendir( dir );
     if ( !d )
@@ -125,41 +127,15 @@ static void ps4_add_dir_and_children( const char * dir )
         ps4_join( child, sizeof( child ), dir, ent->d_name );
         if ( stat( child, &st ) != 0 || !S_ISDIR( st.st_mode ) )
             continue;
-        file_addp( child );
+        ps4_add_tree( child, depth_left - 1 );
     }
     closedir( d );
 }
 
-static void ps4_add_sorr_paths( const char * root )
+/* Register the DCB folder and nested dirs so basename opens resolve for any game. */
+static void ps4_add_search_paths( const char * root )
 {
-    static const char * subs[] = {
-        "palettes",
-        "palettes/enemies",
-        "palettes/players",
-        "palettes/stages",
-        "palettes/bonus",
-        "palettes/boss",
-        "palettes/misc",
-        "mod",
-        "data",
-        "fpg",
-        "fnt",
-        "maps",
-        "chars",
-        "char",
-        NULL
-    };
-    char path[ __MAX_PATH ];
-    int i;
-
-    file_addp( root );
-    for ( i = 0 ; subs[i] ; i++ )
-    {
-        ps4_join( path, sizeof( path ), root, subs[i] );
-        file_addp( path );
-    }
-    ps4_join( path, sizeof( path ), root, "palettes" );
-    ps4_add_dir_and_children( path );
+    ps4_add_tree( root, 4 );
 }
 
 static void ps4_use_dcb( const char * dcb_path )
@@ -176,11 +152,11 @@ static void ps4_use_dcb( const char * dcb_path )
     file_ps4_bind_root( dcb_path );
     root = file_ps4_root();
     chdir( root );
-    ps4_add_sorr_paths( root );
+    ps4_add_search_paths( root );
     for ( i = 0 ; extra[i] ; i++ )
     {
         if ( strcmp( root, extra[i] ) != 0 )
-            ps4_add_sorr_paths( extra[i] );
+            ps4_add_search_paths( extra[i] );
     }
     file_addp( "." );
     fprintf( stderr, "bgdi: data root %s\n", root );

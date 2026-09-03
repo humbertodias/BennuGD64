@@ -80,6 +80,9 @@
 #ifdef TARGET_PS3
 #include "main_ps3.h"
 #endif
+#ifdef TARGET_PS4
+#include "main_ps4.h"
+#endif
 #ifdef TARGET_PANDORA
 #include "main_pandora.h"
 #endif
@@ -241,6 +244,23 @@ int main( int argc, char *argv[] )
         ps3_dcb = bgdi_ps3_startup( argc, argv, &standalone );
         if ( ps3_dcb )
             filename = ps3_dcb;
+    }
+#endif
+
+#ifdef TARGET_PS4
+    {
+        static char * ps4_argv[2] = { "eboot.bin", NULL };
+        char * ps4_dcb;
+
+        if ( argc < 1 || !argv || !argv[0] )
+        {
+            argc = 1;
+            argv = ps4_argv;
+        }
+
+        ps4_dcb = bgdi_ps4_startup( argc, argv, &standalone );
+        if ( ps4_dcb )
+            filename = ps4_dcb;
     }
 #endif
 

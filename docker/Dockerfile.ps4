@@ -1,0 +1,89 @@
+# PlayStation 4 homebrew toolchain (linux/amd64: OpenOrbis host tools are x86_64).
+#   docker build --platform linux/amd64 -t bennugd64-ps4 \
+#     -f docker/Dockerfile.ps4 docker/
+#   docker run --platform linux/amd64 --rm -v "$PWD":/src -w /src \
+#     bennugd64-ps4 cmake --preset ps4-x86_64
+#
+# Toolchain only: does not clone this repo or bake Bennu into the image.
+# OpenOrbis headers/stubs/tools come from the release asset; host clang/lld,
+# cmake, ninja, and gcc are on Ubuntu 24.04 for native bgdc + Orbis cross.
+# PkgTool.Core is netcoreapp3.0 and needs libssl1.1 (not in Ubuntu 24.04).
+
+ARG OO_PS4_TOOLCHAIN_VERSION=v0.5.4
+ARG OO_PS4_TOOLCHAIN_ASSET=toolchain-llvm-18.tar.gz
+
+FROM ubuntu:24.04 AS setup
+
+ARG OO_PS4_TOOLCHAIN_VERSION
+ARG OO_PS4_TOOLCHAIN_ASSET
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    OO_PS4_TOOLCHAIN=/opt/OpenOrbis/PS4Toolchain
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        tar \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /tmp/oo-extract "${OO_PS4_TOOLCHAIN}" \
+    && curl -fsSL \
+        "https://github.com/OpenOrbis/OpenOrbis-PS4-Toolchain/releases/download/${OO_PS4_TOOLCHAIN_VERSION}/${OO_PS4_TOOLCHAIN_ASSET}" \
+        -o /tmp/oo-toolchain.tar.gz \
+    && tar -xzf /tmp/oo-toolchain.tar.gz -C /tmp/oo-extract \
+    && rm -f /tmp/oo-toolchain.tar.gz \
+    && root="$(find /tmp/oo-extract -type f -name link.x | head -n 1 | xargs -r dirname)" \
+    && test -n "${root}" \
+    && test -d "${root}/include" \
+    && test -d "${root}/bin" \
+    && cp -a "${root}/." "${OO_PS4_TOOLCHAIN}/" \
+    && rm -rf /tmp/oo-extract \
+    && test -f "${OO_PS4_TOOLCHAIN}/link.x" \
+    && test -d "${OO_PS4_TOOLCHAIN}/include" \
+    && test -e "${OO_PS4_TOOLCHAIN}/bin/linux/create-fself" \
+        -o -e "${OO_PS4_TOOLCHAIN}/bin/create-fself"
+
+FROM ubuntu:24.04
+
+ARG OO_PS4_TOOLCHAIN_VERSION
+ARG OO_PS4_TOOLCHAIN_ASSET
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=ps4 \
+    OO_PS4_TOOLCHAIN=/opt/OpenOrbis/PS4Toolchain \
+    OO_PS4_TOOLCHAIN_VERSION=${OO_PS4_TOOLCHAIN_VERSION} \
+    OO_PS4_TOOLCHAIN_ASSET=${OO_PS4_TOOLCHAIN_ASSET} \
+    PATH="/opt/OpenOrbis/PS4Toolchain/bin/linux:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin" \
+    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+
+COPY --from=setup /opt/OpenOrbis/PS4Toolchain /opt/OpenOrbis/PS4Toolchain
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        clang \
+        cmake \
+        curl \
+        gcc \
+        g++ \
+        git \
+        lld \
+        llvm \
+        ninja-build \
+        pkg-config \
+        python3 \
+        python-is-python3 \
+        zip \
+    && curl -fsSL \
+        "http://archive.ubuntu.com/ubuntu/pool/main/o/openssl/libssl1.1_1.1.1f-1ubuntu2.24_amd64.deb" \
+        -o /tmp/libssl1.1.deb \
+    && dpkg -i /tmp/libssl1.1.deb \
+    && rm -f /tmp/libssl1.1.deb \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*' \
+    && chmod -R a+rX /opt/OpenOrbis/PS4Toolchain \
+    && test -f /opt/OpenOrbis/PS4Toolchain/link.x \
+    && test -e /usr/lib/x86_64-linux-gnu/libssl.so.1.1 \
+    && command -v clang \
+    && command -v ld.lld
+
+WORKDIR /src
+CMD ["bash"]

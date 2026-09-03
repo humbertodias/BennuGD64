@@ -16,6 +16,7 @@
 #   bash scripts/build.sh ios simulator
 #   bash scripts/build.sh ps2
 #   bash scripts/build.sh ps3
+#   bash scripts/build.sh ps4
 #   bash scripts/build.sh pandora
 #   bash scripts/build.sh wii
 #   bash scripts/build.sh macos
@@ -38,6 +39,7 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 ios [device|simulator|shell]
        $0 ps2 [shell]
        $0 ps3 [shell]
+       $0 ps4 [shell]
        $0 pandora [shell]
        $0 wii [shell]
        $0 macos [x86_64|arm64] [static|shared|shell]"
@@ -57,7 +59,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|pandora|wii|macos) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|ps4|pandora|wii|macos) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -135,6 +137,14 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
       -t bennugd64-ps3 \
       -f docker/Dockerfile.ps3 \
       docker/
+  elif [[ "${PLATFORM}" == "ps4" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      --build-arg OO_PS4_TOOLCHAIN_VERSION="${OO_PS4_TOOLCHAIN_VERSION:-v0.5.4}" \
+      --build-arg OO_PS4_TOOLCHAIN_ASSET="${OO_PS4_TOOLCHAIN_ASSET:-toolchain-llvm-18.tar.gz}" \
+      -t bennugd64-ps4 \
+      -f docker/Dockerfile.ps4 \
+      docker/
   elif [[ "${PLATFORM}" == "pandora" ]]; then
     docker build \
       --platform linux/amd64 \
@@ -174,7 +184,7 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
-  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "ps3" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
+  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "ps3" || "${PLATFORM}" == "ps4" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
       -w /src \
@@ -226,6 +236,7 @@ reuse_fetchcontent_src() {
     "${ROOT}/build-tvos-host/_deps/${name}" \
     "${ROOT}/build-ios-host/_deps/${name}" \
     "${ROOT}/build-ps3-host/_deps/${name}" \
+    "${ROOT}/build-ps4-host/_deps/${name}" \
     "${ROOT}/build-pandora-host/_deps/${name}"
   do
     if [[ -f "${cand}/CMakeLists.txt" ]]; then
@@ -293,11 +304,7 @@ if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
       cmake --build --preset "${HOST_PRESET}"
       BGDC="${HOST_BUILD}/core/bgdc/src/bgdc"
       test -x "${BGDC}"
-      for prg in "${ROOT}/platforms/web/demo/"*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${BGDC}" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      "${ROOT}/scripts/compile-web-demos.sh" "${BGDC}"
       mkdir -p "${CONTENTS}"
       cp "${ROOT}/platforms/web/demo/hello.dcb" "${CONTENTS}/main.dcb"
       cmake --preset "${SIM_PRESET}" "${COMMON[@]}"
@@ -415,11 +422,7 @@ if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
       cmake --build --preset "${HOST_PRESET}"
       BGDC="${HOST_BUILD}/core/bgdc/src/bgdc"
       test -x "${BGDC}"
-      for prg in /src/platforms/web/demo/*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${BGDC}" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      /src/scripts/compile-web-demos.sh "${BGDC}"
       mkdir -p "${CONTENTS}"
       cp /src/platforms/web/demo/hello.dcb "${CONTENTS}/main.dcb"
       if command -v osxcross-conf >/dev/null; then
@@ -513,11 +516,7 @@ if [[ "${PLATFORM}" == "wasm" ]]; then
         "${COMMON[@]}" \
         -DFETCHCONTENT_BASE_DIR="${FETCH_DIR}"
       cmake --build --preset wasm-host
-      for prg in /src/platforms/web/demo/*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
       # Drop a cache from a previous EMSDK layout (/opt/emsdk vs /emsdk).
       rm -f "${WASM_BUILD}/CMakeCache.txt"
       rm -rf "${WASM_BUILD}/CMakeFiles"
@@ -602,11 +601,7 @@ if [[ "${PLATFORM}" == "android" ]]; then
       )
       cmake --preset android-host "${COMMON[@]}"
       cmake --build --preset android-host
-      for prg in /src/platforms/web/demo/*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
       test -n "${ANDROID_NDK:-}"
       test -f "${ANDROID_NDK}/build/cmake/android.toolchain.cmake"
       cmake --preset android-arm64 \
@@ -733,11 +728,7 @@ if [[ "${PLATFORM}" == "switch" ]]; then
       )
       cmake --preset switch-host "${COMMON[@]}"
       cmake --build --preset switch-host
-      for prg in /src/platforms/web/demo/*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
       cmake --preset switch-aarch64 \
         "${COMMON[@]}" \
         -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
@@ -816,11 +807,7 @@ if [[ "${PLATFORM}" == "dreamcast" ]]; then
       )
       cmake --preset dreamcast-host "${COMMON[@]}"
       cmake --build --preset dreamcast-host
-      for prg in /src/platforms/web/demo/*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
       cmake --preset dreamcast-sh4 \
         "${COMMON[@]}" \
         -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
@@ -898,11 +885,7 @@ if [[ "${PLATFORM}" == "psp" ]]; then
       )
       cmake --preset psp-host "${COMMON[@]}"
       cmake --build --preset psp-host
-      for prg in /src/platforms/web/demo/*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
       cmake --preset psp-mips \
         "${COMMON[@]}" \
         -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
@@ -980,11 +963,7 @@ if [[ "${PLATFORM}" == "vita" ]]; then
       )
       cmake --preset vita-host "${COMMON[@]}"
       cmake --build --preset vita-host
-      for prg in /src/platforms/web/demo/*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
       cmake --preset vita-arm \
         "${COMMON[@]}" \
         -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"
@@ -1064,11 +1043,7 @@ if [[ "${PLATFORM}" == "ps2" ]]; then
       )
       cmake --preset ps2-host "${COMMON[@]}"
       cmake --build --preset ps2-host
-      for prg in /src/platforms/web/demo/*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
       # Drop a cache that used FetchContent zlib/libpng (conflicts with ps2sdk-ports).
       rm -f "${PS2_BUILD}/CMakeCache.txt"
       rm -rf "${PS2_BUILD}/CMakeFiles"
@@ -1183,11 +1158,7 @@ if [[ "${PLATFORM}" == "ps3" ]]; then
       )
       cmake --preset ps3-host "${COMMON[@]}"
       cmake --build --preset ps3-host
-      for prg in /src/platforms/web/demo/*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
       cmake --preset ps3-ppu \
         "${COMMON[@]}"
       cmake --build --preset ps3-ppu
@@ -1296,6 +1267,183 @@ if [[ "${PLATFORM}" == "ps3" ]]; then
   exit 0
 fi
 
+if [[ "${PLATFORM}" == "ps4" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: ps4-host + ps4-x86_64"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-ps4-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-ps4-x86_64/_deps"
+  docker run --platform linux/amd64 --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_PS4_REPO="${SDL3_PS4_REPO:-}" \
+    -e SDL3_PS4_REF="${SDL3_PS4_REF:-main}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -n "${OO_PS4_TOOLCHAIN:-}"
+      test -f "${OO_PS4_TOOLCHAIN}/link.x"
+      test -x "$(command -v clang)"
+      test -x "$(command -v ld.lld)"
+      HOST_BUILD=/src/build-ps4-host
+      PS4_BUILD=/src/build-ps4-x86_64
+      PKGDIR=/src/build-ps4-pkg
+      STAGE=/src/dist/ps4-x86_64-static
+      # Keep PS4 IDs in one place; console install rejects mismatched
+      # CONTENT_IDs (SCE_BGFT_ERROR_INVALID_CONTENTID).
+      # platforms/ps4/pkg.env is documented alongside the PKG metadata.
+      source /src/platforms/ps4/pkg.env
+      GAME_TITLE="${TITLE}"
+      GAME_ID="${TITLE_ID}"
+      APPVERSION="${VERSION}"
+      OO_BIN=""
+      for cand in "${OO_PS4_TOOLCHAIN}/bin/linux" "${OO_PS4_TOOLCHAIN}/bin"; do
+        if [[ -d "${cand}" ]]; then OO_BIN="${cand}"; break; fi
+      done
+      test -n "${OO_BIN}"
+      CREATE_FSELF=""
+      for cand in "${OO_BIN}/create-fself" create-fself; do
+        if command -v "${cand}" >/dev/null 2>&1 || [[ -x "${cand}" ]]; then
+          CREATE_FSELF="${cand}"
+          break
+        fi
+      done
+      test -n "${CREATE_FSELF}"
+      PKGTOOL=""
+      for cand in "${OO_BIN}/PkgTool.Core" PkgTool.Core; do
+        if command -v "${cand}" >/dev/null 2>&1 || [[ -x "${cand}" ]]; then
+          PKGTOOL="${cand}"
+          break
+        fi
+      done
+      test -n "${PKGTOOL}"
+      CREATE_GP4=""
+      for cand in "${OO_BIN}/create-gp4" create-gp4; do
+        if command -v "${cand}" >/dev/null 2>&1 || [[ -x "${cand}" ]]; then
+          CREATE_GP4="${cand}"
+          break
+        fi
+      done
+      test -n "${CREATE_GP4}"
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      if [[ -n "${SDL3_PS4_REPO:-}" ]]; then
+        COMMON+=(
+          -DBENNUGD_SDL3_PS4_REPO="${SDL3_PS4_REPO}"
+          -DBENNUGD_SDL3_PS4_REF="${SDL3_PS4_REF}"
+        )
+      fi
+      cmake --preset ps4-host "${COMMON[@]}"
+      cmake --build --preset ps4-host
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
+      cmake --preset ps4-x86_64 "${COMMON[@]}"
+      cmake --build --preset ps4-x86_64
+      ELF=""
+      for cand in \
+        "${PS4_BUILD}/core/bgdi/src/bgdi.elf" \
+        "${PS4_BUILD}/core/bgdi/src/bgdi"
+      do
+        if [[ -f "${cand}" ]]; then
+          ELF="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${ELF}" ]]; then
+        ELF="$(find "${PS4_BUILD}/core/bgdi" \( -type f -o -type l \) \( -name bgdi.elf -o -name bgdi \) | grep -v /CMakeFiles/ | head -n 1 || true)"
+      fi
+      test -n "${ELF}"
+      test -s "${ELF}"
+      rm -rf "${PKGDIR}" "${STAGE}"
+      mkdir -p "${PKGDIR}/sce_sys/about" "${PKGDIR}/sce_module" "${STAGE}"
+      cp "${ELF}" "${PKGDIR}/bgdi.elf"
+      "${CREATE_FSELF}" -in="${PKGDIR}/bgdi.elf" -out="${PKGDIR}/bgdi.oelf" --eboot "${PKGDIR}/eboot.bin" --paid 0x3800000000000011
+      test -s "${PKGDIR}/eboot.bin"
+      cp /src/platforms/web/demo/*.dcb "${PKGDIR}/"
+      cp /src/platforms/web/demo/hello.dcb "${PKGDIR}/main.dcb"
+      for sample in \
+        "${OO_PS4_TOOLCHAIN}/samples/hello_world" \
+        "${OO_PS4_TOOLCHAIN}/samples/input"
+      do
+        if [[ -d "${sample}/sce_module" ]]; then
+          cp -a "${sample}/sce_module/." "${PKGDIR}/sce_module/" || true
+        fi
+        if [[ -f "${sample}/sce_sys/icon0.png" ]]; then
+          cp "${sample}/sce_sys/icon0.png" "${PKGDIR}/sce_sys/icon0.png"
+        fi
+        if [[ -f "${sample}/sce_sys/about/right.sprx" ]]; then
+          cp "${sample}/sce_sys/about/right.sprx" "${PKGDIR}/sce_sys/about/right.sprx"
+        fi
+      done
+      "${PKGTOOL}" sfo_new "${PKGDIR}/sce_sys/param.sfo"
+      "${PKGTOOL}" sfo_setentry "${PKGDIR}/sce_sys/param.sfo" APP_TYPE --type Integer --maxsize 4 --value 1
+      "${PKGTOOL}" sfo_setentry "${PKGDIR}/sce_sys/param.sfo" APP_VER --type Utf8 --maxsize 8 --value "${APPVERSION}"
+      "${PKGTOOL}" sfo_setentry "${PKGDIR}/sce_sys/param.sfo" ATTRIBUTE --type Integer --maxsize 4 --value 0
+      "${PKGTOOL}" sfo_setentry "${PKGDIR}/sce_sys/param.sfo" CATEGORY --type Utf8 --maxsize 4 --value gd
+      "${PKGTOOL}" sfo_setentry "${PKGDIR}/sce_sys/param.sfo" CONTENT_ID --type Utf8 --maxsize 48 --value "${CONTENT_ID}"
+      "${PKGTOOL}" sfo_setentry "${PKGDIR}/sce_sys/param.sfo" DOWNLOAD_DATA_SIZE --type Integer --maxsize 4 --value 0
+      "${PKGTOOL}" sfo_setentry "${PKGDIR}/sce_sys/param.sfo" SYSTEM_VER --type Integer --maxsize 4 --value 0
+      "${PKGTOOL}" sfo_setentry "${PKGDIR}/sce_sys/param.sfo" TITLE --type Utf8 --maxsize 128 --value "${GAME_TITLE}"
+      "${PKGTOOL}" sfo_setentry "${PKGDIR}/sce_sys/param.sfo" TITLE_ID --type Utf8 --maxsize 12 --value "${GAME_ID}"
+      "${PKGTOOL}" sfo_setentry "${PKGDIR}/sce_sys/param.sfo" VERSION --type Utf8 --maxsize 8 --value "${APPVERSION}"
+      if [[ ! -f "${PKGDIR}/sce_sys/icon0.png" ]]; then
+        python3 - <<'"'"'PY'"'"'
+import struct, zlib, pathlib
+path = pathlib.Path("/src/build-ps4-pkg/sce_sys/icon0.png")
+path.parent.mkdir(parents=True, exist_ok=True)
+def chunk(tag, data):
+    return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xffffffff)
+raw = b"\x00" + b"\x00\x00\x00"
+png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b"")
+path.write_bytes(png)
+PY
+      fi
+      FILES=(eboot.bin sce_sys/param.sfo sce_sys/icon0.png main.dcb)
+      if [[ -f "${PKGDIR}/sce_sys/about/right.sprx" ]]; then
+        FILES+=(sce_sys/about/right.sprx)
+      fi
+      while IFS= read -r -d "" f; do
+        FILES+=("${f#${PKGDIR}/}")
+      done < <(find "${PKGDIR}/sce_module" -type f -print0 2>/dev/null || true)
+      for dcb in "${PKGDIR}"/*.dcb; do
+        base="$(basename "${dcb}")"
+        if [[ "${base}" != "main.dcb" ]]; then
+          FILES+=("${base}")
+        fi
+      done
+      (
+        cd "${PKGDIR}"
+        "${CREATE_GP4}" -out pkg.gp4 --content-id="${CONTENT_ID}" --files "${FILES[*]}"
+        "${PKGTOOL}" pkg_build pkg.gp4 .
+      )
+      PKG_OUT=""
+      for cand in "${PKGDIR}/${CONTENT_ID}.pkg" "${PKGDIR}"/*.pkg; do
+        if [[ -f "${cand}" ]]; then PKG_OUT="${cand}"; break; fi
+      done
+      test -n "${PKG_OUT}"
+      cp "${PKG_OUT}" "${STAGE}/bennugd64.pkg"
+      cmake --install "${PS4_BUILD}" --prefix "${STAGE}"
+      cp "${PKGDIR}/bgdi.elf" "${PKGDIR}/eboot.bin" "${PKGDIR}/main.dcb" "${STAGE}/"
+      test -s "${STAGE}/bennugd64.pkg"
+      test -s "${STAGE}/eboot.bin"
+      test -s "${STAGE}/bgdi.elf"
+    '
+  exit 0
+fi
+
 if [[ "${PLATFORM}" == "pandora" ]]; then
   echo "image: ${IMAGE}"
   echo "preset: pandora-host + pandora-arm"
@@ -1338,11 +1486,7 @@ if [[ "${PLATFORM}" == "pandora" ]]; then
       )
       cmake --preset pandora-host "${COMMON[@]}"
       cmake --build --preset pandora-host
-      for prg in /src/platforms/web/demo/*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
       cmake --preset pandora-arm \
         "${COMMON[@]}" \
         -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src" \
@@ -1408,11 +1552,7 @@ if [[ "${PLATFORM}" == "wii" ]]; then
       )
       cmake --preset wii-host "${COMMON[@]}"
       cmake --build --preset wii-host
-      for prg in /src/platforms/web/demo/*.prg; do
-        dcb="${prg%.prg}.dcb"
-        "${HOST_BUILD}/core/bgdc/src/bgdc" -o "${dcb}" "${prg}"
-        test -s "${dcb}"
-      done
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
       cmake --preset wii-powerpc \
         "${COMMON[@]}" \
         -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src"

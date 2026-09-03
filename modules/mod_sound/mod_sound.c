@@ -54,6 +54,9 @@
 #ifdef TARGET_PS3
 #include "mod_sound_ps3.h"
 #endif
+#ifdef TARGET_PS4
+#include "mod_sound_ps4.h"
+#endif
 
 /* --------------------------------------------------------------------------- */
 
@@ -234,6 +237,9 @@ static int sound_init()
 #ifdef TARGET_PS3
     modsound_ps3_prepare();
 #endif
+#ifdef TARGET_PS4
+    modsound_ps4_prepare();
+#endif
 
     if ( !MIX_Init() )
     {
@@ -266,6 +272,9 @@ static int sound_init()
     spec.channels = audio_channels;
 #ifdef TARGET_PS3
     modsound_ps3_adjust_spec( &spec );
+#endif
+#ifdef TARGET_PS4
+    modsound_ps4_adjust_spec( &spec );
 #endif
 
     mixer = MIX_CreateMixerDevice( SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec );
@@ -403,6 +412,9 @@ static int load_song( const char * filename )
     if ( !io ) return ( 0 );
 #elif defined(TARGET_PS3)
     io = modsound_ps3_slurp_file( fp );
+    if ( !io ) return ( 0 );
+#elif defined(TARGET_PS4)
+    io = modsound_ps4_slurp_file( fp );
     if ( !io ) return ( 0 );
 #else
     io = SDL_IOFromBGDFP( fp );
@@ -718,6 +730,9 @@ static int load_wav( const char * filename )
     if ( !io ) return ( 0 );
 #elif defined(TARGET_PS3)
     io = modsound_ps3_slurp_file( fp );
+    if ( !io ) return ( 0 );
+#elif defined(TARGET_PS4)
+    io = modsound_ps4_slurp_file( fp );
     if ( !io ) return ( 0 );
 #else
     io = SDL_IOFromBGDFP( fp );
@@ -2014,6 +2029,8 @@ void  __bgdexport( mod_sound, module_initialize )()
 #ifdef TARGET_PS2
     return;
 #elif defined(TARGET_PS3)
+    return;
+#elif defined(TARGET_PS4)
     return;
 #elif !defined(TARGET_DINGUX_A320)
     if ( !SDL_WasInit( SDL_INIT_AUDIO ) ) SDL_InitSubSystem( SDL_INIT_AUDIO );

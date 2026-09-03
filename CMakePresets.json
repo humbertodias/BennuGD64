@@ -306,6 +306,26 @@
       }
     },
     {
+      "name": "ps4-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile PS4 demo DCBs",
+      "binaryDir": "${sourceDir}/build-ps4-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "ps4-x86_64",
+      "inherits": "base",
+      "displayName": "PlayStation 4 interpreter (bgdi.elf / PKG)",
+      "binaryDir": "${sourceDir}/build-ps4-x86_64",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/ps4dev.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
       "name": "pandora-host",
       "inherits": "static",
       "displayName": "Native bgdc used to compile Pandora demo DCBs",
@@ -403,6 +423,8 @@
     { "name": "ios-simulator", "configurePreset": "ios-simulator", "configuration": "Debug", "targets": ["bgdi"] },
     { "name": "ps3-host", "configurePreset": "ps3-host", "targets": ["bgdc"] },
     { "name": "ps3-ppu", "configurePreset": "ps3-ppu", "targets": ["bgdi"] },
+    { "name": "ps4-host", "configurePreset": "ps4-host", "targets": ["bgdc"] },
+    { "name": "ps4-x86_64", "configurePreset": "ps4-x86_64", "targets": ["bgdi"] },
     { "name": "pandora-host", "configurePreset": "pandora-host", "targets": ["bgdc"] },
     { "name": "pandora-arm", "configurePreset": "pandora-arm", "targets": ["bgdi"] },
     { "name": "wii-host", "configurePreset": "wii-host", "targets": ["bgdc"] },

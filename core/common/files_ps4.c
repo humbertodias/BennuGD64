@@ -1,12 +1,9 @@
 /*
- * PlayStation 3 file I/O. Linked instead of files_native.c.
+ * PlayStation 4 file I/O. Linked instead of files_native.c.
  *
- * Games open relative names (subdir/file or basename). PSL1GHT cwd after
- * chdir("/dev_usb000/...") is often still the ELF directory (USRDIR /
- * app_home), so a bare fopen misses files next to the DCB. Prefix with the
- * DCB directory here; leave files.c unchanged.
- *
- * Absolute paths are POSIX (/dev_hdd0/..., /dev_usb000/...), not device:.
+ * Games open relative names (subdir/file or basename). Prefix with the DCB
+ * directory; leave files.c unchanged. Absolute paths are POSIX
+ * (/app0/..., /data/..., /mnt/usb0/...).
  */
 
 #include <stdio.h>
@@ -14,19 +11,14 @@
 
 #include "files_native.h"
 #include "files_st.h"
-#include "files_ps3.h"
+#include "files_ps4.h"
 
-#ifndef BENNUGD_PS3_TITLE_ID
-#define BENNUGD_PS3_TITLE_ID "BGD300001"
-#endif
+static char ps4_root[ __MAX_PATH ] = "/mnt/usb0/bennugd64/";
 
-static char ps3_root[ __MAX_PATH ] = "/dev_usb000/bennugd64/";
-
-static const char * ps3_fallbacks[] = {
-    "/dev_usb000/bennugd64/",
-    "/dev_hdd0/tmp/bennugd64/",
-    "/dev_hdd0/game/" BENNUGD_PS3_TITLE_ID "/USRDIR/",
-    "/app_home/",
+static const char * ps4_fallbacks[] = {
+    "/mnt/usb0/bennugd64/",
+    "/data/bennugd64/",
+    "/app0/",
     NULL
 };
 
@@ -42,12 +34,11 @@ static const char * strip_rel( const char * filename )
     return filename;
 }
 
-void file_ps3_bind_root( const char * dcb_path )
+void file_ps4_bind_root( const char * dcb_path )
 {
     char * slash;
 
-    snprintf( ps3_root, sizeof( ps3_root ),
-              "/dev_hdd0/game/%s/USRDIR/", BENNUGD_PS3_TITLE_ID );
+    snprintf( ps4_root, sizeof( ps4_root ), "/app0/" );
 
     if ( !dcb_path || !dcb_path[0] )
         return;
@@ -55,20 +46,19 @@ void file_ps3_bind_root( const char * dcb_path )
     if ( !is_abs( dcb_path ) && !strchr( dcb_path, '/' ) )
         return;
 
-    snprintf( ps3_root, sizeof( ps3_root ), "%s", dcb_path );
-    slash = strrchr( ps3_root, '/' );
+    snprintf( ps4_root, sizeof( ps4_root ), "%s", dcb_path );
+    slash = strrchr( ps4_root, '/' );
     if ( !slash )
     {
-        snprintf( ps3_root, sizeof( ps3_root ),
-                  "/dev_hdd0/game/%s/USRDIR/", BENNUGD_PS3_TITLE_ID );
+        snprintf( ps4_root, sizeof( ps4_root ), "/app0/" );
         return;
     }
     slash[1] = '\0';
 }
 
-const char * file_ps3_root( void )
+const char * file_ps4_root( void )
 {
-    return ps3_root;
+    return ps4_root;
 }
 
 int file_native_try_gzip( const char * filename )
@@ -91,16 +81,16 @@ FILE * file_native_fopen( const char * filename, const char * mode )
 
     filename = strip_rel( filename );
 
-    snprintf( path, sizeof( path ), "%s%s", ps3_root, filename );
+    snprintf( path, sizeof( path ), "%s%s", ps4_root, filename );
     fp = fopen( path, mode );
     if ( fp )
         return fp;
 
-    for ( i = 0 ; ps3_fallbacks[i] ; i++ )
+    for ( i = 0 ; ps4_fallbacks[i] ; i++ )
     {
-        if ( strcmp( ps3_fallbacks[i], ps3_root ) == 0 )
+        if ( strcmp( ps4_fallbacks[i], ps4_root ) == 0 )
             continue;
-        snprintf( path, sizeof( path ), "%s%s", ps3_fallbacks[i], filename );
+        snprintf( path, sizeof( path ), "%s%s", ps4_fallbacks[i], filename );
         fp = fopen( path, mode );
         if ( fp )
             return fp;
@@ -119,12 +109,12 @@ int file_native_move( const char * source_file, const char * target_file )
     if ( is_abs( source_file ) )
         snprintf( src, sizeof( src ), "%s", source_file );
     else
-        snprintf( src, sizeof( src ), "%s%s", ps3_root, strip_rel( source_file ) );
+        snprintf( src, sizeof( src ), "%s%s", ps4_root, strip_rel( source_file ) );
 
     if ( is_abs( target_file ) )
         snprintf( dst, sizeof( dst ), "%s", target_file );
     else
-        snprintf( dst, sizeof( dst ), "%s%s", ps3_root, strip_rel( target_file ) );
+        snprintf( dst, sizeof( dst ), "%s%s", ps4_root, strip_rel( target_file ) );
 
     return rename( src, dst );
 }

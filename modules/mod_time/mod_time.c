@@ -39,6 +39,9 @@
 
 #include <SDL3/SDL.h>
 #include "sdl3_compat.h"
+#ifdef TARGET_PS4
+#include "ps4_platform.h"
+#endif
 
 #include <time.h>
 
@@ -47,7 +50,11 @@
 
 static int modtime_get_timer( INSTANCE * my, intptr_t * params )
 {
+#ifdef TARGET_PS4
+    return ps4_platform_get_ticks_ms() ;
+#else
     return SDL_GetTicks() ;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */

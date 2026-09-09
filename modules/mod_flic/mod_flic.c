@@ -41,6 +41,18 @@
 #include "librender.h"
 
 #include "mod_flic.h"
+#ifdef TARGET_PS4
+#include "ps4_platform.h"
+#endif
+
+static int modflic_ticks_ms( void )
+{
+#ifdef TARGET_PS4
+    return ps4_platform_get_ticks_ms();
+#else
+    return SDL_GetTicks();
+#endif
+}
 
 /* --------------------------------------------------------------------- */
 /* Librería para reproducir ficheros FLI directamente desde el disco     */
@@ -95,7 +107,7 @@ static int info_fli( void * what, REGION * clip, int * z, int * drawme )
         flic->saved_flags   = flic->flags;
     }
 
-    ms = SDL_GetTicks() ;
+    ms = modflic_ticks_ms() ;
     if ( flic->last_frame_ms + flic->speed_ms < ms && !flic->finished )
         changed |= ( flic_do_frame( flic ) != NULL ) ;
 
@@ -208,7 +220,7 @@ static FLIC * flic_open( const char * filename )
 
     flic->current_frame = 0 ;
     flic->finished      = 0 ;
-    flic->last_frame_ms = SDL_GetTicks() ;
+    flic->last_frame_ms = modflic_ticks_ms() ;
 
     if ( flic->header.type == 0xAF11 )
         flic->speed_ms = ( int )(( 1000.0F / 70.0F ) * flic->header.speed ) ;

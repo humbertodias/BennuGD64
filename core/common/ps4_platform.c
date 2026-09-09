@@ -50,3 +50,14 @@ int ps4_platform_read_pad( OrbisPadData * data )
         return -1;
     return scePadReadState( ps4_pad_handle, data );
 }
+
+int ps4_platform_get_ticks_ms( void )
+{
+    return ( int )( sceKernelGetProcessTime() / 1000 );
+}
+
+void ps4_platform_delay_ms( int delay )
+{
+    if ( delay > 0 )
+        sceKernelUsleep( ( uint32_t ) delay * 1000u );
+}

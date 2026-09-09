@@ -37,6 +37,9 @@
 #include "sdl3_compat.h"
 
 #include "dlvaracc.h"
+#ifdef TARGET_PS4
+#include "ps4_platform.h"
+#endif
 
 /* ----------------------------------------------------------------- */
 
@@ -76,7 +79,11 @@ static void _advance_timers( void )
         return;
 #endif
     int * timer, i ;
+#ifdef TARGET_PS4
+    int curr_ticktimer = ps4_platform_get_ticks_ms() ;
+#else
     int curr_ticktimer = SDL_GetTicks() ;
+#endif
     static int initial_ticktimer[10] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0} ;
     static int ltimer[10] = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1} ; // -1 to force initial_ticktimer update
 

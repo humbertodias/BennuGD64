@@ -58,6 +58,11 @@
 #include "mod_sound_ps4.h"
 #endif
 
+#ifdef MODSOUND_PS4_DUMMY_AUDIO
+/* Reuse the module's existing no-audio API behavior while keeping exports. */
+#define TARGET_DINGUX_A320
+#endif
+
 /* --------------------------------------------------------------------------- */
 
 #define MAX_SOUND_CHANNELS  32

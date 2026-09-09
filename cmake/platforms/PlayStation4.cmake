@@ -6,6 +6,8 @@
 
 set (STATIC_MODULES ON CACHE BOOL "PS4 homebrew is a single PKG" FORCE)
 set (INTERPRETER_ONLY ON CACHE BOOL "PKG ships the interpreter; compile .prg on a host" FORCE)
+set (BENNUGD_PS4_DUMMY_AUDIO ON CACHE BOOL
+  "Keep mod_sound exports but disable PS4 audio output")
 
 set (SDL_SHARED OFF CACHE BOOL "" FORCE)
 set (SDL_STATIC ON CACHE BOOL "" FORCE)

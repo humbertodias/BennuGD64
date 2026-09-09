@@ -21,6 +21,9 @@ if (PLATFORM_PS3 OR PS3)
 endif ()
 if (PLATFORM_PS4 OR PS4)
   target_sources (mod_sound PRIVATE mod_sound_ps4.c)
+  if (BENNUGD_PS4_DUMMY_AUDIO)
+    target_compile_definitions (mod_sound PRIVATE MODSOUND_PS4_DUMMY_AUDIO=1)
+  endif ()
 endif ()
 
 target_link_libraries (

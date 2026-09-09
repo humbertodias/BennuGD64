@@ -503,7 +503,9 @@ Other assets (FPG, WAV, …) also go in those search paths. Compile with the mat
 
 If none exists, a fallback pattern is displayed. CROSS / OPTIONS quits. Copy
 `/data/bennugd64/bgdi.log` after a silent close. OPTIONS is Enter; touch pad is
-Escape.
+Escape. The log captures stdout/stderr from startup and records common fatal
+signals before the process exits, when the OpenOrbis signal layer receives
+them.
 
 Official SDL3 for PS4 is NDA-only and OpenOrbis ships SDL2. Bennu therefore
 keeps upstream SDL3 for software surfaces, codecs and mixing, while its

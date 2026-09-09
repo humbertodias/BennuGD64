@@ -7,7 +7,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
@@ -19,6 +18,7 @@
 #include "main_ps4.h"
 #include "files.h"
 #include "files_ps4.h"
+#include "ps4_log.h"
 #include "ps4_platform.h"
 #include "../../../modules/libvideo/g_video_ps4.h"
 
@@ -36,27 +36,6 @@ static int ps4_arg_is_dcb( const char * a )
 {
     return ps4_suffix_ok( a, ".dcb" ) || ps4_suffix_ok( a, ".dat" ) ||
            ps4_suffix_ok( a, ".bin" );
-}
-
-static void ps4_mkdir_p( const char * path )
-{
-    mkdir( path, 0777 );
-}
-
-static int ps4_redirect_stdio( void )
-{
-    ps4_mkdir_p( "/data" );
-    ps4_mkdir_p( "/data/bennugd64" );
-    if ( !freopen( "/data/bennugd64/bgdi.log", "w", stderr ) )
-        return -1;
-    if ( !freopen( "/data/bennugd64/bgdi.log", "a", stdout ) )
-    {
-        fprintf( stderr, "bgdi: stdout redirect failed errno=%d\n", errno );
-        return -1;
-    }
-    setvbuf( stdout, NULL, _IONBF, 0 );
-    setvbuf( stderr, NULL, _IONBF, 0 );
-    return 0;
 }
 
 static int ps4_dcb_exists( const char * path )
@@ -215,10 +194,12 @@ char * bgdi_ps4_startup( int argc, char * argv[], int * standalone )
     };
     int k;
 
-    ps4_redirect_stdio();
+    ps4_log_initialize();
+    ps4_log_write( "bgdi: PS4 startup entered" );
     fprintf( stderr, "bgdi: ps4 start argc=%d\n", argc );
     if ( ps4_platform_initialize() != 0 )
         fprintf( stderr, "bgdi: controller unavailable; continuing\n" );
+    ps4_log_write( "bgdi: PS4 platform initialized" );
 
     SDL_SetMainReady();
 

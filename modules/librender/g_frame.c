@@ -46,6 +46,9 @@
 #ifdef TARGET_WII
 #include "g_frame_wii.h"
 #endif
+#ifdef TARGET_PS4
+#include "g_frame_ps4.h"
+#endif
 
 /* --------------------------------------------------------------------------- */
 
@@ -122,6 +125,8 @@ static int bennu_get_ticks_ms( void )
     return ( int )( bgdrtm_ptimer_get_ticks_us() / 1000L );
 #elif defined(TARGET_WII)
     return gr_frame_wii_get_ticks_ms();
+#elif defined(TARGET_PS4)
+    return gr_frame_ps4_get_ticks_ms();
 #else
     return ( int ) SDL_GetTicks();
 #endif
@@ -132,6 +137,8 @@ static void bennu_delay_ms( int delay )
 {
 #ifdef TARGET_WII
     gr_frame_wii_delay_ms( delay );
+#elif defined(TARGET_PS4)
+    gr_frame_ps4_delay_ms( delay );
 #else
     if ( delay > 0 )
         SDL_Delay( delay );

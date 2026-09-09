@@ -80,6 +80,10 @@
 #ifdef TARGET_PS3
 #include "main_ps3.h"
 #endif
+#ifdef TARGET_PS4
+#include "main_ps4.h"
+#include "ps4_log.h"
+#endif
 #ifdef TARGET_PANDORA
 #include "main_pandora.h"
 #endif
@@ -121,7 +125,7 @@ int main( int argc, char *argv[] )
     dcb_signature dcb_signature;
 
     /* disable stdout buffering */
-#ifndef TARGET_PS2
+#if !defined(TARGET_PS2) && !defined(TARGET_PS4)
     setvbuf( stdout, NULL, _IONBF, BUFSIZ );
 #endif
 
@@ -241,6 +245,24 @@ int main( int argc, char *argv[] )
         ps3_dcb = bgdi_ps3_startup( argc, argv, &standalone );
         if ( ps3_dcb )
             filename = ps3_dcb;
+    }
+#endif
+
+#ifdef TARGET_PS4
+    {
+        static char * ps4_argv[2] = { "eboot.bin", NULL };
+        char * ps4_dcb;
+
+        if ( argc < 1 || !argv || !argv[0] )
+        {
+            argc = 1;
+            argv = ps4_argv;
+        }
+
+        ps4_dcb = bgdi_ps4_startup( argc, argv, &standalone );
+        if ( ps4_dcb )
+            filename = ps4_dcb;
+        ps4_log_write( "bgdi: PS4 startup returned" );
     }
 #endif
 
@@ -464,6 +486,9 @@ fflush(stdout);
     if ( !embedded )
     {
         /* First try to load directly (we expect myfile.dcb) */
+#ifdef TARGET_PS4
+        ps4_log_write( "bgdi: loading DCB" );
+#endif
         if ( !dcb_load( dcbname ) )
         {
             char ** dcbext = dcb_exts;
@@ -479,10 +504,16 @@ fflush(stdout);
 
             if ( !dcbloaded )
             {
+#ifdef TARGET_PS4
+                ps4_log_write( "bgdi: DCB load failed" );
+#endif
                 printf( "%s: doesn't exist or isn't version %d DCB compatible\n", filename, DCB_VERSION >> 8 ) ;
                 return -1 ;
             }
         }
+#ifdef TARGET_PS4
+        ps4_log_write( "bgdi: DCB loaded" );
+#endif
     }
     else
     {
@@ -495,7 +526,13 @@ fflush(stdout);
 
     /* Initialization (modules needed after dcb_load) */
 
+#ifdef TARGET_PS4
+    ps4_log_write( "bgdi: initializing modules" );
+#endif
     sysproc_init() ;
+#ifdef TARGET_PS4
+    ps4_log_write( "bgdi: modules initialized" );
+#endif
 
 #ifdef TARGET_WIN32
     bgdi_win32_hide_own_console();
@@ -503,11 +540,17 @@ fflush(stdout);
 
     if ( argv && argc > 0 )
         argv[0] = filename;
+#ifdef TARGET_PS4
+    ps4_log_write( "bgdi: entering runtime" );
+#endif
     bgdrtm_entry( argc, argv );
 
     if ( mainproc )
     {
         mainproc_running = instance_new( mainproc, NULL ) ;
+#ifdef TARGET_PS4
+        ps4_log_write( "bgdi: starting scheduler" );
+#endif
         ret = instance_go_all() ;
     }
 

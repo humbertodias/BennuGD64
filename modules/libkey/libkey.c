@@ -63,6 +63,9 @@
 #ifdef TARGET_PS3
 #include "libkey_ps3.h"
 #endif
+#ifdef TARGET_PS4
+#include "libkey_ps4.h"
+#endif
 
 /* ---------------------------------------------------------------------- */
 
@@ -471,6 +474,9 @@ static void process_key_events()
 #ifdef TARGET_PS3
     libkey_ps3_after_events();
 #endif
+#ifdef TARGET_PS4
+    libkey_ps4_after_events();
+#endif
 }
 
 /* ---------------------------------------------------------------------- */
@@ -491,8 +497,8 @@ void __bgdexport( libkey, module_initialize )()
 {
     int * ptr = equivs ;
 
-#ifdef TARGET_PS2
-    /* PADMAN lives in libkey_ps2. Skip SDL_Init VIDEO; SET_MODE owns gsKit. */
+#if defined(TARGET_PS2) || defined(TARGET_PS4)
+    /* Native pad backends do not need SDL video during key initialization. */
 #else
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
 #endif
@@ -519,6 +525,8 @@ void __bgdexport( libkey, module_initialize )()
     libkey_ios_after_init( window );
 #elif defined(TARGET_PS3)
     libkey_ps3_after_init( window );
+#elif defined(TARGET_PS4)
+    libkey_ps4_after_init( window );
 #elif defined(TARGET_PS2)
     /* No OSK. DualShock is polled in libkey_ps2_after_events. */
 #elif defined(TARGET_EMSCRIPTEN)

@@ -17,7 +17,8 @@
 #if defined(TARGET_PS2)
 #include <kernel.h>
 #endif
-#if defined(TARGET_PS2) || defined(TARGET_PSP) || defined(TARGET_VITA) || defined(TARGET_PS3) || defined(__linux__)
+/* OpenOrbis musl has no mallinfo; TARGET_PS4 also defines __linux__ for SDL. */
+#if ( defined(TARGET_PS2) || defined(TARGET_PSP) || defined(TARGET_VITA) || defined(TARGET_PS3) || defined(__linux__) ) && !defined(TARGET_PS4)
 #include <malloc.h>
 #elif defined(__APPLE__)
 #include <malloc/malloc.h>
@@ -80,7 +81,7 @@ static void stats_boot( void )
 
 static uint32_t mem_used( void )
 {
-#if defined(TARGET_PS2) || defined(TARGET_PSP) || defined(TARGET_VITA) || defined(TARGET_PS3) || defined(__linux__)
+#if ( defined(TARGET_PS2) || defined(TARGET_PSP) || defined(TARGET_VITA) || defined(TARGET_PS3) || defined(__linux__) ) && !defined(TARGET_PS4)
     struct mallinfo mi = mallinfo();
     return ( uint32_t ) mi.uordblks;
 #elif defined(__APPLE__)

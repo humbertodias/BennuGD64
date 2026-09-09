@@ -212,6 +212,16 @@ int gr_lock_screen()
 
 void gr_unlock_screen()
 {
+#ifdef TARGET_PS4
+    /*
+     * The native presenter has no SDL window and does not use SDL's lock
+     * state. The Bennu software surface is the complete frame.
+     */
+    if ( !screen || !screen->pixels ) return;
+    screen_locked = 0;
+    gr_video_present( screen );
+    return;
+#else
     if ( !screen_locked || !screen->pixels ) return ;
 
     screen_locked = 0 ;
@@ -539,6 +549,7 @@ void gr_unlock_screen()
             }
         }
     }
+#endif
 }
 
 /* --------------------------------------------------------------------------- */

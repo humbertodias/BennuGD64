@@ -1,11 +1,10 @@
 /*
  * PlayStation 3 file I/O. Linked instead of files_native.c.
  *
- * Games (SoRR) open relative names such as palettes/enemies/galsia.pal.
- * PSL1GHT cwd after chdir("/dev_usb000/...") is often still the ELF
- * directory (USRDIR / app_home), so a bare fopen misses
- * /dev_usb000/bennugd64/palettes/enemies/galsia.pal. Prefix with the DCB
- * directory here; leave files.c unchanged.
+ * Games open relative names (subdir/file or basename). PSL1GHT cwd after
+ * chdir("/dev_usb000/...") is often still the ELF directory (USRDIR /
+ * app_home), so a bare fopen misses files next to the DCB. Prefix with the
+ * DCB directory here; leave files.c unchanged.
  *
  * Absolute paths are POSIX (/dev_hdd0/..., /dev_usb000/...), not device:.
  */

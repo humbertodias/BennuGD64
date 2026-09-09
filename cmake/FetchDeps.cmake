@@ -33,10 +33,9 @@ if (PLATFORM_PS3 OR PS3)
   set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/onesixromcom/SDL.git")
   set (BENNUGD_SDL3_REF "${BENNUGD_SDL3_PS3_REF}")
 endif ()
-
 # Static archives must be PIC so they can later link into .so/.dylib modules.
 # Switch/Dreamcast/PSP/Vita/PS2/Pandora/Wii homebrew uses the toolchain PIE/KOS/pspdev/vitasdk/libogc flags instead.
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_VITA AND NOT VITA AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PS3 AND NOT PS3 AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_VITA AND NOT VITA AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PS3 AND NOT PS3 AND NOT PLATFORM_PS4 AND NOT PS4 AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -327,6 +326,40 @@ if (PLATFORM_PS3 OR PS3)
   set (HAVE_SYSCONF OFF CACHE BOOL "" FORCE)
   set (HAVE_GETPAGESIZE OFF CACHE BOOL "" FORCE)
 endif ()
+if (PLATFORM_PS4 OR PS4)
+  set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+  set (SDL_DLOPEN_NOTES OFF CACHE BOOL "" FORCE)
+  set (SDL_DEPS_SHARED OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+  set (SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
+  set (SDL_CAMERA OFF CACHE BOOL "" FORCE)
+  set (SDL_HAPTIC OFF CACHE BOOL "" FORCE)
+  set (SDL_SENSOR OFF CACHE BOOL "" FORCE)
+  set (SDL_X11 OFF CACHE BOOL "" FORCE)
+  set (SDL_WAYLAND OFF CACHE BOOL "" FORCE)
+  set (SDL_KMSDRM OFF CACHE BOOL "" FORCE)
+  set (SDL_VULKAN OFF CACHE BOOL "" FORCE)
+  set (SDL_OSS OFF CACHE BOOL "" FORCE)
+  set (SDL_ALSA OFF CACHE BOOL "" FORCE)
+  set (SDL_JACK OFF CACHE BOOL "" FORCE)
+  set (SDL_PIPEWIRE OFF CACHE BOOL "" FORCE)
+  set (SDL_PULSEAUDIO OFF CACHE BOOL "" FORCE)
+  set (SDL_SNDIO OFF CACHE BOOL "" FORCE)
+  set (SDL_DBUS OFF CACHE BOOL "" FORCE)
+  set (SDL_IBUS OFF CACHE BOOL "" FORCE)
+  set (SDL_LIBUDEV OFF CACHE BOOL "" FORCE)
+  set (SDL_PTHREADS ON CACHE BOOL "" FORCE)
+  # Upstream SDL3 has no Orbis video; allow dummy/offscreen without X11/Wayland.
+  set (SDL_UNIX_CONSOLE_BUILD ON CACHE BOOL "" FORCE)
+  set (HAVE_FDATASYNC OFF CACHE BOOL "" FORCE)
+  set (HAVE_GETHOSTNAME OFF CACHE BOOL "" FORCE)
+  set (HAVE_SYSCONF OFF CACHE BOOL "" FORCE)
+  set (HAVE_GETPAGESIZE OFF CACHE BOOL "" FORCE)
+endif ()
 if (PLATFORM_VITA OR VITA)
   set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
   set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
@@ -393,6 +426,36 @@ FetchContent_Declare (
 FetchContent_GetProperties (sdl3)
 if (NOT sdl3_POPULATED)
   FetchContent_Populate (sdl3)
+  if (PLATFORM_PS4 OR PS4)
+    # SDL's hint/property store locks an SDL pthread mutex. OpenOrbis cannot
+    # safely use that Linux pthread path yet, so select plain malloc at build
+    # time and avoid SDL_GetHintBoolean() during every surface allocation.
+    set (_ps4_surface "${sdl3_SOURCE_DIR}/src/video/SDL_surface.c")
+    file (READ "${_ps4_surface}" _ps4_surface_text)
+    set (_ps4_surface_old
+"        if (SDL_GetHintBoolean(\"SDL_SURFACE_MALLOC\", false)) {
+            surface->pixels = SDL_malloc(size);
+        } else {
+            surface->flags |= SDL_SURFACE_SIMD_ALIGNED;
+            surface->pixels = SDL_aligned_alloc(SDL_GetSIMDAlignment(), size);
+        }")
+    set (_ps4_surface_new
+"#ifdef __ORBIS__
+        surface->pixels = SDL_malloc(size);
+#else
+        if (SDL_GetHintBoolean(\"SDL_SURFACE_MALLOC\", false)) {
+            surface->pixels = SDL_malloc(size);
+        } else {
+            surface->flags |= SDL_SURFACE_SIMD_ALIGNED;
+            surface->pixels = SDL_aligned_alloc(SDL_GetSIMDAlignment(), size);
+        }
+#endif")
+    if (_ps4_surface_text MATCHES "SDL_GetHintBoolean\\(\"SDL_SURFACE_MALLOC\"")
+      string (REPLACE "${_ps4_surface_old}" "${_ps4_surface_new}"
+        _ps4_surface_text "${_ps4_surface_text}")
+      file (WRITE "${_ps4_surface}" "${_ps4_surface_text}")
+    endif ()
+  endif ()
   add_subdirectory (${sdl3_SOURCE_DIR} ${sdl3_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif ()
 
@@ -484,6 +547,20 @@ if (PLATFORM_PS3 OR PS3)
         gcm_sys rsx sysutil io audio rt lv2 m z)
     endif ()
   endif ()
+endif ()
+
+if (PLATFORM_PS4 OR PS4)
+  # SDL records INTERFACE_LINK_OPTIONS "-pthread" (clang). OpenOrbis links with
+  # ld.lld + -lpthread; strip the clang flag from every SDL target we use.
+  foreach (_ps4_sdl_tgt SDL3-static SDL3_test SDL3-shared)
+    if (TARGET ${_ps4_sdl_tgt})
+      get_target_property (_ps4_lo ${_ps4_sdl_tgt} INTERFACE_LINK_OPTIONS)
+      if (_ps4_lo AND NOT _ps4_lo STREQUAL "NOTFOUND")
+        list (REMOVE_ITEM _ps4_lo "-pthread")
+        set_property (TARGET ${_ps4_sdl_tgt} PROPERTY INTERFACE_LINK_OPTIONS "${_ps4_lo}")
+      endif ()
+    endif ()
+  endforeach ()
 endif ()
 
 if (PLATFORM_DREAMCAST OR DREAMCAST)
@@ -604,6 +681,12 @@ if (NOT NO_SOUND)
   FetchContent_GetProperties (sdl3_mixer)
   if (NOT sdl3_mixer_POPULATED)
     FetchContent_Populate (sdl3_mixer)
+    if (PLATFORM_PS4 OR PS4)
+      # try_compile is STATIC_LIBRARY (Orbis CRT), so the version-script link
+      # probe always fails. ld.lld supports --version-script; skip the probe.
+      # Without this, SDL3_mixer fatals on LINUX when LINKER_SUPPORTS_VERSION_SCRIPT is false.
+      set (LINKER_SUPPORTS_VERSION_SCRIPT TRUE)
+    endif ()
     if (MSVC)
       set (_stb "${sdl3_mixer_SOURCE_DIR}/src/decoder_stb_vorbis.c")
       if (EXISTS "${_stb}")
@@ -627,6 +710,17 @@ if (NOT NO_SOUND)
       endif ()
     endif ()
     add_subdirectory (${sdl3_mixer_SOURCE_DIR} ${sdl3_mixer_BINARY_DIR} EXCLUDE_FROM_ALL)
+  endif ()
+  if (PLATFORM_PS4 OR PS4)
+    foreach (_ps4_mix_tgt SDL3_mixer-static SDL3_mixer-shared)
+      if (TARGET ${_ps4_mix_tgt})
+        get_target_property (_ps4_lo ${_ps4_mix_tgt} INTERFACE_LINK_OPTIONS)
+        if (_ps4_lo AND NOT _ps4_lo STREQUAL "NOTFOUND")
+          list (REMOVE_ITEM _ps4_lo "-pthread")
+          set_property (TARGET ${_ps4_mix_tgt} PROPERTY INTERFACE_LINK_OPTIONS "${_ps4_lo}")
+        endif ()
+      endif ()
+    endforeach ()
   endif ()
   if (NINTENDO_WII OR PLATFORM_WII)
     # libogc has u8, not uint8. Keep SDL_mixer's aliases (undo a prior Wii patch

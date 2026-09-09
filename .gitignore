@@ -7,6 +7,7 @@
 /cmake-build-*/
 /.deps/
 /dist/
+external/
 
 # In-source CMake artifacts
 CMakeCache.txt

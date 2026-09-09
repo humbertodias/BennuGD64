@@ -19,6 +19,9 @@ endif ()
 if (PLATFORM_PS2 OR PS2)
   target_sources (joy PRIVATE libjoy_ps2.c)
 endif () 
+if (PLATFORM_PS4 OR PS4)
+  target_sources (joy PRIVATE libjoy_ps4.c)
+endif ()
 
 target_link_libraries (
   joy

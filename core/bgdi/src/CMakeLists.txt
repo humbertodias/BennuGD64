@@ -32,6 +32,14 @@ endif ()
 if (PLATFORM_PS3 OR PS3)
   target_sources (bgdi PRIVATE main_ps3.c)
 endif ()
+if (PLATFORM_PS4 OR PS4)
+  target_sources (
+    bgdi PRIVATE
+    main_ps4.c
+    ../../common/ps4_log.c
+    ../../common/ps4_platform.c
+  )
+endif ()
 if (PLATFORM_PS2 OR PS2)
   set (_ps2sdk "$ENV{PS2SDK}")
   if (NOT _ps2sdk)
@@ -385,6 +393,24 @@ if (PLATFORM_PS3 OR PS3)
     m
     z
     "-Wl,--end-group"
+  )
+endif ()
+
+if (PLATFORM_PS4 OR PS4)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+    c
+    c++
+    kernel
+    pthread
+    ScePad
+    SceUserService
+    SceVideoOut
+    SceAudioOut
+    SceSystemService
+    m
   )
 endif ()
 

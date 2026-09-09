@@ -874,7 +874,7 @@ char * getfullpath( char *rel_path )
     if ( !rel_path || !*rel_path ) return NULL;
 #ifdef _WIN32
     GetFullPathName( rel_path, sizeof( fullpath ), fullpath, NULL );
-#elif defined(TARGET_PS2) || defined(TARGET_VITA) || defined(TARGET_PS3)
+#elif defined(TARGET_PS2) || defined(TARGET_VITA) || defined(TARGET_PS3) || defined(TARGET_PS4)
     /* Device paths (mass:/ ux0:/ app0: /dev_usb000/) are not POSIX; realpath strips them. */
     /* Device paths (mass:/ ux0:/ app0:) are not POSIX; realpath strips them. */
     strncpy( fullpath, rel_path, sizeof( fullpath ) - 1 );

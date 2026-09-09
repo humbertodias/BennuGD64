@@ -37,6 +37,9 @@ endif ()
 if (NINTENDO_WII OR PLATFORM_WII)
   target_sources (render PRIVATE g_frame_wii.c)
 endif ()
+if (PLATFORM_PS4 OR PS4)
+  target_sources (render PRIVATE g_frame_ps4.c)
+endif ()
 
 target_link_libraries (
   render

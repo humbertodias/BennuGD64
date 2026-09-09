@@ -63,6 +63,9 @@
 #if defined(TARGET_PS2)
 #include "libjoy_ps2.h"
 #endif
+#if defined(TARGET_PS4)
+#include "libjoy_ps4.h"
+#endif
 
 #if defined(TARGET_WII)
 #define libjoy_plat_num          libjoy_wii_num
@@ -76,6 +79,23 @@
 #define libjoy_plat_get_accel    libjoy_wii_get_accel
 #define libjoy_plat_initialize   libjoy_wii_module_initialize
 #define libjoy_plat_finalize     libjoy_wii_module_finalize
+#endif
+#if defined(TARGET_PS4)
+#define libjoy_plat_num          libjoy_ps4_num
+#define libjoy_plat_name         libjoy_ps4_name
+#define libjoy_plat_buttons      libjoy_ps4_buttons
+#define libjoy_plat_axes         libjoy_ps4_axes
+#define libjoy_plat_hats         libjoy_ps4_hats
+#define libjoy_plat_get_button   libjoy_ps4_get_button
+#define libjoy_plat_get_position libjoy_ps4_get_position
+#define libjoy_plat_get_hat      libjoy_ps4_get_hat
+#define libjoy_plat_get_accel    libjoy_ps4_get_accel
+#define libjoy_plat_initialize   libjoy_ps4_module_initialize
+#define libjoy_plat_finalize     libjoy_ps4_module_finalize
+#endif
+
+#if defined(TARGET_WII) || defined(TARGET_PS4)
+#define LIBJOY_NATIVE_PLATFORM
 #endif
 
 /* --------------------------------------------------------------------------- */
@@ -97,7 +117,7 @@ SDL_JoystickID _joystick_ids[MAX_JOYS];
 char _joystick_names[MAX_JOYS][128];
 static int _selected_joystick = -1;
 
-#ifndef TARGET_WII
+#ifndef LIBJOY_NATIVE_PLATFORM
 static int libjoy_valid( int joy )
 {
     return joy >= 0 && joy < _max_joys && _joysticks[ joy ];
@@ -124,7 +144,7 @@ void libjoy_remember_name( int slot )
 
 int libjoy_num( void )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_num();
 #else
     return _max_joys ;
@@ -139,7 +159,7 @@ int libjoy_num( void )
 int libjoy_name( int joy )
 {
     int result;
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     result = string_new( libjoy_plat_name( joy ) );
     string_use( result );
     return result;
@@ -181,7 +201,7 @@ int libjoy_select( int joy )
 
 int libjoy_buttons( void )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_buttons( _selected_joystick );
 #else
     if ( libjoy_valid( _selected_joystick ) )
@@ -202,7 +222,7 @@ int libjoy_buttons( void )
 
 int libjoy_axes( void )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_axes( _selected_joystick );
 #else
     if ( libjoy_valid( _selected_joystick ) )
@@ -220,7 +240,7 @@ int libjoy_axes( void )
 
 int libjoy_get_button( int button )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_get_button( _selected_joystick, button );
 #else
     if ( libjoy_valid( _selected_joystick ) )
@@ -271,7 +291,7 @@ int libjoy_get_button( int button )
 
 int libjoy_get_position( int axis )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_get_position( _selected_joystick, axis );
 #else
     if ( libjoy_valid( _selected_joystick ) )
@@ -289,7 +309,7 @@ int libjoy_get_position( int axis )
 
 int libjoy_hats( void )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_hats( _selected_joystick );
 #else
     if ( libjoy_valid( _selected_joystick ) )
@@ -307,7 +327,7 @@ int libjoy_hats( void )
 
 int libjoy_balls( void )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return 0;
 #else
     if ( libjoy_valid( _selected_joystick ) )
@@ -325,7 +345,7 @@ int libjoy_balls( void )
 
 int libjoy_get_hat( int hat )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_get_hat( _selected_joystick, hat );
 #else
     if ( libjoy_valid( _selected_joystick ) )
@@ -346,7 +366,7 @@ int libjoy_get_hat( int hat )
 
 int libjoy_get_ball( int ball, int * dx, int * dy )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     ( void ) ball;
     ( void ) dx;
     ( void ) dy;
@@ -367,7 +387,7 @@ int libjoy_get_ball( int ball, int * dx, int * dy )
 
 int libjoy_get_accel( int * x, int * y, int * z )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_get_accel( _selected_joystick, x, y, z );
 #elif defined(TARGET_CAANOO)
     if ( _selected_joystick == 0 )
@@ -391,7 +411,7 @@ int libjoy_get_accel( int * x, int * y, int * z )
 
 int libjoy_buttons_specific( int joy )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_buttons( joy );
 #else
     if ( libjoy_valid( joy ) )
@@ -412,7 +432,7 @@ int libjoy_buttons_specific( int joy )
 
 int libjoy_axes_specific( int joy )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_axes( joy );
 #else
     if ( libjoy_valid( joy ) )
@@ -430,7 +450,7 @@ int libjoy_axes_specific( int joy )
 
 int libjoy_get_button_specific( int joy, int button )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_get_button( joy, button );
 #else
     if ( libjoy_valid( joy ) )
@@ -488,7 +508,7 @@ int libjoy_get_button_specific( int joy, int button )
 
 int libjoy_get_position_specific( int joy, int axis )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_get_position( joy, axis );
 #else
     if ( libjoy_valid( joy ) )
@@ -512,7 +532,7 @@ int libjoy_get_position_specific( int joy, int axis )
 
 int libjoy_hats_specific( int joy )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_hats( joy );
 #else
     if ( libjoy_valid( joy ) )
@@ -530,7 +550,7 @@ int libjoy_hats_specific( int joy )
 
 int libjoy_balls_specific( int joy )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     ( void ) joy;
     return 0;
 #else
@@ -549,7 +569,7 @@ int libjoy_balls_specific( int joy )
 
 int libjoy_get_hat_specific( int joy, int hat )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_get_hat( joy, hat );
 #else
     if ( libjoy_valid( joy ) )
@@ -570,7 +590,7 @@ int libjoy_get_hat_specific( int joy, int hat )
 
 int libjoy_get_ball_specific( int joy, int ball, int * dx, int * dy )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     ( void ) joy;
     ( void ) ball;
     ( void ) dx;
@@ -592,7 +612,7 @@ int libjoy_get_ball_specific( int joy, int ball, int * dx, int * dy )
 
 int libjoy_get_accel_specific( int joy, int * x, int * y, int * z )
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     return libjoy_plat_get_accel( joy, x, y, z );
 #elif defined(TARGET_CAANOO)
     if ( joy == 0 )
@@ -606,7 +626,7 @@ int libjoy_get_accel_specific( int joy, int * x, int * y, int * z )
 
 void  __bgdexport( libjoy, module_initialize )()
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     libjoy_plat_initialize();
     return;
 #elif defined(TARGET_PS2)
@@ -674,7 +694,7 @@ void  __bgdexport( libjoy, module_initialize )()
 
 void  __bgdexport( libjoy, module_finalize )()
 {
-#ifdef TARGET_WII
+#ifdef LIBJOY_NATIVE_PLATFORM
     libjoy_plat_finalize();
     return;
 #else
@@ -698,6 +718,9 @@ HOOK __bgdexport( libjoy, handler_hooks )[] =
 #endif
 #if defined(TARGET_WII)
     { 4900, libjoy_wii_pump },
+#endif
+#if defined(TARGET_PS4)
+    { 4900, libjoy_ps4_pump },
 #endif
     {    0, NULL           }
 };

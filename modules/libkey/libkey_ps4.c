@@ -20,6 +20,7 @@
 #include <SDL3/SDL.h>
 
 #include "libkey_ps4.h"
+#include "ps4_platform.h"
 
 extern const bool * keystate;
 
@@ -27,7 +28,6 @@ extern const bool * keystate;
 #define PS4_ANA_DEAD    0x40
 
 static bool ps4_keystate[ SDL_SCANCODE_COUNT ];
-static int ps4_pad_handle = -1;
 
 static void set_sc( SDL_Scancode sc )
 {
@@ -93,14 +93,7 @@ static void apply_pad( const OrbisPadData * pad )
 
 void libkey_ps4_after_init( SDL_Window * window )
 {
-    int32_t user = 0;
-
     ( void ) window;
-    sceUserServiceInitialize( NULL );
-    scePadInit();
-    if ( sceUserServiceGetInitialUser( &user ) != 0 )
-        user = 0x1;
-    ps4_pad_handle = scePadOpen( user, ORBIS_PAD_PORT_TYPE_STANDARD, 0, NULL );
     libkey_ps4_after_events();
 }
 
@@ -120,10 +113,10 @@ void libkey_ps4_after_events( void )
 
     ps4_keystate[ SDL_SCANCODE_ESCAPE ] = false;
 
-    if ( ps4_pad_handle >= 0 )
+    if ( ps4_platform_pad_handle() >= 0 )
     {
         memset( &pad, 0, sizeof( pad ) );
-        if ( scePadReadState( ps4_pad_handle, &pad ) == 0 )
+        if ( ps4_platform_read_pad( &pad ) == 0 )
             apply_pad( &pad );
     }
 

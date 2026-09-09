@@ -277,7 +277,11 @@ static int sound_init()
     modsound_ps4_adjust_spec( &spec );
 #endif
 
+#ifdef TARGET_PS4
+    mixer = MIX_CreateMixer( &spec );
+#else
     mixer = MIX_CreateMixerDevice( SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec );
+#endif
     if ( !mixer )
     {
         fprintf( stderr, "[SOUND] No se pudo inicializar el audio: %s\n", SDL_GetError() );
@@ -316,6 +320,27 @@ static int sound_init()
         }
     }
 
+#ifdef TARGET_PS4
+    if ( modsound_ps4_start_output( mixer ) != 0 )
+    {
+        fprintf( stderr, "[SOUND] No se pudo iniciar PS4 AudioOut\n" );
+        for ( i = 0; i < num_channels; i++ )
+        {
+            if ( channels[i] )
+            {
+                MIX_DestroyTrack( channels[i] );
+                channels[i] = NULL;
+            }
+        }
+        MIX_DestroyTrack( music_track );
+        music_track = NULL;
+        MIX_DestroyMixer( mixer );
+        mixer = NULL;
+        MIX_Quit();
+        return -1;
+    }
+#endif
+
     audio_initialized = 1;
     return 0;
 }
@@ -340,6 +365,10 @@ static void sound_close()
     int i;
 
     if ( !audio_initialized ) return;
+
+#ifdef TARGET_PS4
+    modsound_ps4_stop_output();
+#endif
 
     if ( music_track )
     {

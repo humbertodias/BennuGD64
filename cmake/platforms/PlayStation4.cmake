@@ -1,9 +1,8 @@
 # PlayStation 4 homebrew: static modules, interpreter only (bgdi → eboot.bin / PKG).
 # Compile .prg on a host with the ps4-host preset.
 #
-# Official SDL3 for PS4 is NDA-only. Homebrew OpenOrbis ships SDL2. Point
-# BENNUGD_SDL3_PS4_REPO / BENNUGD_SDL3_PS4_REF (or FETCHCONTENT_SOURCE_DIR_SDL3)
-# at NDA sources or a community SDL3 Orbis tree when available.
+# SDL3 provides software surfaces/timers; Bennu drives OpenOrbis VideoOut,
+# AudioOut and Pad directly.
 
 set (STATIC_MODULES ON CACHE BOOL "PS4 homebrew is a single PKG" FORCE)
 set (INTERPRETER_ONLY ON CACHE BOOL "PKG ships the interpreter; compile .prg on a host" FORCE)

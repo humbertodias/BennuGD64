@@ -124,7 +124,7 @@ int main( int argc, char *argv[] )
     dcb_signature dcb_signature;
 
     /* disable stdout buffering */
-#ifndef TARGET_PS2
+#if !defined(TARGET_PS2) && !defined(TARGET_PS4)
     setvbuf( stdout, NULL, _IONBF, BUFSIZ );
 #endif
 

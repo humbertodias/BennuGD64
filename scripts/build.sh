@@ -1284,8 +1284,6 @@ if [[ "${PLATFORM}" == "ps4" ]]; then
     -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
     -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
     -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
-    -e SDL3_PS4_REPO="${SDL3_PS4_REPO:-}" \
-    -e SDL3_PS4_REF="${SDL3_PS4_REF:-main}" \
     -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
     "${IMAGE}" \
     bash -c 'set -euo pipefail
@@ -1341,12 +1339,6 @@ if [[ "${PLATFORM}" == "ps4" ]]; then
         -DBENNUGD_SDL3_REF="${SDL3_REF}"
         -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
       )
-      if [[ -n "${SDL3_PS4_REPO:-}" ]]; then
-        COMMON+=(
-          -DBENNUGD_SDL3_PS4_REPO="${SDL3_PS4_REPO}"
-          -DBENNUGD_SDL3_PS4_REF="${SDL3_PS4_REF}"
-        )
-      fi
       cmake --preset ps4-host "${COMMON[@]}"
       cmake --build --preset ps4-host
       /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
@@ -1379,13 +1371,16 @@ if [[ "${PLATFORM}" == "ps4" ]]; then
         "${OO_PS4_TOOLCHAIN}/samples/input"
       do
         if [[ -d "${sample}/sce_module" ]]; then
-          cp -a "${sample}/sce_module/." "${PKGDIR}/sce_module/" || true
-        fi
-        if [[ -f "${sample}/sce_sys/icon0.png" ]]; then
-          cp "${sample}/sce_sys/icon0.png" "${PKGDIR}/sce_sys/icon0.png"
+          cp -a "${sample}/sce_module/." "${PKGDIR}/sce_module/"
         fi
         if [[ -f "${sample}/sce_sys/about/right.sprx" ]]; then
           cp "${sample}/sce_sys/about/right.sprx" "${PKGDIR}/sce_sys/about/right.sprx"
+        fi
+      done
+      for required_prx in libc.prx libSceFios2.prx; do
+        if [[ ! -s "${PKGDIR}/sce_module/${required_prx}" ]]; then
+          echo "PS4 packaging error: missing sce_module/${required_prx}" >&2
+          exit 1
         fi
       done
       "${PKGTOOL}" sfo_new "${PKGDIR}/sce_sys/param.sfo"
@@ -1406,8 +1401,16 @@ path = pathlib.Path("/src/build-ps4-pkg/sce_sys/icon0.png")
 path.parent.mkdir(parents=True, exist_ok=True)
 def chunk(tag, data):
     return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xffffffff)
-raw = b"\x00" + b"\x00\x00\x00"
-png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 1, 1, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b"")
+width = height = 512
+rows = []
+for y in range(height):
+    row = bytearray([0])
+    for x in range(width):
+        band = 18 if ((x // 64) + (y // 64)) % 2 else 0
+        row.extend((20 + band, 36 + band, 96 + band))
+    rows.append(bytes(row))
+raw = b"".join(rows)
+png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
 path.write_bytes(png)
 PY
       fi
@@ -1437,6 +1440,7 @@ PY
       cp "${PKG_OUT}" "${STAGE}/bennugd64.pkg"
       cmake --install "${PS4_BUILD}" --prefix "${STAGE}"
       cp "${PKGDIR}/bgdi.elf" "${PKGDIR}/eboot.bin" "${PKGDIR}/main.dcb" "${STAGE}/"
+
       test -s "${STAGE}/bennugd64.pkg"
       test -s "${STAGE}/eboot.bin"
       test -s "${STAGE}/bgdi.elf"

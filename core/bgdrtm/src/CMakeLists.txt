@@ -65,7 +65,7 @@ if (PLATFORM_PS3 OR PS3)
   target_sources (bgdrtm PRIVATE misc_ps3.c)
 endif ()
 if (PLATFORM_PS4 OR PS4)
-  target_sources (bgdrtm PRIVATE misc_ps4.c)
+  target_sources (bgdrtm PRIVATE misc_ps4.c bgd_lowmem_ps4.c)
 endif ()
 if (EMSCRIPTEN)
   target_sources (bgdrtm PRIVATE

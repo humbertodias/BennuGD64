@@ -15,8 +15,6 @@ set (BENNUGD_SDL3_SWITCH_REF "switch-sdl-3.4" CACHE STRING "devkitPro SDL3 Switc
 set (BENNUGD_SDL3_DREAMCAST_REF "dreamcastSDL3" CACHE STRING "GPF SDL3 Dreamcast branch")
 set (BENNUGD_SDL3_WII_REF "fixes" CACHE STRING "libogc2 SDL3 Wii branch")
 set (BENNUGD_SDL3_PS3_REF "ps3" CACHE STRING "onesixromcom SDL3 PS3 branch")
-set (BENNUGD_SDL3_PS4_REPO "" CACHE STRING "SDL3 git repository with Orbis/PS4 support (empty = upstream; NDA or community)")
-set (BENNUGD_SDL3_PS4_REF "main" CACHE STRING "SDL3 Orbis/PS4 git tag/branch")
 set (BENNUGD_SDL3_MIXER_REF "release-3.2.4" CACHE STRING "SDL3_mixer git tag/branch to fetch")
 
 if (NINTENDO_SWITCH)
@@ -35,18 +33,6 @@ if (PLATFORM_PS3 OR PS3)
   set (BENNUGD_SDL3_GIT_REPOSITORY "https://github.com/onesixromcom/SDL.git")
   set (BENNUGD_SDL3_REF "${BENNUGD_SDL3_PS3_REF}")
 endif ()
-if (PLATFORM_PS4 OR PS4)
-  if (BENNUGD_SDL3_PS4_REPO AND NOT BENNUGD_SDL3_PS4_REPO STREQUAL "")
-    set (BENNUGD_SDL3_GIT_REPOSITORY "${BENNUGD_SDL3_PS4_REPO}")
-    set (BENNUGD_SDL3_REF "${BENNUGD_SDL3_PS4_REF}")
-  else ()
-    message (WARNING
-      "PS4: official SDL3 is NDA-only; OpenOrbis has SDL2. "
-      "Building upstream SDL3 (${BENNUGD_SDL3_REF}) — set "
-      "BENNUGD_SDL3_PS4_REPO / FETCHCONTENT_SOURCE_DIR_SDL3 for a working Orbis video backend.")
-  endif ()
-endif ()
-
 # Static archives must be PIC so they can later link into .so/.dylib modules.
 # Switch/Dreamcast/PSP/Vita/PS2/Pandora/Wii homebrew uses the toolchain PIE/KOS/pspdev/vitasdk/libogc flags instead.
 if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_VITA AND NOT VITA AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PS3 AND NOT PS3 AND NOT PLATFORM_PS4 AND NOT PS4 AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
@@ -342,6 +328,8 @@ if (PLATFORM_PS3 OR PS3)
 endif ()
 if (PLATFORM_PS4 OR PS4)
   set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+  set (SDL_DLOPEN_NOTES OFF CACHE BOOL "" FORCE)
+  set (SDL_DEPS_SHARED OFF CACHE BOOL "" FORCE)
   set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
   set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
   set (SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
@@ -438,6 +426,36 @@ FetchContent_Declare (
 FetchContent_GetProperties (sdl3)
 if (NOT sdl3_POPULATED)
   FetchContent_Populate (sdl3)
+  if (PLATFORM_PS4 OR PS4)
+    # SDL's hint/property store locks an SDL pthread mutex. OpenOrbis cannot
+    # safely use that Linux pthread path yet, so select plain malloc at build
+    # time and avoid SDL_GetHintBoolean() during every surface allocation.
+    set (_ps4_surface "${sdl3_SOURCE_DIR}/src/video/SDL_surface.c")
+    file (READ "${_ps4_surface}" _ps4_surface_text)
+    set (_ps4_surface_old
+"        if (SDL_GetHintBoolean(\"SDL_SURFACE_MALLOC\", false)) {
+            surface->pixels = SDL_malloc(size);
+        } else {
+            surface->flags |= SDL_SURFACE_SIMD_ALIGNED;
+            surface->pixels = SDL_aligned_alloc(SDL_GetSIMDAlignment(), size);
+        }")
+    set (_ps4_surface_new
+"#ifdef __ORBIS__
+        surface->pixels = SDL_malloc(size);
+#else
+        if (SDL_GetHintBoolean(\"SDL_SURFACE_MALLOC\", false)) {
+            surface->pixels = SDL_malloc(size);
+        } else {
+            surface->flags |= SDL_SURFACE_SIMD_ALIGNED;
+            surface->pixels = SDL_aligned_alloc(SDL_GetSIMDAlignment(), size);
+        }
+#endif")
+    if (_ps4_surface_text MATCHES "SDL_GetHintBoolean\\(\"SDL_SURFACE_MALLOC\"")
+      string (REPLACE "${_ps4_surface_old}" "${_ps4_surface_new}"
+        _ps4_surface_text "${_ps4_surface_text}")
+      file (WRITE "${_ps4_surface}" "${_ps4_surface_text}")
+    endif ()
+  endif ()
   add_subdirectory (${sdl3_SOURCE_DIR} ${sdl3_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif ()
 

@@ -160,6 +160,8 @@ static const char * modsys_running_os_name( void )
     return "PS2";
 #elif defined(TARGET_PS3)
     return "PS3";
+#elif defined(TARGET_PS4)
+    return "PS4";
 #elif defined(TARGET_PANDORA)
     return "Pandora";
 #elif defined(TARGET_SWITCH)

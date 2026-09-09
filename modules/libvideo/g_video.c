@@ -267,7 +267,14 @@ void gr_video_present( SDL_Surface * src )
 {
     SDL_Surface * winsurf ;
 
-    if ( !window || !src ) return ;
+    if ( !src ) return ;
+
+#ifdef TARGET_PS4
+    gr_video_ps4_present( src );
+    return;
+#endif
+
+    if ( !window ) return ;
 
 #ifdef TARGET_SWITCH
     gr_video_switch_present( src );
@@ -295,10 +302,6 @@ void gr_video_present( SDL_Surface * src )
 #endif
 #ifdef TARGET_PS3
     gr_video_ps3_present( src );
-    return;
-#endif
-#ifdef TARGET_PS4
-    gr_video_ps4_present( src );
     return;
 #endif
 #ifdef TARGET_DC
@@ -332,7 +335,14 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
     SDL_Surface * winsurf ;
     int i ;
 
-    if ( !window || !src || count <= 0 ) return ;
+    if ( !src ) return ;
+
+#ifdef TARGET_PS4
+    gr_video_ps4_present_rects( src, rects, count );
+    return;
+#endif
+
+    if ( !window || count <= 0 ) return ;
 
 #ifdef TARGET_SWITCH
     gr_video_switch_present_rects( src, rects, count );
@@ -360,10 +370,6 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 #endif
 #ifdef TARGET_PS3
     gr_video_ps3_present_rects( src, rects, count );
-    return;
-#endif
-#ifdef TARGET_PS4
-    gr_video_ps4_present_rects( src, rects, count );
     return;
 #endif
 #ifdef TARGET_WII
@@ -425,6 +431,12 @@ static SDL_Surface * gr_create_shadow_surface( int width, int height, int depth 
 
 static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 {
+#ifdef TARGET_PS4
+    ( void ) width;
+    ( void ) height;
+    ( void ) window_flags;
+    return 0;
+#else
     int cur_w = 0, cur_h = 0;
     int recreate = 0;
     char caption_buf[512];
@@ -527,6 +539,7 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
     }
 
     return 0;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */
@@ -868,11 +881,13 @@ int gr_set_mode( int width, int height, int depth )
     if ( !gr_video_psp_ready_present( screen->w, screen->h ) ) return -1;
 #endif
 
+#ifndef TARGET_PS4
     SDL_SetWindowMouseGrab( window, grab_input ? true : false ) ;
     SDL_SetWindowKeyboardGrab( window, grab_input ? true : false ) ;
 
     /* Set window title */
     gr_set_caption( apptitle ) ;
+#endif
 
     if ( !sys_pixel_format )
     {
@@ -909,7 +924,9 @@ int gr_set_mode( int width, int height, int depth )
 
     scr_initialized = 1 ;
 
+#ifndef TARGET_PS4
     SDL_HideCursor() ;
+#endif
 
     pal_refresh( NULL ) ;
     palette_changed = 1 ;

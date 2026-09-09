@@ -11,6 +11,9 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #endif
+#ifdef TARGET_PS4
+#include "bgd_lowmem_ps4.h"
+#endif
 
 #include "bgd_lowmem.h"
 
@@ -49,10 +52,32 @@ static void * bgd_low_alloc( size_t size, int zeroed )
             return hdr + 1;
         }
     }
+#elif defined(TARGET_PS4) && defined(__x86_64__)
+    {
+        size_t page = 16384;
+        size_t mapped = ( total + page - 1 ) & ~( page - 1 );
+
+        map = bgd_lowmem_ps4_map( mapped );
+        if ( map )
+        {
+            hdr = ( bgd_low_hdr * ) map;
+            hdr->magic = BGD_LOW_MAGIC_MMAP;
+            hdr->total = ( uint32_t ) mapped;
+            if ( zeroed ) memset( hdr + 1, 0, size );
+            return hdr + 1;
+        }
+    }
 #endif
 
     hdr = ( bgd_low_hdr * ) malloc( total );
     if ( !hdr ) return NULL;
+#if defined(TARGET_PS4) && defined(__x86_64__)
+    if ( ( uintptr_t )( hdr + 1 ) + size - 1 > UINT32_MAX )
+    {
+        free( hdr );
+        return NULL;
+    }
+#endif
     hdr->magic = BGD_LOW_MAGIC_HEAP;
     hdr->total = ( uint32_t ) total;
     if ( zeroed ) memset( hdr + 1, 0, size );
@@ -83,7 +108,15 @@ void bgd_low_free( void * ptr )
         return;
     }
 
-#if defined(__linux__) && defined(__x86_64__) && !defined(TARGET_PS4)
+#if defined(TARGET_PS4) && defined(__x86_64__)
+    if ( hdr->magic == BGD_LOW_MAGIC_MMAP )
+    {
+        size_t total = hdr->total;
+        hdr->magic = 0;
+        bgd_lowmem_ps4_unmap( hdr, total );
+        return;
+    }
+#elif defined(__linux__) && defined(__x86_64__)
     if ( hdr->magic == BGD_LOW_MAGIC_MMAP )
     {
         size_t total = hdr->total;

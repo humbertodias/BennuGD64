@@ -7,24 +7,20 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
 
-#include <orbis/Pad.h>
-#include <orbis/UserService.h>
+#include <orbis/libkernel.h>
 
 #include "main_ps4.h"
 #include "files.h"
 #include "files_ps4.h"
-
-#ifndef BENNUGD_PS4_TITLE_ID
-#define BENNUGD_PS4_TITLE_ID "BGDG00001"
-#endif
-
-static int ps4_pad_handle = -1;
+#include "ps4_platform.h"
+#include "../../../modules/libvideo/g_video_ps4.h"
 
 static int ps4_suffix_ok( const char * name, const char * ext )
 {
@@ -47,16 +43,20 @@ static void ps4_mkdir_p( const char * path )
     mkdir( path, 0777 );
 }
 
-static void ps4_redirect_stdio( void )
+static int ps4_redirect_stdio( void )
 {
     ps4_mkdir_p( "/data" );
     ps4_mkdir_p( "/data/bennugd64" );
-    if ( !freopen( "/data/bennugd64/bgdi.log", "w", stdout ) )
-        return;
-    if ( !freopen( "/data/bennugd64/bgdi.log", "a", stderr ) )
-        return;
+    if ( !freopen( "/data/bennugd64/bgdi.log", "w", stderr ) )
+        return -1;
+    if ( !freopen( "/data/bennugd64/bgdi.log", "a", stdout ) )
+    {
+        fprintf( stderr, "bgdi: stdout redirect failed errno=%d\n", errno );
+        return -1;
+    }
     setvbuf( stdout, NULL, _IONBF, 0 );
     setvbuf( stderr, NULL, _IONBF, 0 );
+    return 0;
 }
 
 static int ps4_dcb_exists( const char * path )
@@ -162,75 +162,45 @@ static void ps4_use_dcb( const char * dcb_path )
     fprintf( stderr, "bgdi: data root %s\n", root );
 }
 
-static void ps4_pad_init( void )
-{
-    int32_t user = 0;
-
-    sceUserServiceInitialize( NULL );
-    scePadInit();
-    if ( sceUserServiceGetInitialUser( &user ) != 0 )
-        user = 0x1;
-    ps4_pad_handle = scePadOpen( user, ORBIS_PAD_PORT_TYPE_STANDARD, 0, NULL );
-}
-
 static int ps4_pad_quit( void )
 {
     OrbisPadData pad;
 
-    if ( ps4_pad_handle < 0 )
+    if ( ps4_platform_pad_handle() < 0 )
         return 0;
     memset( &pad, 0, sizeof( pad ) );
-    if ( scePadReadState( ps4_pad_handle, &pad ) != 0 )
+    if ( ps4_platform_read_pad( &pad ) != 0 )
         return 0;
     return ( pad.buttons & ( ORBIS_PAD_BUTTON_CROSS | ORBIS_PAD_BUTTON_OPTIONS ) ) != 0;
 }
 
 static void ps4_missing_dcb( void )
 {
-    SDL_Window * window;
-    SDL_Renderer * renderer;
-    SDL_Event event;
+    SDL_Surface * surface;
+    int x, y;
 
     fprintf( stderr, "bgdi: main.dcb not found\n" );
 
-    if ( !SDL_WasInit( SDL_INIT_VIDEO ) )
-        SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS );
-
-    window = SDL_CreateWindow( "bgdi", 1920, 1080, SDL_WINDOW_FULLSCREEN );
-    if ( !window )
-        exit( 0 );
-    renderer = SDL_CreateRenderer( window, NULL );
-    if ( !renderer )
-        exit( 0 );
-
-    SDL_SetRenderScale( renderer, 2.0f, 2.0f );
+    gr_video_ps4_module_initialize();
+    surface = SDL_CreateSurface( 960, 540, SDL_PIXELFORMAT_ARGB8888 );
+    if ( !surface )
+        for ( ;; ) sceKernelUsleep( 1000000 );
+    for ( y = 0; y < surface->h; ++y )
+    {
+        uint32_t * row = ( uint32_t * )
+            ( ( uint8_t * ) surface->pixels + y * surface->pitch );
+        for ( x = 0; x < surface->w; ++x )
+            row[ x ] = ( ( x / 32 + y / 32 ) & 1 )
+                ? 0xff202060u : 0xff101030u;
+    }
 
     for ( ;; )
     {
-        while ( SDL_PollEvent( &event ) )
-        {
-            if ( event.type == SDL_EVENT_QUIT )
-                exit( 0 );
-        }
-
         if ( ps4_pad_quit() )
             exit( 0 );
 
-        SDL_SetRenderDrawColor( renderer, 16, 16, 48, 255 );
-        SDL_RenderClear( renderer );
-        SDL_SetRenderDrawColor( renderer, 255, 255, 255, 255 );
-        SDL_RenderDebugText( renderer, 16, 24, "BennuGD64: main.dcb not found" );
-        SDL_RenderDebugText( renderer, 16, 56, "Copy a game DCB to:" );
-        SDL_RenderDebugText( renderer, 16, 72, "/mnt/usb0/bennugd64/main.dcb" );
-        SDL_RenderDebugText( renderer, 16, 88, "or /data/bennugd64/main.dcb" );
-        SDL_RenderDebugText( renderer, 16, 120, "The PKG also looks in /app0/:" );
-        SDL_RenderDebugText( renderer, 16, 136, "/app0/main.dcb" );
-        SDL_RenderDebugText( renderer, 16, 168, "Compile with this tree's" );
-        SDL_RenderDebugText( renderer, 16, 184, "ps4-host bgdc (not PC Bennu)." );
-        SDL_RenderDebugText( renderer, 16, 216, "Log: /data/bennugd64/bgdi.log" );
-        SDL_RenderDebugText( renderer, 16, 232, "CROSS / OPTIONS: quit" );
-        SDL_RenderPresent( renderer );
-        SDL_Delay( 16 );
+        gr_video_ps4_present( surface );
+        sceKernelUsleep( 16000 );
     }
 }
 
@@ -245,9 +215,10 @@ char * bgdi_ps4_startup( int argc, char * argv[], int * standalone )
     };
     int k;
 
-    ps4_pad_init();
     ps4_redirect_stdio();
     fprintf( stderr, "bgdi: ps4 start argc=%d\n", argc );
+    if ( ps4_platform_initialize() != 0 )
+        fprintf( stderr, "bgdi: controller unavailable; continuing\n" );
 
     SDL_SetMainReady();
 

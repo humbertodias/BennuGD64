@@ -497,8 +497,8 @@ void __bgdexport( libkey, module_initialize )()
 {
     int * ptr = equivs ;
 
-#ifdef TARGET_PS2
-    /* PADMAN lives in libkey_ps2. Skip SDL_Init VIDEO; SET_MODE owns gsKit. */
+#if defined(TARGET_PS2) || defined(TARGET_PS4)
+    /* Native pad backends do not need SDL video during key initialization. */
 #else
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
 #endif

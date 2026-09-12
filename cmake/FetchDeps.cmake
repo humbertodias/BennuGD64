@@ -455,6 +455,68 @@ if (NOT sdl3_POPULATED)
         _ps4_surface_text "${_ps4_surface_text}")
       file (WRITE "${_ps4_surface}" "${_ps4_surface_text}")
     endif ()
+
+    # OpenOrbis exposes pthread-shaped types, but the generic mutex lock path
+    # faults when SDL initializes its first audio stream. Keep SDL's ownership
+    # logic and route only the primitive operations to libkernel.
+    set (_ps4_mutex "${sdl3_SOURCE_DIR}/src/thread/pthread/SDL_sysmutex.c")
+    file (READ "${_ps4_mutex}" _ps4_mutex_text)
+    if (NOT _ps4_mutex_text MATCHES "BENNUGD_PS4_MUTEX_BACKEND")
+      string (REPLACE
+"#include \"SDL_sysmutex_c.h\""
+"#include \"SDL_sysmutex_c.h\"
+
+#ifdef __ORBIS__
+#include <orbis/libkernel.h>
+#define BENNUGD_PS4_MUTEX_BACKEND 1
+static int SDL_PS4_InitMutex(pthread_mutex_t *mutex)
+{
+    void *attr_storage = NULL;
+    OrbisPthreadMutexattr *attr = (OrbisPthreadMutexattr *)&attr_storage;
+    int rc = scePthreadMutexattrInit(attr);
+    if (rc == 0) {
+        rc = scePthreadMutexattrSettype(attr, PTHREAD_MUTEX_RECURSIVE);
+    }
+    if (rc == 0) {
+        rc = scePthreadMutexInit((OrbisPthreadMutex *)mutex, attr, \"SDL mutex\");
+    }
+    if (attr_storage) {
+        scePthreadMutexattrDestroy(attr);
+    }
+    return rc;
+}
+#define pthread_mutexattr_init(a) 0
+#define pthread_mutexattr_destroy(a) 0
+#define pthread_mutexattr_settype(a, t) 0
+#define pthread_mutex_init(m, a) SDL_PS4_InitMutex(m)
+#define pthread_mutex_destroy(m) scePthreadMutexDestroy((OrbisPthreadMutex *)(m))
+#define pthread_mutex_lock(m) scePthreadMutexLock((OrbisPthreadMutex *)(m))
+#define pthread_mutex_unlock(m) scePthreadMutexUnlock((OrbisPthreadMutex *)(m))
+static int SDL_PS4_TryLockMutex(pthread_mutex_t *mutex)
+{
+    return scePthreadMutexTrylock((OrbisPthreadMutex *)mutex) == 0 ? 0 : EBUSY;
+}
+#define pthread_mutex_trylock(m) SDL_PS4_TryLockMutex(m)
+#endif"
+        _ps4_mutex_text "${_ps4_mutex_text}")
+      file (WRITE "${_ps4_mutex}" "${_ps4_mutex_text}")
+    endif ()
+
+    # The thread-safe global property registry creates a pthread RWLock that
+    # stalls on OpenOrbis. Property values retain their own working mutexes.
+    # Registry objects are created and published by the game thread before
+    # the audio worker can observe them, so the registry itself can be plain.
+    set (_ps4_properties "${sdl3_SOURCE_DIR}/src/SDL_properties.c")
+    file (READ "${_ps4_properties}" _ps4_properties_text)
+    if (_ps4_properties_text MATCHES
+        "SDL_CreateHashTable\\(0, true, SDL_HashID")
+      string (REPLACE
+        "SDL_CreateHashTable(0, true, SDL_HashID"
+        "SDL_CreateHashTable(0, false, SDL_HashID"
+        _ps4_properties_text "${_ps4_properties_text}")
+      file (WRITE "${_ps4_properties}" "${_ps4_properties_text}")
+    endif ()
+
   endif ()
   add_subdirectory (${sdl3_SOURCE_DIR} ${sdl3_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif ()

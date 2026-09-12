@@ -58,11 +58,6 @@
 #include "mod_sound_ps4.h"
 #endif
 
-#ifdef MODSOUND_PS4_DUMMY_AUDIO
-/* Reuse the module's existing no-audio API behavior while keeping exports. */
-#define TARGET_DINGUX_A320
-#endif
-
 /* --------------------------------------------------------------------------- */
 
 #define MAX_SOUND_CHANNELS  32
@@ -251,7 +246,6 @@ static int sound_init()
         fprintf( stderr, "[SOUND] No se pudo inicializar el audio: %s\n", SDL_GetError() );
         return -1;
     }
-
     /* Initialize variables: but limit quality to some fixed options */
     audio_rate = GLODWORD( mod_sound, SOUND_FREQ );
 
@@ -294,7 +288,6 @@ static int sound_init()
         audio_initialized = 0;
         return -1;
     }
-
     num_channels = ( int ) GLODWORD( mod_sound, SOUND_CHANNELS );
     if ( num_channels <= 0 ) num_channels = 8;
     if ( num_channels > MAX_SOUND_CHANNELS ) num_channels = MAX_SOUND_CHANNELS;

@@ -333,6 +333,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
       - name: Download release artifacts
         uses: actions/download-artifact@v8
         with:
@@ -354,6 +357,7 @@ jobs:
                 ;;
             esac
             echo "Packaging $base"
+            bash scripts/generate-install-md.sh "$base" "$art_dir"
             find "$art_dir" \( -path '*/bgdi.app/bgdi' -o -name sim-install.sh \) -exec chmod +x {} +
             case "$base" in
               *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*psp*|*vita*|*ps2*|*ps3*|*ps4*|*pandora*|*wii*|*tvos*|*ios*)

@@ -18,6 +18,8 @@ typedef struct Ps4VideoState
 {
     int handle;
     int current;
+    int source_width;
+    int source_height;
     int allocated;
     int registered;
     uint64_t flip_arg;
@@ -27,11 +29,17 @@ typedef struct Ps4VideoState
     size_t frame_size;
     size_t mapped_size;
     OrbisKernelEqueue flip_queue;
+    int scale_x[ PS4_FB_WIDTH ];
+    int scale_y[ PS4_FB_HEIGHT ];
 } Ps4VideoState;
 
 static Ps4VideoState ps4_video = {
     .handle = -1
 };
+
+static uint32_t ps4_scaled_row[ PS4_FB_WIDTH ] __attribute__((aligned(64)));
+static uint32_t ps4_rgb565_table[ 65536 ] __attribute__((aligned(64)));
+static int ps4_rgb565_table_ready;
 
 static size_t ps4_align_up( size_t value, size_t alignment )
 {
@@ -165,30 +173,89 @@ static uint32_t ps4_rgb565( uint16_t pixel )
     return r | ( g << 8 ) | ( b << 16 ) | 0xff000000u;
 }
 
-static void ps4_blit_scaled( SDL_Surface * src, uint32_t * dst )
+static void ps4_build_rgb565_table( void )
+{
+    int pixel;
+
+    if ( ps4_rgb565_table_ready )
+        return;
+
+    for ( pixel = 0; pixel < 65536; pixel++ )
+        ps4_rgb565_table[ pixel ] = ps4_rgb565( ( uint16_t ) pixel );
+    ps4_rgb565_table_ready = 1;
+}
+
+static void ps4_build_scale_maps( int width, int height )
 {
     int x, y;
+
+    if ( ps4_video.source_width != width )
+    {
+        for ( x = 0; x < PS4_FB_WIDTH; x++ )
+            ps4_video.scale_x[ x ] =
+                ( int )( ( int64_t ) x * width / PS4_FB_WIDTH );
+        ps4_video.source_width = width;
+    }
+
+    if ( ps4_video.source_height != height )
+    {
+        for ( y = 0; y < PS4_FB_HEIGHT; y++ )
+            ps4_video.scale_y[ y ] =
+                ( int )( ( int64_t ) y * height / PS4_FB_HEIGHT );
+        ps4_video.source_height = height;
+    }
+}
+
+static void ps4_scale_row_565( const uint16_t * src )
+{
+    int x;
+
+    for ( x = 0; x < PS4_FB_WIDTH; x++ )
+        ps4_scaled_row[ x ] = ps4_rgb565_table[ src[ ps4_video.scale_x[ x ] ] ];
+}
+
+static void ps4_scale_row_32( const uint32_t * src )
+{
+    int x;
+
+    for ( x = 0; x < PS4_FB_WIDTH; x++ )
+    {
+        uint32_t pixel = src[ ps4_video.scale_x[ x ] ];
+        ps4_scaled_row[ x ] = ( pixel & 0xff00ff00u ) |
+                              ( ( pixel & 0x00ff0000u ) >> 16 ) |
+                              ( ( pixel & 0x000000ffu ) << 16 ) |
+                              0xff000000u;
+    }
+}
+
+static void ps4_blit_scaled( SDL_Surface * src, uint32_t * dst )
+{
+    int y;
+    int last_sy = -1;
     int bpp = bennu_surface_bytes_pp( src );
+
+    ps4_build_scale_maps( src->w, src->h );
+    if ( bpp == 2 )
+        ps4_build_rgb565_table();
 
     for ( y = 0; y < PS4_FB_HEIGHT; y++ )
     {
-        int sy = ( int )( ( int64_t ) y * src->h / PS4_FB_HEIGHT );
-        const uint8_t * row = ( const uint8_t * ) src->pixels + sy * src->pitch;
-        uint32_t * out = dst + y * PS4_FB_WIDTH;
-        for ( x = 0; x < PS4_FB_WIDTH; x++ )
+        int sy = ps4_video.scale_y[ y ];
+
+        if ( sy != last_sy )
         {
-            int sx = ( int )( ( int64_t ) x * src->w / PS4_FB_WIDTH );
+            const uint8_t * row =
+                ( const uint8_t * ) src->pixels + sy * src->pitch;
+
             if ( bpp == 2 )
-                out[ x ] = ps4_rgb565( ( ( const uint16_t * ) row )[ sx ] );
+                ps4_scale_row_565( ( const uint16_t * ) row );
             else
-            {
-                uint32_t pixel = ( ( const uint32_t * ) row )[ sx ];
-                out[ x ] = ( pixel & 0xff00ff00u ) |
-                           ( ( pixel & 0x00ff0000u ) >> 16 ) |
-                           ( ( pixel & 0x000000ffu ) << 16 ) |
-                           0xff000000u;
-            }
+                ps4_scale_row_32( ( const uint32_t * ) row );
+            last_sy = sy;
         }
+
+        memcpy( dst + y * PS4_FB_WIDTH, ps4_scaled_row,
+                PS4_FB_WIDTH * sizeof( *ps4_scaled_row ) );
     }
 }
 

@@ -17,6 +17,7 @@
 #   bash scripts/build.sh ps2
 #   bash scripts/build.sh ps3
 #   bash scripts/build.sh ps4
+#   bash scripts/build.sh xbox360
 #   bash scripts/build.sh pandora
 #   bash scripts/build.sh wii
 #   bash scripts/build.sh macos
@@ -40,6 +41,7 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 ps2 [shell]
        $0 ps3 [shell]
        $0 ps4 [shell]
+       $0 xbox360 [shell]
        $0 pandora [shell]
        $0 wii [shell]
        $0 macos [x86_64|arm64] [static|shared|shell]"
@@ -59,7 +61,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|ps4|pandora|wii|macos) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|ps4|xbox360|pandora|wii|macos) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -145,6 +147,12 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
       -t bennugd64-ps4 \
       -f docker/Dockerfile.ps4 \
       docker/
+  elif [[ "${PLATFORM}" == "xbox360" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      -t bennugd64-xbox360 \
+      -f docker/Dockerfile.xbox360 \
+      docker/
   elif [[ "${PLATFORM}" == "pandora" ]]; then
     docker build \
       --platform linux/amd64 \
@@ -184,7 +192,7 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
-  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "ps3" || "${PLATFORM}" == "ps4" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
+  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "ps3" || "${PLATFORM}" == "ps4" || "${PLATFORM}" == "xbox360" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
       -w /src \
@@ -237,6 +245,7 @@ reuse_fetchcontent_src() {
     "${ROOT}/build-ios-host/_deps/${name}" \
     "${ROOT}/build-ps3-host/_deps/${name}" \
     "${ROOT}/build-ps4-host/_deps/${name}" \
+    "${ROOT}/build-xbox360-host/_deps/${name}" \
     "${ROOT}/build-pandora-host/_deps/${name}"
   do
     if [[ -f "${cand}/CMakeLists.txt" ]]; then
@@ -1444,6 +1453,66 @@ PY
       test -s "${STAGE}/bennugd64.pkg"
       test -s "${STAGE}/eboot.bin"
       test -s "${STAGE}/bgdi.elf"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "xbox360" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: xbox360-host + xbox360-powerpc"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-xbox360-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-xbox360-powerpc/_deps"
+  mkdir -p "${ROOT}/build-xbox360-powerpc/_deps"
+  prefetch_github_archive "${ROOT}/build-xbox360-powerpc/_deps/sdl3-src" \
+    "https://github.com/libsdl-org/SDL/archive/refs/tags/${SDL3_REF:-release-3.4.14}.tar.gz"
+  prefetch_github_archive "${ROOT}/build-xbox360-powerpc/_deps/sdl3_mixer-src" \
+    "https://github.com/libsdl-org/SDL_mixer/archive/refs/tags/${SDL3_MIXER_REF:-release-3.2.4}.tar.gz"
+  docker run --platform linux/amd64 --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      HOST_BUILD=/src/build-xbox360-host
+      XBOX_BUILD=/src/build-xbox360-powerpc
+      STAGE=/src/dist/xbox360-powerpc-static
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset xbox360-host "${COMMON[@]}"
+      cmake --build --preset xbox360-host
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
+      cmake --preset xbox360-powerpc "${COMMON[@]}"
+      cmake --build --preset xbox360-powerpc
+      ELF="${XBOX_BUILD}/core/bgdi/src/bgdi.elf"
+      ELF32="${XBOX_BUILD}/core/bgdi/src/bgdi.elf32"
+      test -s "${ELF}"
+      test -s "${ELF32}"
+      rm -rf "${STAGE}"
+      mkdir -p "${STAGE}"
+      cmake --install "${XBOX_BUILD}" --prefix "${STAGE}"
+      cp "${ELF}" "${STAGE}/bgdi.elf"
+      cp "${ELF32}" "${STAGE}/xenon.elf"
+      cp /src/platforms/web/demo/*.dcb "${STAGE}/"
+      cp /src/platforms/web/demo/hello.dcb "${STAGE}/main.dcb"
+      bash /src/scripts/generate-install-md.sh \
+        "bennugd64-${BENNUGD_VERSION}-xbox360-powerpc-static" "${STAGE}"
+      test -s "${STAGE}/xenon.elf"
+      test -s "${STAGE}/main.dcb"
+      test -s "${STAGE}/INSTALL.md"
     '
   exit 0
 fi

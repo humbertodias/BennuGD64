@@ -57,6 +57,9 @@
 #ifdef TARGET_PS4
 #include "mod_sound_ps4.h"
 #endif
+#ifdef TARGET_XBOX360
+#include "mod_sound_xbox360.h"
+#endif
 
 #ifdef MODSOUND_PS4_DUMMY_AUDIO
 /* Reuse the module's existing no-audio API behavior while keeping exports. */
@@ -245,6 +248,9 @@ static int sound_init()
 #ifdef TARGET_PS4
     modsound_ps4_prepare();
 #endif
+#ifdef TARGET_XBOX360
+    modsound_xbox360_prepare();
+#endif
 
     if ( !MIX_Init() )
     {
@@ -280,8 +286,11 @@ static int sound_init()
 #ifdef TARGET_PS4
     modsound_ps4_adjust_spec( &spec );
 #endif
+#ifdef TARGET_XBOX360
+    modsound_xbox360_adjust_spec( &spec );
+#endif
 
-#ifdef TARGET_PS4
+#if defined(TARGET_PS4) || defined(TARGET_XBOX360)
     mixer = MIX_CreateMixer( &spec );
 #else
     mixer = MIX_CreateMixerDevice( SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec );
@@ -343,6 +352,13 @@ static int sound_init()
         return -1;
     }
 #endif
+#ifdef TARGET_XBOX360
+    if ( modsound_xbox360_start_output( mixer ) != 0 )
+    {
+        fprintf( stderr, "[SOUND] No se pudo iniciar Xbox 360 AudioOut\n" );
+        return -1;
+    }
+#endif
 
     audio_initialized = 1;
     return 0;
@@ -371,6 +387,9 @@ static void sound_close()
 
 #ifdef TARGET_PS4
     modsound_ps4_stop_output();
+#endif
+#ifdef TARGET_XBOX360
+    modsound_xbox360_stop_output();
 #endif
 
     if ( music_track )
@@ -2064,6 +2083,8 @@ void  __bgdexport( mod_sound, module_initialize )()
     return;
 #elif defined(TARGET_PS4)
     return;
+#elif defined(TARGET_XBOX360)
+    return;
 #elif !defined(TARGET_DINGUX_A320)
     if ( !SDL_WasInit( SDL_INIT_AUDIO ) ) SDL_InitSubSystem( SDL_INIT_AUDIO );
 #endif
@@ -2080,6 +2101,14 @@ void __bgdexport( mod_sound, module_finalize )()
     if ( SDL_WasInit( SDL_INIT_AUDIO ) ) SDL_QuitSubSystem( SDL_INIT_AUDIO );
 #endif
 }
+
+HOOK __bgdexport( mod_sound, handler_hooks )[] =
+{
+#ifdef TARGET_XBOX360
+    { 4800, modsound_xbox360_pump },
+#endif
+    {    0, NULL }
+};
 
 /* ----------------------------------------------------------------- */
 /* exports                                                           */

@@ -35,7 +35,7 @@ if (PLATFORM_PS3 OR PS3)
 endif ()
 # Static archives must be PIC so they can later link into .so/.dylib modules.
 # Switch/Dreamcast/PSP/Vita/PS2/Pandora/Wii homebrew uses the toolchain PIE/KOS/pspdev/vitasdk/libogc flags instead.
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_VITA AND NOT VITA AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PS3 AND NOT PS3 AND NOT PLATFORM_PS4 AND NOT PS4 AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_VITA AND NOT VITA AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PS3 AND NOT PS3 AND NOT PLATFORM_PS4 AND NOT PS4 AND NOT PLATFORM_XBOX360 AND NOT XBOX360 AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -58,7 +58,38 @@ set (SKIP_INSTALL_FILES ON CACHE BOOL "" FORCE)
 
 # --- zlib ---
 set (_bennugd_skip_fetch_zlib_png FALSE)
-if (PLATFORM_PS2 OR PS2)
+if (PLATFORM_XBOX360 OR XBOX360)
+  set (_xbox360_ports "${DEVKITXENON}/usr")
+  set (ZLIB_INCLUDE_DIR "${_xbox360_ports}/include")
+  set (ZLIB_LIBRARY "${_xbox360_ports}/lib/libz.a")
+  set (PNG_PNG_INCLUDE_DIR "${_xbox360_ports}/include")
+  set (PNG_LIBRARY "${_xbox360_ports}/lib/libpng.a")
+  foreach (_xbox360_required "${ZLIB_LIBRARY}" "${PNG_LIBRARY}")
+    if (NOT EXISTS "${_xbox360_required}")
+      message (FATAL_ERROR "libXenon dependency missing: ${_xbox360_required}")
+    endif ()
+  endforeach ()
+  if (NOT TARGET ZLIB::ZLIB)
+    add_library (ZLIB::ZLIB STATIC IMPORTED GLOBAL)
+    set_target_properties (ZLIB::ZLIB PROPERTIES
+      IMPORTED_LOCATION "${ZLIB_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${ZLIB_INCLUDE_DIR}"
+    )
+  endif ()
+  if (NOT TARGET PNG::PNG)
+    add_library (PNG::PNG STATIC IMPORTED GLOBAL)
+    set_target_properties (PNG::PNG PROPERTIES
+      IMPORTED_LOCATION "${PNG_LIBRARY}"
+      INTERFACE_INCLUDE_DIRECTORIES "${PNG_PNG_INCLUDE_DIR}"
+      INTERFACE_LINK_LIBRARIES ZLIB::ZLIB
+    )
+  endif ()
+  set (ZLIB_INCLUDE_DIRS "${ZLIB_INCLUDE_DIR}")
+  set (ZLIB_FOUND TRUE)
+  set (_bennugd_zlib_include_dirs "${ZLIB_INCLUDE_DIR}")
+  set (_bennugd_skip_fetch_zlib_png TRUE)
+  message (STATUS "Xbox 360: zlib/libpng from ${_xbox360_ports}")
+elseif (PLATFORM_PS2 OR PS2)
   # ps2sdk-ports already has zlib/libpng on the EE include path. FetchContent
   # 1.3.1 plus ports zlib.h makes libpng error ZLIB_VERNUM != PNG_ZLIB_VERNUM.
   set (_ps2_ports "")
@@ -360,6 +391,26 @@ if (PLATFORM_PS4 OR PS4)
   set (HAVE_SYSCONF OFF CACHE BOOL "" FORCE)
   set (HAVE_GETPAGESIZE OFF CACHE BOOL "" FORCE)
 endif ()
+if (PLATFORM_XBOX360 OR XBOX360)
+  set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+  set (SDL_VULKAN OFF CACHE BOOL "" FORCE)
+  set (SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
+  set (SDL_CAMERA OFF CACHE BOOL "" FORCE)
+  set (SDL_HAPTIC OFF CACHE BOOL "" FORCE)
+  set (SDL_SENSOR OFF CACHE BOOL "" FORCE)
+  set (SDL_THREADS OFF CACHE BOOL "" FORCE)
+  set (SDL_PTHREADS OFF CACHE BOOL "" FORCE)
+  set (SDL_UNIX_CONSOLE_BUILD ON CACHE BOOL "" FORCE)
+  set (HAVE_FDATASYNC OFF CACHE BOOL "" FORCE)
+  set (HAVE_GETHOSTNAME OFF CACHE BOOL "" FORCE)
+  set (HAVE_SYSCONF OFF CACHE BOOL "" FORCE)
+  set (HAVE_GETPAGESIZE OFF CACHE BOOL "" FORCE)
+endif ()
 if (PLATFORM_VITA OR VITA)
   set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
   set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
@@ -426,6 +477,34 @@ FetchContent_Declare (
 FetchContent_GetProperties (sdl3)
 if (NOT sdl3_POPULATED)
   FetchContent_Populate (sdl3)
+  if (PLATFORM_XBOX360 OR XBOX360)
+    # libXenon is a single-process bare-metal environment. SDL's generic
+    # no-thread primitives are sufficient; Bennu owns the native I/O backends.
+    set (_xbox360_sdl_cmake "${sdl3_SOURCE_DIR}/CMakeLists.txt")
+    file (READ "${_xbox360_sdl_cmake}" _xbox360_sdl_cmake_text)
+    set (_xbox360_sdl_cmake_original "${_xbox360_sdl_cmake_text}")
+    string (REPLACE
+      "if(EMSCRIPTEN OR NGAGE)"
+      "if(EMSCRIPTEN OR NGAGE OR XBOX360)"
+      _xbox360_sdl_cmake_text "${_xbox360_sdl_cmake_text}")
+    if (NOT _xbox360_sdl_cmake_text STREQUAL _xbox360_sdl_cmake_original)
+      file (WRITE "${_xbox360_sdl_cmake}" "${_xbox360_sdl_cmake_text}")
+    endif ()
+    set (_xbox360_dynapi "${sdl3_SOURCE_DIR}/src/dynapi/SDL_dynapi.h")
+    file (READ "${_xbox360_dynapi}" _xbox360_dynapi_text)
+    set (_xbox360_dynapi_original "${_xbox360_dynapi_text}")
+    string (REPLACE
+      "#if defined(__XBOX360__)\n#define SDL_DYNAMIC_API 0\n#endif\n\n#ifdef SDL_DYNAMIC_API // Tried to force it on the command line?"
+      "#ifdef SDL_DYNAMIC_API // Tried to force it on the command line?"
+      _xbox360_dynapi_text "${_xbox360_dynapi_text}")
+    string (REPLACE
+      "#if defined(SDL_PLATFORM_PRIVATE) // probably not useful on private platforms."
+      "#if defined(__XBOX360__)\n#define SDL_DYNAMIC_API 0\n#elif defined(SDL_PLATFORM_PRIVATE) // probably not useful on private platforms."
+      _xbox360_dynapi_text "${_xbox360_dynapi_text}")
+    if (NOT _xbox360_dynapi_text STREQUAL _xbox360_dynapi_original)
+      file (WRITE "${_xbox360_dynapi}" "${_xbox360_dynapi_text}")
+    endif ()
+  endif ()
   if (PLATFORM_PS4 OR PS4)
     # SDL's hint/property store locks an SDL pthread mutex. OpenOrbis cannot
     # safely use that Linux pthread path yet, so select plain malloc at build
@@ -519,6 +598,15 @@ static int SDL_PS4_TryLockMutex(pthread_mutex_t *mutex)
 
   endif ()
   add_subdirectory (${sdl3_SOURCE_DIR} ${sdl3_BINARY_DIR} EXCLUDE_FROM_ALL)
+endif ()
+
+if (PLATFORM_XBOX360 OR XBOX360)
+  target_sources (SDL3-static PRIVATE
+    "${CMAKE_SOURCE_DIR}/platforms/xbox360/sdl/SDL_systimer.c")
+  target_compile_definitions (SDL3-static PRIVATE
+    SDL_TIMER_XBOX360=1)
+  set_target_properties (SDL3-static PROPERTIES POSITION_INDEPENDENT_CODE OFF)
+  target_link_libraries (SDL3-static PUBLIC Xbox360::Xenon)
 endif ()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")

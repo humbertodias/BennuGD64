@@ -326,6 +326,26 @@
       }
     },
     {
+      "name": "xbox360-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile Xbox 360 demo DCBs",
+      "binaryDir": "${sourceDir}/build-xbox360-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "xbox360-powerpc",
+      "inherits": "base",
+      "displayName": "Xbox 360 libXenon interpreter (bgdi.elf)",
+      "binaryDir": "${sourceDir}/build-xbox360-powerpc",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/libxenon.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
       "name": "pandora-host",
       "inherits": "static",
       "displayName": "Native bgdc used to compile Pandora demo DCBs",
@@ -425,6 +445,8 @@
     { "name": "ps3-ppu", "configurePreset": "ps3-ppu", "targets": ["bgdi"] },
     { "name": "ps4-host", "configurePreset": "ps4-host", "targets": ["bgdc"] },
     { "name": "ps4-x86_64", "configurePreset": "ps4-x86_64", "targets": ["bgdi"] },
+    { "name": "xbox360-host", "configurePreset": "xbox360-host", "targets": ["bgdc"] },
+    { "name": "xbox360-powerpc", "configurePreset": "xbox360-powerpc", "targets": ["bgdi"] },
     { "name": "pandora-host", "configurePreset": "pandora-host", "targets": ["bgdc"] },
     { "name": "pandora-arm", "configurePreset": "pandora-arm", "targets": ["bgdi"] },
     { "name": "wii-host", "configurePreset": "wii-host", "targets": ["bgdc"] },

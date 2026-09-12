@@ -25,6 +25,9 @@ if (PLATFORM_PS4 OR PS4)
     target_compile_definitions (mod_sound PRIVATE MODSOUND_PS4_DUMMY_AUDIO=1)
   endif ()
 endif ()
+if (PLATFORM_XBOX360 OR XBOX360)
+  target_sources (mod_sound PRIVATE mod_sound_xbox360.c)
+endif ()
 
 target_link_libraries (
   mod_sound

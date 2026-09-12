@@ -66,6 +66,9 @@
 #if defined(TARGET_PS4)
 #include "libjoy_ps4.h"
 #endif
+#if defined(TARGET_XBOX360)
+#include "libjoy_xbox360.h"
+#endif
 
 #if defined(TARGET_WII)
 #define libjoy_plat_num          libjoy_wii_num
@@ -93,8 +96,21 @@
 #define libjoy_plat_initialize   libjoy_ps4_module_initialize
 #define libjoy_plat_finalize     libjoy_ps4_module_finalize
 #endif
+#if defined(TARGET_XBOX360)
+#define libjoy_plat_num          libjoy_xbox360_num
+#define libjoy_plat_name         libjoy_xbox360_name
+#define libjoy_plat_buttons      libjoy_xbox360_buttons
+#define libjoy_plat_axes         libjoy_xbox360_axes
+#define libjoy_plat_hats         libjoy_xbox360_hats
+#define libjoy_plat_get_button   libjoy_xbox360_get_button
+#define libjoy_plat_get_position libjoy_xbox360_get_position
+#define libjoy_plat_get_hat      libjoy_xbox360_get_hat
+#define libjoy_plat_get_accel    libjoy_xbox360_get_accel
+#define libjoy_plat_initialize   libjoy_xbox360_module_initialize
+#define libjoy_plat_finalize     libjoy_xbox360_module_finalize
+#endif
 
-#if defined(TARGET_WII) || defined(TARGET_PS4)
+#if defined(TARGET_WII) || defined(TARGET_PS4) || defined(TARGET_XBOX360)
 #define LIBJOY_NATIVE_PLATFORM
 #endif
 
@@ -721,6 +737,9 @@ HOOK __bgdexport( libjoy, handler_hooks )[] =
 #endif
 #if defined(TARGET_PS4)
     { 4900, libjoy_ps4_pump },
+#endif
+#if defined(TARGET_XBOX360)
+    { 4900, libjoy_xbox360_pump },
 #endif
     {    0, NULL           }
 };

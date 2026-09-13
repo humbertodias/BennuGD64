@@ -1,0 +1,26 @@
+# Open Xbox 360 homebrew toolchain. Produces XeLL-loadable ELF32 binaries.
+FROM --platform=linux/amd64 free60/libxenon:latest
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=xbox360 \
+    DEVKITXENON=/usr/local/xenon \
+    PATH="/usr/local/xenon/bin:/usr/local/xenon/usr/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        cmake \
+        curl \
+        gcc \
+        g++ \
+        git \
+        ninja-build \
+        pkg-config \
+        python3 \
+        zip \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*' \
+    && test -x "${DEVKITXENON}/bin/xenon-gcc" \
+    && test -f "${DEVKITXENON}/usr/lib/libxenon.a"
+
+WORKDIR /src
+CMD ["bash"]

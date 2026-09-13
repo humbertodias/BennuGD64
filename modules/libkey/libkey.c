@@ -66,6 +66,9 @@
 #ifdef TARGET_PS4
 #include "libkey_ps4.h"
 #endif
+#ifdef TARGET_XBOX360
+#include "libkey_xbox360.h"
+#endif
 #ifdef TARGET_XBOX
 #include "libkey_xbox.h"
 #endif
@@ -480,6 +483,9 @@ static void process_key_events()
 #ifdef TARGET_PS4
     libkey_ps4_after_events();
 #endif
+#ifdef TARGET_XBOX360
+    libkey_xbox360_after_events();
+#endif
 #ifdef TARGET_XBOX
     libkey_xbox_after_events();
 #endif
@@ -503,7 +509,7 @@ void __bgdexport( libkey, module_initialize )()
 {
     int * ptr = equivs ;
 
-#if defined(TARGET_PS2) || defined(TARGET_PS4) || defined(TARGET_XBOX)
+#if defined(TARGET_PS2) || defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX)
     /* Native pad backends do not need SDL video during key initialization. */
 #else
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
@@ -533,8 +539,11 @@ void __bgdexport( libkey, module_initialize )()
     libkey_ps3_after_init( window );
 #elif defined(TARGET_PS4)
     libkey_ps4_after_init( window );
+#elif defined(TARGET_XBOX360)
+    libkey_xbox360_after_init( window );
 #elif defined(TARGET_XBOX)
     libkey_xbox_after_init( window );
+
 #elif defined(TARGET_PS2)
     /* No OSK. DualShock is polled in libkey_ps2_after_events. */
 #elif defined(TARGET_EMSCRIPTEN)

@@ -68,9 +68,9 @@
 #endif
 #ifdef TARGET_XBOX360
 #include "libkey_xbox360.h"
+#endif
 #ifdef TARGET_XBOX
 #include "libkey_xbox.h"
-
 #endif
 
 /* ---------------------------------------------------------------------- */
@@ -485,9 +485,9 @@ static void process_key_events()
 #endif
 #ifdef TARGET_XBOX360
     libkey_xbox360_after_events();
+#endif
 #ifdef TARGET_XBOX
     libkey_xbox_after_events();
-
 #endif
 }
 

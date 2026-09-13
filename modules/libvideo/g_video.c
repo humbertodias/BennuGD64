@@ -64,9 +64,9 @@
 #endif
 #ifdef TARGET_XBOX360
 #include "g_video_xbox360.h"
+#endif
 #ifdef TARGET_XBOX
 #include "g_video_xbox.h"
-
 #endif
 #ifdef TARGET_SWITCH
 #include "g_video_switch.h"
@@ -281,9 +281,10 @@ void gr_video_present( SDL_Surface * src )
 #endif
 #ifdef TARGET_XBOX360
     gr_video_xbox360_present( src );
+    return;
+#endif
 #ifdef TARGET_XBOX
     gr_video_xbox_present( src );
-
     return;
 #endif
 
@@ -356,9 +357,10 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 #endif
 #ifdef TARGET_XBOX360
     gr_video_xbox360_present_rects( src, rects, count );
+    return;
+#endif
 #ifdef TARGET_XBOX
     gr_video_xbox_present_rects( src, rects, count );
-
     return;
 #endif
 
@@ -666,9 +668,10 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_XBOX360
     gr_video_xbox360_apply_mode();
+    GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
+#endif
 #ifdef TARGET_XBOX
     gr_video_xbox_apply_mode();
-
     GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
 #endif
 #ifdef TARGET_PANDORA

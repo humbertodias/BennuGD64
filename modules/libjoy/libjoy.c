@@ -68,9 +68,9 @@
 #endif
 #if defined(TARGET_XBOX360)
 #include "libjoy_xbox360.h"
+#endif
 #if defined(TARGET_XBOX)
 #include "libjoy_xbox.h"
-
 #endif
 
 #if defined(TARGET_WII)
@@ -757,9 +757,9 @@ HOOK __bgdexport( libjoy, handler_hooks )[] =
 #endif
 #if defined(TARGET_XBOX360)
     { 4900, libjoy_xbox360_pump },
+#endif
 #if defined(TARGET_XBOX)
     { 4900, libjoy_xbox_pump },
-
 #endif
     {    0, NULL           }
 };

@@ -220,12 +220,13 @@ int debug = 0;  /* 1 if running in debug mode      */
 #undef _OS_ID
 #endif
 #define _OS_ID          OS_XBOX360
+#endif
+
 #ifdef TARGET_XBOX
 #ifdef _OS_ID
 #undef _OS_ID
 #endif
 #define _OS_ID          OS_XBOX
-
 #endif
 
 #ifdef TARGET_IOS

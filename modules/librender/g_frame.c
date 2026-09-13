@@ -51,9 +51,9 @@
 #endif
 #ifdef TARGET_XBOX360
 #include "g_frame_xbox360.h"
+#endif
 #ifdef TARGET_XBOX
 #include "g_frame_xbox.h"
-
 #endif
 
 /* --------------------------------------------------------------------------- */

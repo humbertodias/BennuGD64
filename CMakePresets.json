@@ -326,6 +326,26 @@
       }
     },
     {
+      "name": "xbox-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile Xbox demo DCBs",
+      "binaryDir": "${sourceDir}/build-xbox-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "xbox-i386",
+      "inherits": "base",
+      "displayName": "Original Xbox nxdk interpreter (default.xbe)",
+      "binaryDir": "${sourceDir}/build-xbox-i386",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/nxdk.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
       "name": "pandora-host",
       "inherits": "static",
       "displayName": "Native bgdc used to compile Pandora demo DCBs",
@@ -425,6 +445,8 @@
     { "name": "ps3-ppu", "configurePreset": "ps3-ppu", "targets": ["bgdi"] },
     { "name": "ps4-host", "configurePreset": "ps4-host", "targets": ["bgdc"] },
     { "name": "ps4-x86_64", "configurePreset": "ps4-x86_64", "targets": ["bgdi"] },
+    { "name": "xbox-host", "configurePreset": "xbox-host", "targets": ["bgdc"] },
+    { "name": "xbox-i386", "configurePreset": "xbox-i386", "targets": ["bgdi"] },
     { "name": "pandora-host", "configurePreset": "pandora-host", "targets": ["bgdc"] },
     { "name": "pandora-arm", "configurePreset": "pandora-arm", "targets": ["bgdi"] },
     { "name": "wii-host", "configurePreset": "wii-host", "targets": ["bgdc"] },

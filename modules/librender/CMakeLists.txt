@@ -40,6 +40,9 @@ endif ()
 if (PLATFORM_PS4 OR PS4)
   target_sources (render PRIVATE g_frame_ps4.c)
 endif ()
+if (PLATFORM_XBOX OR XBOX)
+  target_sources (render PRIVATE g_frame_xbox.c)
+endif ()
 
 target_link_libraries (
   render

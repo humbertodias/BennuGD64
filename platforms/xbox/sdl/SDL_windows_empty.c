@@ -1,0 +1,1 @@
+/* Empty translation unit placeholders for unused Windows SDL core files on nxdk. */

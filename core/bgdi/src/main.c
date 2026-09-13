@@ -84,6 +84,9 @@
 #include "main_ps4.h"
 #include "ps4_log.h"
 #endif
+#ifdef TARGET_XBOX360
+#include "main_xbox360.h"
+#endif
 #ifdef TARGET_XBOX
 #include "main_xbox.h"
 #include <hal/debug.h>
@@ -129,7 +132,7 @@ int main( int argc, char *argv[] )
     dcb_signature dcb_signature;
 
     /* disable stdout buffering */
-#if !defined(TARGET_PS2) && !defined(TARGET_PS4) && !defined(TARGET_XBOX)
+#if !defined(TARGET_PS2) && !defined(TARGET_PS4) && !defined(TARGET_XBOX) && !defined(TARGET_XBOX360)
     setvbuf( stdout, NULL, _IONBF, BUFSIZ );
 #endif
 
@@ -267,6 +270,23 @@ int main( int argc, char *argv[] )
         if ( ps4_dcb )
             filename = ps4_dcb;
         ps4_log_write( "bgdi: PS4 startup returned" );
+    }
+#endif
+
+#ifdef TARGET_XBOX360
+    {
+        static char * xbox360_argv[2] = { "xenon.elf", NULL };
+        char * xbox360_dcb;
+
+        if ( argc < 1 || !argv || !argv[0] )
+        {
+            argc = 1;
+            argv = xbox360_argv;
+        }
+
+        xbox360_dcb = bgdi_xbox360_startup( argc, argv, &standalone );
+        if ( xbox360_dcb )
+            filename = xbox360_dcb;
     }
 #endif
 

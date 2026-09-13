@@ -90,6 +90,11 @@ case "${artifact}" in
     install='Install `bennugd64.pkg` on a jailbroken PS4.'
     data='Place `main.dcb` and game assets in `/mnt/usb0/bennugd64/` or `/data/bennugd64/`.'
     ;;
+  *-xbox360-powerpc-*)
+    platform="Xbox 360"
+    install='Copy `xenon.elf` to the root of a FAT32 USB drive and boot it with XeLL Reloaded. This is a libXenon homebrew binary, not an XEX.'
+    data='Place `main.dcb` and all game assets in `uda:/bennugd64/`. Additional USB devices are searched as `udb:` and `udc:`.'
+    ;;
   *-xbox-i386-*)
     platform="Original Xbox"
     install='Open `bennugd64.iso` in [xemu](https://xemu.app/), or copy `default.xbe` to a softmodded Original Xbox game folder and launch it from a dashboard such as XBMC4Gamers or UnleashX.'

@@ -62,6 +62,9 @@
 #ifdef TARGET_PS4
 #include "g_video_ps4.h"
 #endif
+#ifdef TARGET_XBOX360
+#include "g_video_xbox360.h"
+#endif
 #ifdef TARGET_XBOX
 #include "g_video_xbox.h"
 #endif
@@ -276,6 +279,10 @@ void gr_video_present( SDL_Surface * src )
     gr_video_ps4_present( src );
     return;
 #endif
+#ifdef TARGET_XBOX360
+    gr_video_xbox360_present( src );
+    return;
+#endif
 #ifdef TARGET_XBOX
     gr_video_xbox_present( src );
     return;
@@ -346,6 +353,10 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 
 #ifdef TARGET_PS4
     gr_video_ps4_present_rects( src, rects, count );
+    return;
+#endif
+#ifdef TARGET_XBOX360
+    gr_video_xbox360_present_rects( src, rects, count );
     return;
 #endif
 #ifdef TARGET_XBOX
@@ -442,7 +453,7 @@ static SDL_Surface * gr_create_shadow_surface( int width, int height, int depth 
 
 static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 {
-#if defined(TARGET_PS4) || defined(TARGET_XBOX)
+#if defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX)
     ( void ) width;
     ( void ) height;
     ( void ) window_flags;
@@ -653,6 +664,10 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_PS4
     gr_video_ps4_apply_mode();
+    GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
+#endif
+#ifdef TARGET_XBOX360
+    gr_video_xbox360_apply_mode();
     GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
 #endif
 #ifdef TARGET_XBOX
@@ -896,7 +911,8 @@ int gr_set_mode( int width, int height, int depth )
     if ( !gr_video_psp_ready_present( screen->w, screen->h ) ) return -1;
 #endif
 
-#if !defined(TARGET_PS4) && !defined(TARGET_XBOX)
+#if !defined(TARGET_PS4) && !defined(TARGET_XBOX360) && !defined(TARGET_XBOX)
+
     SDL_SetWindowMouseGrab( window, grab_input ? true : false ) ;
     SDL_SetWindowKeyboardGrab( window, grab_input ? true : false ) ;
 
@@ -939,7 +955,8 @@ int gr_set_mode( int width, int height, int depth )
 
     scr_initialized = 1 ;
 
-#if !defined(TARGET_PS4) && !defined(TARGET_XBOX)
+#if !defined(TARGET_PS4) && !defined(TARGET_XBOX360) && !defined(TARGET_XBOX)
+
     SDL_HideCursor() ;
 #endif
 
@@ -1042,8 +1059,11 @@ void __bgdexport( libvideo, module_initialize )()
     gr_video_ps3_module_initialize();
 #elif defined(TARGET_PS4)
     gr_video_ps4_module_initialize();
+#elif defined(TARGET_XBOX360)
+    gr_video_xbox360_module_initialize();
 #elif defined(TARGET_XBOX)
     gr_video_xbox_module_initialize();
+
 #elif defined(TARGET_PANDORA)
     gr_video_pandora_module_initialize();
 #else
@@ -1108,6 +1128,9 @@ void __bgdexport( libvideo, module_finalize )()
         window = NULL;
     }
     if ( SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_QuitSubSystem( SDL_INIT_VIDEO );
+#ifdef TARGET_XBOX360
+    gr_video_xbox360_destroy();
+#endif
 }
 
 /* --------------------------------------------------------------------------- */

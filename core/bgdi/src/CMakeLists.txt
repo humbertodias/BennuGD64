@@ -40,6 +40,9 @@ if (PLATFORM_PS4 OR PS4)
     ../../common/ps4_platform.c
   )
 endif ()
+if (PLATFORM_XBOX360 OR XBOX360)
+  target_sources (bgdi PRIVATE main_xbox360.c)
+endif ()
 if (PLATFORM_XBOX OR XBOX)
   target_sources (bgdi PRIVATE main_xbox.c)
 endif ()
@@ -117,7 +120,7 @@ endif ()
 if (NINTENDO_WII OR PLATFORM_WII)
   target_sources (bgdi PRIVATE main_wii.c main_wii_posix.c)
 endif ()
-if (WIN32 AND NOT PLATFORM_XBOX AND NOT XBOX)
+if (WIN32 AND NOT PLATFORM_XBOX AND NOT XBOX AND NOT PLATFORM_XBOX360 AND NOT XBOX360)
   target_sources (bgdi PRIVATE main_win32.c)
 endif ()
 
@@ -414,6 +417,27 @@ if (PLATFORM_PS4 OR PS4)
     SceAudioOut
     SceSystemService
     m
+  )
+endif ()
+
+if (PLATFORM_XBOX360 OR XBOX360)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+    "-Wl,--start-group"
+    Xbox360::Fat
+    Xbox360::Xenon
+    m
+    "-Wl,--end-group"
+  )
+  add_custom_command (
+    TARGET bgdi POST_BUILD
+    COMMAND "${CMAKE_OBJCOPY}" -O elf32-powerpc --adjust-vma 0x80000000
+      "$<TARGET_FILE:bgdi>" "${CMAKE_CURRENT_BINARY_DIR}/bgdi.elf32"
+    COMMAND "${CMAKE_STRIP}" "${CMAKE_CURRENT_BINARY_DIR}/bgdi.elf32"
+    BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/bgdi.elf32"
+    COMMENT "Convert bgdi to a XeLL-loadable Xbox 360 ELF32"
   )
 endif ()
 

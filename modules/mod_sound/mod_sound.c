@@ -57,6 +57,9 @@
 #ifdef TARGET_PS4
 #include "mod_sound_ps4.h"
 #endif
+#ifdef TARGET_XBOX360
+#include "mod_sound_xbox360.h"
+#endif
 #ifdef TARGET_XBOX
 #include "mod_sound_xbox.h"
 #endif
@@ -248,6 +251,9 @@ static int sound_init()
 #ifdef TARGET_PS4
     modsound_ps4_prepare();
 #endif
+#ifdef TARGET_XBOX360
+    modsound_xbox360_prepare();
+#endif
 #ifdef TARGET_XBOX
     modsound_xbox_prepare();
 #endif
@@ -286,11 +292,14 @@ static int sound_init()
 #ifdef TARGET_PS4
     modsound_ps4_adjust_spec( &spec );
 #endif
+#ifdef TARGET_XBOX360
+    modsound_xbox360_adjust_spec( &spec );
+#endif
 #ifdef TARGET_XBOX
     modsound_xbox_adjust_spec( &spec );
 #endif
 
-#if defined(TARGET_PS4) || defined(TARGET_XBOX)
+#if defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX)
     mixer = MIX_CreateMixer( &spec );
 #else
     mixer = MIX_CreateMixerDevice( SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec );
@@ -352,6 +361,14 @@ static int sound_init()
         return -1;
     }
 #endif
+#ifdef TARGET_XBOX360
+    if ( modsound_xbox360_start_output( mixer ) != 0 )
+    {
+        fprintf( stderr, "[SOUND] No se pudo iniciar Xbox 360 AudioOut\n" );
+        return -1;
+    }
+#endif
+
 #ifdef TARGET_XBOX
     if ( modsound_xbox_start_output( mixer ) != 0 )
     {
@@ -400,6 +417,9 @@ static void sound_close()
 
 #ifdef TARGET_PS4
     modsound_ps4_stop_output();
+#endif
+#ifdef TARGET_XBOX360
+    modsound_xbox360_stop_output();
 #endif
 #ifdef TARGET_XBOX
     modsound_xbox_stop_output();
@@ -2096,6 +2116,8 @@ void  __bgdexport( mod_sound, module_initialize )()
     return;
 #elif defined(TARGET_PS4)
     return;
+#elif defined(TARGET_XBOX360)
+    return;
 #elif defined(TARGET_XBOX)
     return;
 #elif !defined(TARGET_DINGUX_A320)
@@ -2117,6 +2139,9 @@ void __bgdexport( mod_sound, module_finalize )()
 
 HOOK __bgdexport( mod_sound, handler_hooks )[] =
 {
+#ifdef TARGET_XBOX360
+    { 4800, modsound_xbox360_pump },
+#endif
 #ifdef TARGET_XBOX
     { 4800, modsound_xbox_pump },
 #endif

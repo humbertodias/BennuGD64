@@ -90,6 +90,11 @@ case "${artifact}" in
     install='Install `bennugd64.pkg` on a jailbroken PS4.'
     data='Place `main.dcb` and game assets in `/mnt/usb0/bennugd64/` or `/data/bennugd64/`.'
     ;;
+  *-xbox-i386-*)
+    platform="Original Xbox"
+    install='Open `bennugd64.iso` in [xemu](https://xemu.app/), or copy `default.xbe` to a softmodded Original Xbox game folder and launch it from a dashboard such as XBMC4Gamers or UnleashX.'
+    data='Place `main.dcb` (or `SorR.dat`) and assets in `D:\bennugd64\` or beside the XBE on `D:\`. The sample ISO already embeds the demo `main.dcb` at the disc root.'
+    ;;
   *-pandora-arm-*)
     platform="OpenPandora"
     install='Copy `bennugd64.pnd` to an application directory on the Pandora SD card, or run `./bgdi` directly.'

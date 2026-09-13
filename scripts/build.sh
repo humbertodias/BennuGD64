@@ -17,6 +17,7 @@
 #   bash scripts/build.sh ps2
 #   bash scripts/build.sh ps3
 #   bash scripts/build.sh ps4
+#   bash scripts/build.sh xbox
 #   bash scripts/build.sh pandora
 #   bash scripts/build.sh wii
 #   bash scripts/build.sh macos
@@ -40,6 +41,7 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 ps2 [shell]
        $0 ps3 [shell]
        $0 ps4 [shell]
+       $0 xbox [shell]
        $0 pandora [shell]
        $0 wii [shell]
        $0 macos [x86_64|arm64] [static|shared|shell]"
@@ -59,7 +61,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|ps4|pandora|wii|macos) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|ps4|xbox|pandora|wii|macos) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -145,6 +147,12 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
       -t bennugd64-ps4 \
       -f docker/Dockerfile.ps4 \
       docker/
+  elif [[ "${PLATFORM}" == "xbox" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      -t bennugd64-xbox \
+      -f docker/Dockerfile.xbox \
+      docker/
   elif [[ "${PLATFORM}" == "pandora" ]]; then
     docker build \
       --platform linux/amd64 \
@@ -184,7 +192,7 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
-  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "ps3" || "${PLATFORM}" == "ps4" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
+  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "ps3" || "${PLATFORM}" == "ps4" || "${PLATFORM}" == "xbox" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
       -w /src \
@@ -237,6 +245,7 @@ reuse_fetchcontent_src() {
     "${ROOT}/build-ios-host/_deps/${name}" \
     "${ROOT}/build-ps3-host/_deps/${name}" \
     "${ROOT}/build-ps4-host/_deps/${name}" \
+    "${ROOT}/build-xbox-host/_deps/${name}" \
     "${ROOT}/build-pandora-host/_deps/${name}"
   do
     if [[ -f "${cand}/CMakeLists.txt" ]]; then
@@ -1444,6 +1453,79 @@ PY
       test -s "${STAGE}/bennugd64.pkg"
       test -s "${STAGE}/eboot.bin"
       test -s "${STAGE}/bgdi.elf"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "xbox" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: xbox-host + xbox-i386"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-xbox-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-xbox-i386/_deps"
+  mkdir -p "${ROOT}/build-xbox-i386/_deps"
+  prefetch_github_archive "${ROOT}/build-xbox-i386/_deps/sdl3-src" \
+    "https://github.com/libsdl-org/SDL/archive/refs/tags/${SDL3_REF:-release-3.4.14}.tar.gz"
+  prefetch_github_archive "${ROOT}/build-xbox-i386/_deps/sdl3_mixer-src" \
+    "https://github.com/libsdl-org/SDL_mixer/archive/refs/tags/${SDL3_MIXER_REF:-release-3.2.4}.tar.gz"
+  docker run --platform linux/amd64 --rm \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e NXDK_DIR=/usr/src/nxdk \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    /bin/bash -lc '
+      set -euo pipefail
+      eval "$($NXDK_DIR/bin/activate -s)"
+      HOST_BUILD=/src/build-xbox-host
+      XBOX_BUILD=/src/build-xbox-i386
+      STAGE=/src/dist/xbox-i386-static
+      rm -rf "${STAGE}"
+      mkdir -p "${STAGE}"
+
+      cmake --preset xbox-host -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+      cmake --build --preset xbox-host
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
+
+      rm -f "${XBOX_BUILD}/CMakeCache.txt"
+      cmake --preset xbox-i386 \
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}" \
+        -DSDL_THREADS=ON \
+        -DWINDOWS=ON \
+        -DCMAKE_RC_COMPILER=/usr/bin/llvm-rc
+      cmake --build --preset xbox-i386
+
+      cmake --install "${XBOX_BUILD}" --prefix "${STAGE}"
+      XBE="${XBOX_BUILD}/core/bgdi/src/default.xbe"
+      if [[ ! -s "${XBE}" ]]; then
+        XBE="$(find "${XBOX_BUILD}" -name default.xbe | head -n 1)"
+      fi
+      test -n "${XBE}"
+      test -s "${XBE}"
+      cp "${XBE}" "${STAGE}/default.xbe"
+      cp /src/platforms/web/demo/hello.dcb "${STAGE}/main.dcb"
+      test -s "${STAGE}/main.dcb"
+
+      # xemu boots XISOs; extract-xiso ships with nxdk.
+      XISO_DIR=/src/build-xbox-xiso
+      EXTRACT_XISO="${NXDK_DIR}/tools/extract-xiso/build/extract-xiso"
+      test -x "${EXTRACT_XISO}"
+      rm -rf "${XISO_DIR}"
+      mkdir -p "${XISO_DIR}"
+      cp "${STAGE}/default.xbe" "${XISO_DIR}/default.xbe"
+      cp "${STAGE}/main.dcb" "${XISO_DIR}/main.dcb"
+      "${EXTRACT_XISO}" -q -c "${XISO_DIR}" "${STAGE}/bennugd64.iso"
+      test -s "${STAGE}/bennugd64.iso"
+
+      bash /src/scripts/generate-install-md.sh \
+        "bennugd64-${BENNUGD_VERSION}-xbox-i386-static" "${STAGE}"
+      test -s "${STAGE}/default.xbe"
+      test -s "${STAGE}/main.dcb"
+      test -s "${STAGE}/bennugd64.iso"
+      test -s "${STAGE}/INSTALL.md"
     '
   exit 0
 fi

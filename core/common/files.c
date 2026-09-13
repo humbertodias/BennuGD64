@@ -695,7 +695,12 @@ file * file_open( const char * filename, char * mode )
     while ( *filename )
     {
         *p++ = *filename++;
+#if defined(TARGET_XBOX) || defined(__XBOX__)
+        /* nxdk/FATX expects DOS-style drive paths (D:\...); '/' breaks fopen. */
+        if ( p[-1] == '/' ) p[-1] = '\\';
+#else
         if ( p[-1] == '\\' ) p[-1] = '/'; /* Unix style */
+#endif
     }
     p[0] = '\0';
 
@@ -794,8 +799,13 @@ void file_addp( const char * path )
 
     strcpy( truepath, path ) ;
 
+#if defined(TARGET_XBOX) || defined(__XBOX__)
+    for ( n = 0 ; truepath[n] ; n++ ) if ( truepath[n] == '/' ) truepath[n] = '\\' ;
+    if ( truepath[strlen( truepath ) - 1] != '\\' ) strcat( truepath, "\\" ) ;
+#else
     for ( n = 0 ; truepath[n] ; n++ ) if ( truepath[n] == '\\' ) truepath[n] = '/' ;
     if ( truepath[strlen( truepath )-1] != '/' ) strcat( truepath, "/" ) ;
+#endif
 
     for ( n = 0 ; n < MAX_POSSIBLE_PATHS - 1 && possible_paths[n] ; n++ ) ;
 
@@ -872,11 +882,11 @@ char * getfullpath( char *rel_path )
 {
     char fullpath[ __MAX_PATH ] = "";
     if ( !rel_path || !*rel_path ) return NULL;
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(TARGET_XBOX) && !defined(__XBOX__)
     GetFullPathName( rel_path, sizeof( fullpath ), fullpath, NULL );
-#elif defined(TARGET_PS2) || defined(TARGET_VITA) || defined(TARGET_PS3) || defined(TARGET_PS4)
-    /* Device paths (mass:/ ux0:/ app0: /dev_usb000/) are not POSIX; realpath strips them. */
-    /* Device paths (mass:/ ux0:/ app0:) are not POSIX; realpath strips them. */
+#elif defined(TARGET_PS2) || defined(TARGET_VITA) || defined(TARGET_PS3) || defined(TARGET_PS4) \
+   || defined(TARGET_XBOX) || defined(__XBOX__)
+    /* Device paths (mass:/ ux0:/ app0: /dev_usb000/ D:\\) are not POSIX; realpath strips them. */
     strncpy( fullpath, rel_path, sizeof( fullpath ) - 1 );
     fullpath[ sizeof( fullpath ) - 1 ] = '\0';
 #else

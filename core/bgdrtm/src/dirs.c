@@ -97,6 +97,8 @@ char * dir_current( void )
 {
 #ifdef TARGET_PS2
     return dirs_ps2_getcwd( NULL, 0 );
+#elif defined(TARGET_XBOX) || defined(__XBOX__) || defined(NXDK)
+    return ( _getcwd( NULL, 0 ) ) ;
 #else
     return ( getcwd( NULL, 0 ) ) ;
 #endif
@@ -124,7 +126,11 @@ int dir_change( const char * dir )
 #else
     char *c = dir_path_convert( dir ) ;
     if ( !c ) return 0;
+#if defined(TARGET_XBOX) || defined(__XBOX__) || defined(NXDK)
+    int r = _chdir( c ) ;
+#else
     int r = chdir( c ) ;
+#endif
     free( c ) ;
     return r ;
 #endif
@@ -149,7 +155,9 @@ int dir_create( const char * dir )
 {
     char *c = dir_path_convert( dir ) ;
     if ( !c ) return 0;
-#ifdef WIN32
+#if defined(TARGET_XBOX) || defined(__XBOX__) || defined(NXDK)
+    int r = _mkdir( c ) ;
+#elif defined(WIN32)
     int r = mkdir( c ) ;
 #else
     int r = mkdir( c, 0777 ) ;
@@ -201,7 +209,11 @@ int dir_deletefile( const char * filename )
 {
     char *c = dir_path_convert( filename ) ;
     if ( !c ) return 0;
+#if defined(TARGET_XBOX) || defined(__XBOX__) || defined(NXDK)
+    int r = remove( c ) ;
+#else
     int r = unlink( c ) ;
+#endif
     free( c ) ;
     return ( r == -1 ) ? 0 : 1 ;
 }

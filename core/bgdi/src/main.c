@@ -84,6 +84,10 @@
 #include "main_ps4.h"
 #include "ps4_log.h"
 #endif
+#ifdef TARGET_XBOX
+#include "main_xbox.h"
+#include <hal/debug.h>
+#endif
 #ifdef TARGET_PANDORA
 #include "main_pandora.h"
 #endif
@@ -125,7 +129,7 @@ int main( int argc, char *argv[] )
     dcb_signature dcb_signature;
 
     /* disable stdout buffering */
-#if !defined(TARGET_PS2) && !defined(TARGET_PS4)
+#if !defined(TARGET_PS2) && !defined(TARGET_PS4) && !defined(TARGET_XBOX)
     setvbuf( stdout, NULL, _IONBF, BUFSIZ );
 #endif
 
@@ -263,6 +267,23 @@ int main( int argc, char *argv[] )
         if ( ps4_dcb )
             filename = ps4_dcb;
         ps4_log_write( "bgdi: PS4 startup returned" );
+    }
+#endif
+
+#ifdef TARGET_XBOX
+    {
+        static char * xbox_argv[2] = { "default.xbe", NULL };
+        char * xbox_dcb;
+
+        if ( argc < 1 || !argv || !argv[0] )
+        {
+            argc = 1;
+            argv = xbox_argv;
+        }
+
+        xbox_dcb = bgdi_xbox_startup( argc, argv, &standalone );
+        if ( xbox_dcb )
+            filename = xbox_dcb;
     }
 #endif
 
@@ -496,8 +517,26 @@ fflush(stdout);
 
             while ( dcbext && *dcbext )
             {
+#ifdef TARGET_XBOX
+                /* Xbox has no relative paths; keep drive+dir from the discovered file. */
+                {
+                    size_t prefix = ( size_t )( ptr - filename );
+                    if ( prefix && prefix < sizeof( dcbname ) )
+                    {
+                        memcpy( dcbname, filename, prefix );
+                        dcbname[prefix] = '\0';
+                        strncat( dcbname, appname, sizeof( dcbname ) - strlen( dcbname ) - 1 );
+                        strncat( dcbname, *dcbext, sizeof( dcbname ) - strlen( dcbname ) - 1 );
+                    }
+                    else
+                    {
+                        snprintf( dcbname, sizeof( dcbname ), "%s%s", appname, *dcbext );
+                    }
+                }
+#else
                 strcpy( dcbname, appname ) ;
                 strcat( dcbname, *dcbext ) ;
+#endif
                 if (( dcbloaded = dcb_load( dcbname ) ) ) break;
                 dcbext++;
             }
@@ -507,12 +546,22 @@ fflush(stdout);
 #ifdef TARGET_PS4
                 ps4_log_write( "bgdi: DCB load failed" );
 #endif
+#ifdef TARGET_XBOX
+                {
+                    char msg[256];
+                    snprintf( msg, sizeof( msg ), "DCB load failed:\n%s", filename );
+                    bgdi_xbox_hang( msg );
+                }
+#endif
                 printf( "%s: doesn't exist or isn't version %d DCB compatible\n", filename, DCB_VERSION >> 8 ) ;
                 return -1 ;
             }
         }
 #ifdef TARGET_PS4
         ps4_log_write( "bgdi: DCB loaded" );
+#endif
+#ifdef TARGET_XBOX
+        debugPrint( "DCB loaded\n" );
 #endif
     }
     else
@@ -533,6 +582,9 @@ fflush(stdout);
 #ifdef TARGET_PS4
     ps4_log_write( "bgdi: modules initialized" );
 #endif
+#ifdef TARGET_XBOX
+    debugPrint( "modules ok\n" );
+#endif
 
 #ifdef TARGET_WIN32
     bgdi_win32_hide_own_console();
@@ -551,10 +603,26 @@ fflush(stdout);
 #ifdef TARGET_PS4
         ps4_log_write( "bgdi: starting scheduler" );
 #endif
+#ifdef TARGET_XBOX
+        debugPrint( "starting game\n" );
+#endif
         ret = instance_go_all() ;
     }
+#ifdef TARGET_XBOX
+    else
+    {
+        bgdi_xbox_hang( "no main process in DCB" );
+    }
+#endif
 
     bgdrtm_exit( ret );
+#ifdef TARGET_XBOX
+    {
+        char msg[64];
+        snprintf( msg, sizeof( msg ), "exit code %d", ret );
+        bgdi_xbox_hang( msg );
+    }
+#endif
 
     free( appexename        );
     free( appexepath        );

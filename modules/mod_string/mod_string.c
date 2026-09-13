@@ -241,7 +241,7 @@ static int modstring_trim( INSTANCE * my, intptr_t * params )
     return r;
 }
 
-#ifndef WIN32
+#if !defined(WIN32) || defined(TARGET_XBOX) || defined(__XBOX__) || defined(NXDK)
 static char * strrev( char * str )
 {
     char *start = str;

@@ -42,6 +42,9 @@
 #include <winbase.h>
 #include <windef.h>
 #include <direct.h>
+#if defined(TARGET_XBOX) || defined(__XBOX__) || defined(NXDK)
+#include <winextras.h>
+#endif
 #else
 #include <glob.h>
 #include <sys/stat.h>

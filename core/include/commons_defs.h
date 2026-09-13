@@ -64,7 +64,8 @@
 #define OS_VITA                 1009
 #define OS_PS3                  1010
 #define OS_PS4                  1011
-#define OS_XBOX360              1012
+#define OS_XBOX                 1012
+#define OS_XBOX360              1013
 
 #endif
 

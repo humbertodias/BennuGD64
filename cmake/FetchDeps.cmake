@@ -35,7 +35,7 @@ if (PLATFORM_PS3 OR PS3)
 endif ()
 # Static archives must be PIC so they can later link into .so/.dylib modules.
 # Switch/Dreamcast/PSP/Vita/PS2/Pandora/Wii homebrew uses the toolchain PIE/KOS/pspdev/vitasdk/libogc flags instead.
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_VITA AND NOT VITA AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PS3 AND NOT PS3 AND NOT PLATFORM_PS4 AND NOT PS4 AND NOT PLATFORM_XBOX360 AND NOT XBOX360 AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_VITA AND NOT VITA AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PS3 AND NOT PS3 AND NOT PLATFORM_PS4 AND NOT PS4 AND NOT PLATFORM_XBOX AND NOT XBOX AND NOT PLATFORM_XBOX360 AND NOT XBOX360 AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -204,6 +204,43 @@ endif ()
 ")
     list (PREPEND CMAKE_MODULE_PATH "${CMAKE_BINARY_DIR}/cmake-overrides")
   endif ()
+endif ()
+if (PLATFORM_XBOX OR XBOX)
+  if (NOT DEFINED NXDK_DIR OR NXDK_DIR STREQUAL "")
+    if (DEFINED ENV{NXDK_DIR})
+      set (NXDK_DIR "$ENV{NXDK_DIR}")
+    else ()
+      set (NXDK_DIR "/usr/src/nxdk")
+    endif ()
+  endif ()
+  set (_xbox_lib "${NXDK_DIR}/lib")
+  set (_xbox_inc "${NXDK_DIR}/lib")
+  if (NOT EXISTS "${_xbox_lib}/libzlib.lib" OR NOT EXISTS "${_xbox_lib}/libpng.lib")
+    message (FATAL_ERROR "nxdk zlib/libpng not found under ${NXDK_DIR}/lib")
+  endif ()
+  if (NOT TARGET ZLIB::ZLIB)
+    add_library (ZLIB::ZLIB STATIC IMPORTED GLOBAL)
+    set_target_properties (ZLIB::ZLIB PROPERTIES
+      IMPORTED_LOCATION "${_xbox_lib}/libzlib.lib"
+      INTERFACE_INCLUDE_DIRECTORIES "${_xbox_inc}/zlib/zlib"
+    )
+  endif ()
+  set (ZLIB_INCLUDE_DIR "${_xbox_inc}/zlib/zlib")
+  set (ZLIB_INCLUDE_DIRS "${_xbox_inc}/zlib/zlib")
+  set (ZLIB_FOUND TRUE)
+  set (_bennugd_zlib_include_dirs "${_xbox_inc}/zlib/zlib")
+  if (NOT TARGET PNG::PNG)
+    add_library (PNG::PNG STATIC IMPORTED GLOBAL)
+    set_target_properties (PNG::PNG PROPERTIES
+      IMPORTED_LOCATION "${_xbox_lib}/libpng.lib"
+      INTERFACE_INCLUDE_DIRECTORIES "${_xbox_inc}/libpng/libpng;${_xbox_inc}/libpng"
+      INTERFACE_LINK_LIBRARIES ZLIB::ZLIB
+    )
+  endif ()
+  # nxdk zlib is Z_SOLO (no gzopen); skip gzip FILE* wrappers in files.c.
+  add_compile_definitions (NO_ZLIB=1)
+  message (STATUS "Xbox: zlib/libpng from ${NXDK_DIR} (Z_SOLO / NO_ZLIB)")
+  set (_bennugd_skip_fetch_zlib_png TRUE)
 endif ()
 if (NOT _bennugd_skip_fetch_zlib_png)
 set (ZLIB_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -411,6 +448,38 @@ if (PLATFORM_XBOX360 OR XBOX360)
   set (HAVE_SYSCONF OFF CACHE BOOL "" FORCE)
   set (HAVE_GETPAGESIZE OFF CACHE BOOL "" FORCE)
 endif ()
+if (PLATFORM_XBOX OR XBOX)
+  # nxdk sets WIN32=1; keep SDL on Windows thread/timer backends, but nxdk is
+  # ANSI-only (no Unicode WinAPI). Patched in SDL_windows.h below.
+  set (WINDOWS TRUE)
+  set (WIN32 TRUE)
+  set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+  set (SDL_DLOPEN_NOTES OFF CACHE BOOL "" FORCE)
+  set (SDL_DEPS_SHARED OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+  set (SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
+  set (SDL_CAMERA OFF CACHE BOOL "" FORCE)
+  set (SDL_HAPTIC OFF CACHE BOOL "" FORCE)
+  set (SDL_SENSOR OFF CACHE BOOL "" FORCE)
+  set (SDL_VIDEO OFF CACHE BOOL "" FORCE)
+  set (SDL_AUDIO OFF CACHE BOOL "" FORCE)
+  set (SDL_JOYSTICK OFF CACHE BOOL "" FORCE)
+  set (SDL_TRAY OFF CACHE BOOL "" FORCE)
+  set (SDL_DIALOG OFF CACHE BOOL "" FORCE)
+  set (SDL_X11 OFF CACHE BOOL "" FORCE)
+  set (SDL_WAYLAND OFF CACHE BOOL "" FORCE)
+  set (SDL_KMSDRM OFF CACHE BOOL "" FORCE)
+  set (SDL_VULKAN OFF CACHE BOOL "" FORCE)
+  set (SDL_DIRECTX OFF CACHE BOOL "" FORCE)
+  set (SDL_WASAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_XINPUT OFF CACHE BOOL "" FORCE)
+  set (SDL_UNIX_CONSOLE_BUILD ON CACHE BOOL "" FORCE)
+  set (SDL_THREADS ON CACHE BOOL "" FORCE)
+endif ()
 if (PLATFORM_VITA OR VITA)
   set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
   set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
@@ -503,6 +572,66 @@ if (NOT sdl3_POPULATED)
       _xbox360_dynapi_text "${_xbox360_dynapi_text}")
     if (NOT _xbox360_dynapi_text STREQUAL _xbox360_dynapi_original)
       file (WRITE "${_xbox360_dynapi}" "${_xbox360_dynapi_text}")
+    endif ()
+  endif ()
+  if (PLATFORM_XBOX OR XBOX)
+    # SDL forces UNICODE before windows.h; nxdk only ships ANSI WinAPI aliases.
+    set (_xbox_sdl_windows "${sdl3_SOURCE_DIR}/src/core/windows/SDL_windows.h")
+    if (EXISTS "${_xbox_sdl_windows}")
+      # Replace the full Windows core header/helpers with nxdk-safe stubs.
+      file (COPY "${CMAKE_SOURCE_DIR}/platforms/xbox/sdl/SDL_windows.h"
+            DESTINATION "${sdl3_SOURCE_DIR}/src/core/windows")
+      file (COPY "${CMAKE_SOURCE_DIR}/platforms/xbox/sdl/SDL_windows.c"
+            DESTINATION "${sdl3_SOURCE_DIR}/src/core/windows")
+    endif ()
+    # Stub subsystems that hardcode desktop WinAPI / Unicode.
+    set (_xbox_sdl_copies
+      "src/filesystem/windows/SDL_sysfsops.c|platforms/xbox/sdl/SDL_sysfsops.c"
+      "src/filesystem/windows/SDL_sysfilesystem.c|platforms/xbox/sdl/SDL_sysfilesystem.c"
+      "src/timer/windows/SDL_systimer.c|platforms/xbox/sdl/SDL_systimer.c"
+      "src/time/windows/SDL_systime.c|platforms/xbox/sdl/SDL_systime.c"
+      "src/locale/windows/SDL_syslocale.c|platforms/xbox/sdl/SDL_syslocale.c"
+      "src/power/windows/SDL_syspower.c|platforms/xbox/sdl/SDL_syspower.c"
+      "src/loadso/windows/SDL_sysloadso.c|platforms/xbox/sdl/SDL_sysloadso.c"
+      "src/misc/windows/SDL_sysurl.c|platforms/xbox/sdl/SDL_sysurl.c"
+    )
+    foreach (_xbox_pair ${_xbox_sdl_copies})
+      string (REPLACE "|" ";" _xbox_pair_list "${_xbox_pair}")
+      list (GET _xbox_pair_list 0 _xbox_dst_rel)
+      list (GET _xbox_pair_list 1 _xbox_src_rel)
+      set (_xbox_dst "${sdl3_SOURCE_DIR}/${_xbox_dst_rel}")
+      set (_xbox_src "${CMAKE_SOURCE_DIR}/${_xbox_src_rel}")
+      if (EXISTS "${_xbox_src}" AND EXISTS "${_xbox_dst}")
+        configure_file ("${_xbox_src}" "${_xbox_dst}" COPYONLY)
+      endif ()
+    endforeach ()
+    # Silence unused desktop-only core sources pulled by sdl_glob_sources.
+    foreach (_xbox_empty SDL_hid.c SDL_immdevice.c SDL_xinput.c pch.c)
+      if (EXISTS "${sdl3_SOURCE_DIR}/src/core/windows/${_xbox_empty}")
+        configure_file ("${CMAKE_SOURCE_DIR}/platforms/xbox/sdl/SDL_windows_empty.c"
+          "${sdl3_SOURCE_DIR}/src/core/windows/${_xbox_empty}" COPYONLY)
+      endif ()
+    endforeach ()
+    foreach (_xbox_empty_cpp SDL_gameinput.cpp pch_cpp.cpp)
+      if (EXISTS "${sdl3_SOURCE_DIR}/src/core/windows/${_xbox_empty_cpp}")
+        file (WRITE "${sdl3_SOURCE_DIR}/src/core/windows/${_xbox_empty_cpp}"
+          "// Empty stub for nxdk\n")
+      endif ()
+    endforeach ()
+    # Do not link desktop Win32 import libs that nxdk does not provide.
+    set (_xbox_sdl_cmake "${sdl3_SOURCE_DIR}/CMakeLists.txt")
+    if (EXISTS "${_xbox_sdl_cmake}")
+      file (READ "${_xbox_sdl_cmake}" _xbox_sdl_cmake_txt)
+      if (NOT _xbox_sdl_cmake_txt MATCHES "BENNUGD_XBOX_NO_WIN32_LIBS")
+        string (REPLACE
+"  sdl_link_dependency(base LIBS kernel32 user32 gdi32 winmm imm32 ole32 oleaut32 version uuid advapi32 setupapi shell32)"
+"  # BENNUGD_XBOX_NO_WIN32_LIBS
+  if(NOT NXDK)
+    sdl_link_dependency(base LIBS kernel32 user32 gdi32 winmm imm32 ole32 oleaut32 version uuid advapi32 setupapi shell32)
+  endif()"
+          _xbox_sdl_cmake_txt "${_xbox_sdl_cmake_txt}")
+        file (WRITE "${_xbox_sdl_cmake}" "${_xbox_sdl_cmake_txt}")
+      endif ()
     endif ()
   endif ()
   if (PLATFORM_PS4 OR PS4)
@@ -607,6 +736,215 @@ if (PLATFORM_XBOX360 OR XBOX360)
     SDL_TIMER_XBOX360=1)
   set_target_properties (SDL3-static PROPERTIES POSITION_INDEPENDENT_CODE OFF)
   target_link_libraries (SDL3-static PUBLIC Xbox360::Xenon)
+endif ()
+
+# Always refresh nxdk SDL stubs (FetchContent may already be populated).
+  if ((PLATFORM_XBOX OR XBOX) AND DEFINED sdl3_SOURCE_DIR AND EXISTS "${sdl3_SOURCE_DIR}/src/core/windows/SDL_windows.h")
+  file (COPY "${CMAKE_SOURCE_DIR}/platforms/xbox/sdl/SDL_windows.h"
+        DESTINATION "${sdl3_SOURCE_DIR}/src/core/windows")
+  file (COPY "${CMAKE_SOURCE_DIR}/platforms/xbox/sdl/SDL_windows.c"
+        DESTINATION "${sdl3_SOURCE_DIR}/src/core/windows")
+  # Static XBE: disable SDL dynamic API jump table.
+  set (_xbox_dynapi "${sdl3_SOURCE_DIR}/src/dynapi/SDL_dynapi.h")
+  if (EXISTS "${_xbox_dynapi}")
+    file (READ "${_xbox_dynapi}" _xbox_dynapi_txt)
+    if (NOT _xbox_dynapi_txt MATCHES "BENNUGD_XBOX_NO_DYNAPI")
+      string (REPLACE
+"elif defined(SDL_PLATFORM_VITA)
+#define SDL_DYNAMIC_API 0 // vitasdk doesn't support dynamic linking
+#elif defined(SDL_PLATFORM_3DS)"
+"elif defined(SDL_PLATFORM_VITA)
+#define SDL_DYNAMIC_API 0 // vitasdk doesn't support dynamic linking
+#elif defined(NXDK) || defined(__XBOX__) || defined(TARGET_XBOX)
+#define SDL_DYNAMIC_API 0 /* BENNUGD_XBOX_NO_DYNAPI */
+#elif defined(SDL_PLATFORM_3DS)"
+        _xbox_dynapi_txt "${_xbox_dynapi_txt}")
+      file (WRITE "${_xbox_dynapi}" "${_xbox_dynapi_txt}")
+    endif ()
+  endif ()
+  # Avoid desktop WinAPI RAM/mouse queries that nxdk does not provide.
+  set (_xbox_cpuinfo "${sdl3_SOURCE_DIR}/src/cpuinfo/SDL_cpuinfo.c")
+  if (EXISTS "${_xbox_cpuinfo}")
+    file (READ "${_xbox_cpuinfo}" _xbox_cpuinfo_txt)
+    if (NOT _xbox_cpuinfo_txt MATCHES "BENNUGD_XBOX_SYSTEM_RAM")
+      string (REPLACE
+"#if defined(SDL_PLATFORM_WINDOWS)
+        if (SDL_SystemRAM <= 0) {
+            MEMORYSTATUSEX stat;
+            stat.dwLength = sizeof(stat);
+            if (GlobalMemoryStatusEx(&stat)) {
+                SDL_SystemRAM = (int)(stat.ullTotalPhys / (1024 * 1024));
+            }
+        }
+#endif"
+"#if defined(SDL_PLATFORM_WINDOWS) && !defined(NXDK)
+        if (SDL_SystemRAM <= 0) {
+            MEMORYSTATUSEX stat;
+            stat.dwLength = sizeof(stat);
+            if (GlobalMemoryStatusEx(&stat)) {
+                SDL_SystemRAM = (int)(stat.ullTotalPhys / (1024 * 1024));
+            }
+        }
+#elif defined(NXDK)
+        if (SDL_SystemRAM <= 0) {
+            SDL_SystemRAM = 64; /* BENNUGD_XBOX_SYSTEM_RAM */
+        }
+#endif"
+        _xbox_cpuinfo_txt "${_xbox_cpuinfo_txt}")
+      file (WRITE "${_xbox_cpuinfo}" "${_xbox_cpuinfo_txt}")
+    endif ()
+  endif ()
+  set (_xbox_mouse "${sdl3_SOURCE_DIR}/src/events/SDL_mouse.c")
+  if (EXISTS "${_xbox_mouse}")
+    file (READ "${_xbox_mouse}" _xbox_mouse_txt)
+    if (NOT _xbox_mouse_txt MATCHES "BENNUGD_XBOX_MOUSE_CLICK")
+      string (REPLACE
+"#if defined(SDL_PLATFORM_WIN32) || defined(SDL_PLATFORM_WINGDK)
+        mouse->double_click_time = GetDoubleClickTime();
+#else
+        mouse->double_click_time = 500;
+#endif"
+"#if (defined(SDL_PLATFORM_WIN32) || defined(SDL_PLATFORM_WINGDK)) && !defined(NXDK)
+        mouse->double_click_time = GetDoubleClickTime();
+#else
+        mouse->double_click_time = 500; /* BENNUGD_XBOX_MOUSE_CLICK */
+#endif"
+        _xbox_mouse_txt "${_xbox_mouse_txt}")
+      file (WRITE "${_xbox_mouse}" "${_xbox_mouse_txt}")
+    endif ()
+  endif ()
+  # Skip desktop process/console WinAPI on nxdk.
+  set (_xbox_sdl_c "${sdl3_SOURCE_DIR}/src/SDL.c")
+  if (EXISTS "${_xbox_sdl_c}")
+    file (READ "${_xbox_sdl_c}" _xbox_sdl_c_txt)
+    if (NOT _xbox_sdl_c_txt MATCHES "BENNUGD_XBOX_EXIT_PROCESS")
+      string (REPLACE
+"#if defined(SDL_PLATFORM_WINDOWS)
+    /* \"if you do not know the state of all threads in your process, it is
+       better to call TerminateProcess than ExitProcess\"
+       https://msdn.microsoft.com/en-us/library/windows/desktop/ms682658(v=vs.85).aspx */
+    TerminateProcess(GetCurrentProcess(), exitcode);
+    /* MingW doesn't have TerminateProcess marked as noreturn, so add an
+       ExitProcess here that will never be reached but make MingW happy. */
+    ExitProcess(exitcode);
+#elif defined(SDL_PLATFORM_EMSCRIPTEN)"
+"#if defined(SDL_PLATFORM_WINDOWS) && !defined(NXDK) /* BENNUGD_XBOX_EXIT_PROCESS */
+    /* \"if you do not know the state of all threads in your process, it is
+       better to call TerminateProcess than ExitProcess\"
+       https://msdn.microsoft.com/en-us/library/windows/desktop/ms682658(v=vs.85).aspx */
+    TerminateProcess(GetCurrentProcess(), exitcode);
+    /* MingW doesn't have TerminateProcess marked as noreturn, so add an
+       ExitProcess here that will never be reached but make MingW happy. */
+    ExitProcess(exitcode);
+#elif defined(SDL_PLATFORM_EMSCRIPTEN)"
+        _xbox_sdl_c_txt "${_xbox_sdl_c_txt}")
+      file (WRITE "${_xbox_sdl_c}" "${_xbox_sdl_c_txt}")
+    endif ()
+    if (NOT _xbox_sdl_c_txt MATCHES "BENNUGD_XBOX_HELPER_WINDOW")
+      file (READ "${_xbox_sdl_c}" _xbox_sdl_c_txt)
+      string (REPLACE
+"#ifdef SDL_PLATFORM_WINDOWS
+extern bool SDL_HelperWindowCreate(void);
+extern void SDL_HelperWindowDestroy(void);
+#endif"
+"#if defined(SDL_PLATFORM_WINDOWS) && !defined(NXDK) /* BENNUGD_XBOX_HELPER_WINDOW */
+extern bool SDL_HelperWindowCreate(void);
+extern void SDL_HelperWindowDestroy(void);
+#endif"
+        _xbox_sdl_c_txt "${_xbox_sdl_c_txt}")
+      string (REPLACE
+"#ifdef SDL_PLATFORM_WINDOWS
+    if (flags & (SDL_INIT_HAPTIC | SDL_INIT_JOYSTICK)) {
+        if (!SDL_HelperWindowCreate()) {
+            goto quit_and_error;
+        }
+    }
+#endif"
+"#if defined(SDL_PLATFORM_WINDOWS) && !defined(NXDK) /* BENNUGD_XBOX_HELPER_WINDOW */
+    if (flags & (SDL_INIT_HAPTIC | SDL_INIT_JOYSTICK)) {
+        if (!SDL_HelperWindowCreate()) {
+            goto quit_and_error;
+        }
+    }
+#endif"
+        _xbox_sdl_c_txt "${_xbox_sdl_c_txt}")
+      string (REPLACE
+"#ifdef SDL_PLATFORM_WINDOWS
+    SDL_HelperWindowDestroy();
+#endif"
+"#if defined(SDL_PLATFORM_WINDOWS) && !defined(NXDK) /* BENNUGD_XBOX_HELPER_WINDOW */
+    SDL_HelperWindowDestroy();
+#endif"
+        _xbox_sdl_c_txt "${_xbox_sdl_c_txt}")
+      file (WRITE "${_xbox_sdl_c}" "${_xbox_sdl_c_txt}")
+    endif ()
+  endif ()
+  set (_xbox_sdl_log "${sdl3_SOURCE_DIR}/src/SDL_log.c")
+  if (EXISTS "${_xbox_sdl_log}")
+    file (READ "${_xbox_sdl_log}" _xbox_sdl_log_txt)
+    if (NOT _xbox_sdl_log_txt MATCHES "BENNUGD_XBOX_LOG")
+      string (REPLACE
+"#if defined(SDL_PLATFORM_WINDOWS)
+    // Way too many allocations here, urgh"
+"#if defined(SDL_PLATFORM_WINDOWS) && !defined(NXDK) /* BENNUGD_XBOX_LOG */
+    // Way too many allocations here, urgh"
+        _xbox_sdl_log_txt "${_xbox_sdl_log_txt}")
+      string (REPLACE
+"#if defined(SDL_PLATFORM_WIN32) && !defined(SDL_PLATFORM_GDK)"
+"#if defined(SDL_PLATFORM_WIN32) && !defined(SDL_PLATFORM_GDK) && !defined(NXDK)"
+        _xbox_sdl_log_txt "${_xbox_sdl_log_txt}")
+      file (WRITE "${_xbox_sdl_log}" "${_xbox_sdl_log_txt}")
+    endif ()
+  endif ()
+  set (_xbox_sdl_copies
+    "src/filesystem/windows/SDL_sysfsops.c|platforms/xbox/sdl/SDL_sysfsops.c"
+    "src/filesystem/windows/SDL_sysfilesystem.c|platforms/xbox/sdl/SDL_sysfilesystem.c"
+    "src/timer/windows/SDL_systimer.c|platforms/xbox/sdl/SDL_systimer.c"
+    "src/time/windows/SDL_systime.c|platforms/xbox/sdl/SDL_systime.c"
+    "src/locale/windows/SDL_syslocale.c|platforms/xbox/sdl/SDL_syslocale.c"
+    "src/power/windows/SDL_syspower.c|platforms/xbox/sdl/SDL_syspower.c"
+    "src/loadso/windows/SDL_sysloadso.c|platforms/xbox/sdl/SDL_sysloadso.c"
+    "src/misc/windows/SDL_sysurl.c|platforms/xbox/sdl/SDL_sysurl.c"
+    "src/process/windows/SDL_windowsprocess.c|platforms/xbox/sdl/SDL_windowsprocess.c"
+    "src/main/windows/SDL_sysmain_runapp.c|platforms/xbox/sdl/SDL_sysmain_runapp.c"
+    "src/thread/windows/SDL_systhread.c|platforms/xbox/sdl/SDL_systhread.c"
+  )
+  foreach (_xbox_pair ${_xbox_sdl_copies})
+    string (REPLACE "|" ";" _xbox_pair_list "${_xbox_pair}")
+    list (GET _xbox_pair_list 0 _xbox_dst_rel)
+    list (GET _xbox_pair_list 1 _xbox_src_rel)
+    set (_xbox_dst "${sdl3_SOURCE_DIR}/${_xbox_dst_rel}")
+    set (_xbox_src "${CMAKE_SOURCE_DIR}/${_xbox_src_rel}")
+    if (EXISTS "${_xbox_src}" AND EXISTS "${_xbox_dst}")
+      configure_file ("${_xbox_src}" "${_xbox_dst}" COPYONLY)
+    endif ()
+  endforeach ()
+  foreach (_xbox_empty SDL_hid.c SDL_immdevice.c SDL_xinput.c pch.c)
+    if (EXISTS "${sdl3_SOURCE_DIR}/src/core/windows/${_xbox_empty}")
+      configure_file ("${CMAKE_SOURCE_DIR}/platforms/xbox/sdl/SDL_windows_empty.c"
+        "${sdl3_SOURCE_DIR}/src/core/windows/${_xbox_empty}" COPYONLY)
+    endif ()
+  endforeach ()
+  foreach (_xbox_empty_cpp SDL_gameinput.cpp pch_cpp.cpp)
+    if (EXISTS "${sdl3_SOURCE_DIR}/src/core/windows/${_xbox_empty_cpp}")
+      file (WRITE "${sdl3_SOURCE_DIR}/src/core/windows/${_xbox_empty_cpp}"
+        "// Empty stub for nxdk\n")
+    endif ()
+  endforeach ()
+  set (_xbox_sdl_cmake "${sdl3_SOURCE_DIR}/CMakeLists.txt")
+  if (EXISTS "${_xbox_sdl_cmake}")
+    file (READ "${_xbox_sdl_cmake}" _xbox_sdl_cmake_txt)
+    if (NOT _xbox_sdl_cmake_txt MATCHES "BENNUGD_XBOX_NO_WIN32_LIBS")
+      string (REPLACE
+"  sdl_link_dependency(base LIBS kernel32 user32 gdi32 winmm imm32 ole32 oleaut32 version uuid advapi32 setupapi shell32)"
+"  # BENNUGD_XBOX_NO_WIN32_LIBS
+  if(NOT NXDK)
+    sdl_link_dependency(base LIBS kernel32 user32 gdi32 winmm imm32 ole32 oleaut32 version uuid advapi32 setupapi shell32)
+  endif()"
+        _xbox_sdl_cmake_txt "${_xbox_sdl_cmake_txt}")
+      file (WRITE "${_xbox_sdl_cmake}" "${_xbox_sdl_cmake_txt}")
+    endif ()
+  endif ()
 endif ()
 
 if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")

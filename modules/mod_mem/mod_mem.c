@@ -32,8 +32,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* WIN32 INCLUDES */
-#ifdef WIN32
+/* WIN32 INCLUDES (Original Xbox defines WIN32 for nxdk, but has no MEMORYSTATUS) */
+#if defined(WIN32) && !defined(TARGET_XBOX)
 #include <windows.h>
 #include <winbase.h>
 #include <windef.h>
@@ -135,7 +135,7 @@ static int kernel_version_type( void )
 
 static int modmem_memory_free( INSTANCE * my, intptr_t * params )
 {
-#ifdef WIN32
+#if defined(WIN32) && !defined(TARGET_XBOX)
     MEMORYSTATUS mem ;
     GlobalMemoryStatus( &mem ) ;
     return mem.dwAvailPhys ;
@@ -178,7 +178,7 @@ static int modmem_memory_free( INSTANCE * my, intptr_t * params )
 
 static int modmem_memory_total( INSTANCE * my, intptr_t * params )
 {
-#ifdef WIN32
+#if defined(WIN32) && !defined(TARGET_XBOX)
     MEMORYSTATUS mem ;
     GlobalMemoryStatus( &mem ) ;
     return mem.dwTotalPhys ;

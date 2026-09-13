@@ -60,6 +60,13 @@
 
 /* ----------------------------------------------------------------- */
 
+#if defined(TARGET_XBOX) || defined(__XBOX__) || defined(NXDK)
+/* xboxkrnl.h defines FILE_CREATED as a create-disposition constant. */
+#ifdef FILE_CREATED
+#undef FILE_CREATED
+#endif
+#endif
+
 enum
 {
     FILE_PATH = 0,

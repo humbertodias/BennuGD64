@@ -212,7 +212,7 @@ int gr_lock_screen()
 
 void gr_unlock_screen()
 {
-#ifdef TARGET_PS4
+#if defined(TARGET_PS4) || defined(TARGET_XBOX)
     /*
      * The native presenter has no SDL window and does not use SDL's lock
      * state. The Bennu software surface is the complete frame.

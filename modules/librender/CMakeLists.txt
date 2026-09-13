@@ -43,6 +43,9 @@ endif ()
 if (PLATFORM_XBOX360 OR XBOX360)
   target_sources (render PRIVATE g_frame_xbox360.c)
 endif ()
+if (PLATFORM_XBOX OR XBOX)
+  target_sources (render PRIVATE g_frame_xbox.c)
+endif ()
 
 target_link_libraries (
   render

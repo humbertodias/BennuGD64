@@ -3,6 +3,10 @@ include_directories (
   ../libvideo
 )
 
+if (PLATFORM_XBOX OR XBOX)
+  include_directories (../libjoy)
+endif ()
+
 add_library (
   key
   ${MODULES}
@@ -32,6 +36,10 @@ if (PLATFORM_PS4 OR PS4)
 endif ()
 if (PLATFORM_XBOX360 OR XBOX360)
   target_sources (key PRIVATE libkey_xbox360.c)
+endif ()
+if (PLATFORM_XBOX OR XBOX)
+  target_sources (key PRIVATE libkey_xbox.c)
+  target_link_libraries (key Xbox::Nxdk joy)
 endif ()
 if (EMSCRIPTEN)
   target_sources (key PRIVATE libkey_emscripten.c)

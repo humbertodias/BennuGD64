@@ -77,6 +77,12 @@ if (EMSCRIPTEN)
   )
 endif ()
 
+if (PLATFORM_XBOX OR XBOX)
+  target_sources (bgdrtm PRIVATE
+    "${CMAKE_SOURCE_DIR}/platforms/xbox/xbox_compat.c"
+  )
+endif ()
+
 if (USE_LIBDES)
   target_link_libraries (
     bgdrtm

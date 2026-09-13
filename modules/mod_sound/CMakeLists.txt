@@ -28,6 +28,9 @@ endif ()
 if (PLATFORM_XBOX360 OR XBOX360)
   target_sources (mod_sound PRIVATE mod_sound_xbox360.c)
 endif ()
+if (PLATFORM_XBOX OR XBOX)
+  target_sources (mod_sound PRIVATE mod_sound_xbox.c)
+endif ()
 
 target_link_libraries (
   mod_sound

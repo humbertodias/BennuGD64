@@ -43,6 +43,9 @@ endif ()
 if (PLATFORM_XBOX360 OR XBOX360)
   target_sources (bgdi PRIVATE main_xbox360.c)
 endif ()
+if (PLATFORM_XBOX OR XBOX)
+  target_sources (bgdi PRIVATE main_xbox.c)
+endif ()
 if (PLATFORM_PS2 OR PS2)
   set (_ps2sdk "$ENV{PS2SDK}")
   if (NOT _ps2sdk)
@@ -117,7 +120,7 @@ endif ()
 if (NINTENDO_WII OR PLATFORM_WII)
   target_sources (bgdi PRIVATE main_wii.c main_wii_posix.c)
 endif ()
-if (WIN32)
+if (WIN32 AND NOT PLATFORM_XBOX AND NOT XBOX AND NOT PLATFORM_XBOX360 AND NOT XBOX360)
   target_sources (bgdi PRIVATE main_win32.c)
 endif ()
 
@@ -436,6 +439,26 @@ if (PLATFORM_XBOX360 OR XBOX360)
     BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/bgdi.elf32"
     COMMENT "Convert bgdi to a XeLL-loadable Xbox 360 ELF32"
   )
+endif ()
+
+if (PLATFORM_XBOX OR XBOX)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+    Xbox::Nxdk
+  )
+  if (DEFINED NXDK_DIR AND EXISTS "${NXDK_DIR}/tools/cxbe/cxbe")
+    add_custom_command (
+      TARGET bgdi POST_BUILD
+      COMMAND "${NXDK_DIR}/tools/cxbe/cxbe"
+        "-OUT:${CMAKE_CURRENT_BINARY_DIR}/default.xbe"
+        "-TITLE:BennuGD64"
+        "$<TARGET_FILE:bgdi>"
+      BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/default.xbe"
+      COMMENT "Convert bgdi.exe to default.xbe"
+    )
+  endif ()
 endif ()
 
 if (PLATFORM_PANDORA OR OPENPANDORA)

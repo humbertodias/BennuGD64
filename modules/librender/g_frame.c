@@ -51,6 +51,9 @@
 #endif
 #ifdef TARGET_XBOX360
 #include "g_frame_xbox360.h"
+#ifdef TARGET_XBOX
+#include "g_frame_xbox.h"
+
 #endif
 
 /* --------------------------------------------------------------------------- */
@@ -132,6 +135,9 @@ static int bennu_get_ticks_ms( void )
     return gr_frame_ps4_get_ticks_ms();
 #elif defined(TARGET_XBOX360)
     return gr_frame_xbox360_get_ticks_ms();
+#elif defined(TARGET_XBOX)
+    return gr_frame_xbox_get_ticks_ms();
+
 #else
     return ( int ) SDL_GetTicks();
 #endif
@@ -146,6 +152,9 @@ static void bennu_delay_ms( int delay )
     gr_frame_ps4_delay_ms( delay );
 #elif defined(TARGET_XBOX360)
     gr_frame_xbox360_delay_ms( delay );
+#elif defined(TARGET_XBOX)
+    gr_frame_xbox_delay_ms( delay );
+
 #else
     if ( delay > 0 )
         SDL_Delay( delay );

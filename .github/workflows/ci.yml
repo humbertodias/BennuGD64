@@ -374,8 +374,7 @@ jobs:
             bash scripts/generate-install-md.sh "$base" "$art_dir"
             find "$art_dir" \( -path '*/bgdi.app/bgdi' -o -name sim-install.sh \) -exec chmod +x {} +
             case "$base" in
-              *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*psp*|*vita*|*ps2*|*ps3*|*ps4*|*xbox*|*pandora*|*wii*|*tvos*|*ios*)
-              *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*psp*|*vita*|*ps2*|*ps3*|*ps4*|*xbox360*|*pandora*|*wii*|*tvos*|*ios*)
+              *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*psp*|*vita*|*ps2*|*ps3*|*ps4*|*xbox*|*xbox360*|*pandora*|*wii*|*tvos*|*ios*)
                 (cd artifacts && zip -r "$GITHUB_WORKSPACE/release-assets/${base}.zip" "$base")
                 ;;
               *)

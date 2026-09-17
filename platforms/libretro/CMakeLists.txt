@@ -58,12 +58,28 @@ if (PLATFORM_PS3 OR PS3)
   )
 endif ()
 
-# nxdk is Win32 without _wfopen / UTF-16. libretro-common's LEGACY_WIN32 path uses fopen.
+# nxdk looks like Win32 to libretro-common but has no Windows.h, _wfopen,
+# MultiByteToWideChar, or fcntl.h. Compile those files as a POSIX host.
 if (PLATFORM_XBOX OR XBOX)
-  set_source_files_properties (
-    ${LIBRETRO_COMMON_DIR}/compat/fopen_utf8.c
+  set (_nxdk_libretro_common
+    ${LIBRETRO_COMMON_DIR}/libco/libco.c
     ${LIBRETRO_COMMON_DIR}/vfs/vfs_implementation.c
-    PROPERTIES COMPILE_DEFINITIONS LEGACY_WIN32
+    ${LIBRETRO_COMMON_DIR}/file/file_path.c
+    ${LIBRETRO_COMMON_DIR}/file/file_path_io.c
+    ${LIBRETRO_COMMON_DIR}/file/retro_dirent.c
+    ${LIBRETRO_COMMON_DIR}/string/stdstring.c
+    ${LIBRETRO_COMMON_DIR}/encodings/encoding_utf.c
+    ${LIBRETRO_COMMON_DIR}/time/rtime.c
+    ${LIBRETRO_COMMON_DIR}/compat/compat_strl.c
+    ${LIBRETRO_COMMON_DIR}/compat/compat_strldup.c
+    ${LIBRETRO_COMMON_DIR}/streams/file_stream.c
+    ${LIBRETRO_COMMON_DIR}/streams/trans_stream_zlib.c
+    ${LIBRETRO_COMMON_DIR}/streams/file_stream_transforms.c
+    ${LIBRETRO_COMMON_DIR}/compat/compat_posix_string.c
+    ${LIBRETRO_COMMON_DIR}/compat/fopen_utf8.c
+  )
+  set_source_files_properties ( ${_nxdk_libretro_common}
+    PROPERTIES COMPILE_OPTIONS "-U_WIN32;-UWIN32;-U_MSC_VER"
   )
 endif ()
 

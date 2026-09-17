@@ -50,6 +50,14 @@ add_library ( bennugd_libretro ${CORE_LIBRARY_TYPE}
   ${_libretro_sources}
 )
 
+# PSL1GHT has no Sony CELL SDK. Undefine __PS3__ so VFS uses POSIX I/O.
+if (PLATFORM_PS3 OR PS3)
+  set_source_files_properties (
+    ${LIBRETRO_COMMON_DIR}/vfs/vfs_implementation.c
+    PROPERTIES COMPILE_OPTIONS "-U__PS3__"
+  )
+endif ()
+
 check_symbol_exists ( posix_memalign stdlib.h BENNUGD_LIBRETRO_HAVE_POSIX_MEMALIGN )
 if ( BENNUGD_LIBRETRO_HAVE_POSIX_MEMALIGN )
   target_compile_definitions ( bennugd_libretro PRIVATE HAVE_POSIX_MEMALIGN=1 )

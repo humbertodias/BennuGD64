@@ -4,7 +4,11 @@ if (NOT LIBRETRO_COMMON_DIR)
   message (FATAL_ERROR "LIBRETRO_COMMON_DIR is not set (cmake/platforms/Libretro.cmake)")
 endif ()
 
-set ( CORE_LIBRARY_TYPE SHARED )
+if ( BENNUGD_LIBRETRO_STATIC_CORE )
+  set ( CORE_LIBRARY_TYPE STATIC )
+else ()
+  set ( CORE_LIBRARY_TYPE SHARED )
+endif ()
 
 add_library ( bennugd_libretro ${CORE_LIBRARY_TYPE}
   ${LIBRETRO_COMMON_DIR}/libco/libco.c
@@ -65,7 +69,7 @@ set_target_properties ( bennugd_libretro PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}
 )
 
-if ( UNIX AND NOT APPLE )
+if ( UNIX AND NOT APPLE AND NOT BENNUGD_LIBRETRO_STATIC_CORE )
   target_link_options ( bennugd_libretro PRIVATE -Wl,-Bsymbolic )
 endif ()
 
@@ -77,8 +81,10 @@ target_link_libraries ( bennugd_libretro PRIVATE
   PNG::PNG
 )
 
-if ( UNIX )
+if ( UNIX AND NOT APPLE AND NOT ANDROID AND NOT BENNUGD_LIBRETRO_STATIC_CORE )
   target_link_libraries ( bennugd_libretro PRIVATE m pthread )
+elseif ( ANDROID )
+  target_link_libraries ( bennugd_libretro PRIVATE android log m )
 endif ()
 
 install ( TARGETS bennugd_libretro

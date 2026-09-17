@@ -46,9 +46,9 @@ bash scripts/build.sh windows libretro
 | Command | Image | Output |
 |---------|-------|--------|
 | `linux` / `linux shared` / `linux libretro` | `docker/Dockerfile.linux` (`--target linux`) | `dist/linux-{static,shared,libretro}/` |
-| `wasm` | `docker/Dockerfile.wasm` | `dist/web-wasm32-static/` |
-| `android` | `docker/Dockerfile.android` | `dist/android-arm64-static/` (`bennugd64.apk`) |
-| `switch` | `docker/Dockerfile.switch` | `dist/switch-aarch64-static/` (`bennugd64.nro`) |
+| `wasm` / `wasm libretro` | `docker/Dockerfile.wasm` | `dist/web-wasm32-static/` or `dist/web-wasm32-libretro/` |
+| `android` / `android libretro` | `docker/Dockerfile.android` | `dist/android-arm64-static/` (`bennugd64.apk`) or `dist/android-arm64-libretro/` |
+| `switch` / `switch libretro` | `docker/Dockerfile.switch` | `dist/switch-aarch64-static/` (`bennugd64.nro`) or `dist/switch-aarch64-libretro/` |
 | `dreamcast` | `docker/Dockerfile.dreamcast` | `dist/dreamcast-sh4-static/` (`bennugd64.cdi`) |
 | `psp` | `docker/Dockerfile.psp` | `dist/psp-mips-static/` (`EBOOT.PBP`) |
 | `vita` | `docker/Dockerfile.vita` | `dist/vita-arm-static/` (`bennugd64.vpk`) |

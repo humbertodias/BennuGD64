@@ -7,12 +7,12 @@ include_directories (
   ../../bgdrtm/include
 )
 
-if (ANDROID)
-  add_library ( bgdi SHARED main.c )
-  set_target_properties ( bgdi PROPERTIES OUTPUT_NAME "main" )
-elseif (BENNUGD_LIBRETRO)
+if (BENNUGD_LIBRETRO)
   add_library ( bgdi STATIC main.c )
   target_compile_definitions ( bgdi PRIVATE SDL_MAIN_HANDLED=1 )
+elseif (ANDROID)
+  add_library ( bgdi SHARED main.c )
+  set_target_properties ( bgdi PROPERTIES OUTPUT_NAME "main" )
 else ()
   add_executable (
     bgdi
@@ -20,6 +20,7 @@ else ()
   )
 endif ()
 
+if (NOT BENNUGD_LIBRETRO)
 if (PLATFORM_PSP OR PSP)
   target_sources (bgdi PRIVATE main_psp.c)
 endif ()
@@ -126,6 +127,7 @@ endif ()
 if (WIN32 AND NOT PLATFORM_XBOX AND NOT XBOX AND NOT PLATFORM_XBOX360 AND NOT XBOX360)
   target_sources (bgdi PRIVATE main_win32.c)
 endif ()
+endif ()
 
 add_dependencies ( bgdi bennugd_git_header )
 
@@ -145,6 +147,7 @@ else ()
   )
 endif ()
 
+if (NOT BENNUGD_LIBRETRO)
 if (ANDROID)
   target_link_libraries (
     bgdi
@@ -498,4 +501,5 @@ endif ()
 
 if (EMSCRIPTEN)
   bennugd_emscripten_link (bgdi)
+endif ()
 endif ()

@@ -123,7 +123,7 @@ The archive also contains `libmain.so` and `libSDL3.so` for integration and diag
 esac
 
 if [[ "${artifact}" == *-libretro ]]; then
-  install='Load `bennugd_libretro.so` (Linux), `bennugd_libretro.dll` (Windows), or `bennugd_libretro.dylib` (macOS) in RetroArch and open a `.dcb` / `.dat` game.'
+  install='Load `bennugd_libretro` in RetroArch (`.so` / `.dll` / `.dylib` on desktop and Android, static `.a` on most consoles) and open a `.dcb` / `.dat` game.'
   data='Place the DCB and its assets together; RetroArch serves files from the selected game directory.'
   linkage='This is a libretro core. BennuGD modules are linked into `bennugd_libretro`.'
 elif [[ "${artifact}" == *-shared ]]; then

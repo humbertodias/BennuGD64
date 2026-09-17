@@ -1,5 +1,4 @@
-/* libogc already defines pthread_t. libretro-common's gx_pthread.h
- * conflicts with that, so Wii (and other GEKKO) cores skip rthreads.c. */
+/* Consoles with incomplete pthreads skip libretro-common rthreads.c. */
 
 #include "rthreads/rthreads.h"
 #include <stdlib.h>

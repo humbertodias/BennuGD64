@@ -31,8 +31,14 @@ set (_libretro_sources
   filestream_gzip.c
 )
 
-# gx_pthread.h typedefs pthread_t as lwp_t; libogc already has pthread_t.
-if (NINTENDO_WII OR PLATFORM_WII OR GEKKO)
+if (PLATFORM_DREAMCAST OR DREAMCAST)
+  list (REMOVE_ITEM _libretro_sources ${LIBRETRO_COMMON_DIR}/libco/libco.c)
+  list (APPEND _libretro_sources libco_kos.c)
+endif ()
+
+# Incomplete pthread APIs (KOS, libogc gx_pthread vs pthread_t, …).
+# The core is cooperative via libco; filesystem only needs a mutex stub.
+if (BENNUGD_LIBRETRO_STATIC_CORE)
   list (APPEND _libretro_sources rthreads_stub.c)
   set (_libretro_have_threads 0)
 else ()

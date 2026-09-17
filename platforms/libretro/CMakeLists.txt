@@ -36,6 +36,11 @@ if (PLATFORM_DREAMCAST OR DREAMCAST)
   list (APPEND _libretro_sources libco_kos.c)
 endif ()
 
+if (PLATFORM_XBOX OR XBOX)
+  list (REMOVE_ITEM _libretro_sources ${LIBRETRO_COMMON_DIR}/libco/libco.c)
+  list (APPEND _libretro_sources libco_nxdk.c)
+endif ()
+
 # Incomplete pthread APIs (KOS, libogc gx_pthread vs pthread_t, …).
 # The core is cooperative via libco; filesystem only needs a mutex stub.
 if (BENNUGD_LIBRETRO_STATIC_CORE)
@@ -63,7 +68,6 @@ endif ()
 if (PLATFORM_XBOX OR XBOX)
   target_sources ( bennugd_libretro PRIVATE nxdk_mbstowcs.c )
   set (_nxdk_libretro_common
-    ${LIBRETRO_COMMON_DIR}/libco/libco.c
     ${LIBRETRO_COMMON_DIR}/vfs/vfs_implementation.c
     ${LIBRETRO_COMMON_DIR}/file/file_path.c
     ${LIBRETRO_COMMON_DIR}/file/file_path_io.c

@@ -17,11 +17,14 @@
 #ifndef rmdir
 #define rmdir _rmdir
 #endif
-#ifndef mkdir
-#define mkdir _mkdir
-#endif
 #ifndef getcwd
 #define getcwd _getcwd
 #endif
+
+#ifdef mkdir
+#undef mkdir
+#endif
+/* libretro VFS POSIX path calls mkdir(path, mode); nxdk only has _mkdir. */
+int mkdir (const char *path, int mode);
 
 #endif

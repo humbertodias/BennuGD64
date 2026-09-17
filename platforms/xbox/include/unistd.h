@@ -2,6 +2,18 @@
 #ifndef __BENNUGD_XBOX_UNISTD_H
 #define __BENNUGD_XBOX_UNISTD_H
 
+#include <stddef.h>
+#include <stdio.h>
+#include <sys/types.h>
+
+ssize_t read (int fd, void *buf, size_t n);
+ssize_t write (int fd, const void *buf, size_t n);
+off_t lseek (int fd, off_t offset, int whence);
+int close (int fd);
+int ftruncate (int fd, off_t length);
+int fileno (FILE *stream);
+int mkdir (const char *path, int mode);
+
 #include <direct.h>
 
 /* nxdk ships an empty unistd.h; keep a soft include_next if present. */
@@ -24,18 +36,5 @@
 #ifdef mkdir
 #undef mkdir
 #endif
-/* libretro VFS POSIX path calls mkdir(path, mode); nxdk only has _mkdir. */
-int mkdir (const char *path, int mode);
-
-#include <stddef.h>
-#include <stdio.h>
-#include <sys/types.h>
-
-ssize_t read (int fd, void *buf, size_t n);
-ssize_t write (int fd, const void *buf, size_t n);
-off_t lseek (int fd, off_t offset, int whence);
-int close (int fd);
-int ftruncate (int fd, off_t length);
-int fileno (FILE *stream);
 
 #endif

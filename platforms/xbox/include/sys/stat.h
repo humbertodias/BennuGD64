@@ -26,6 +26,13 @@ extern "C" {
 #define S_ISBLK(m) (((m) & S_IFMT) == S_IFBLK)
 #endif
 
+#ifndef S_IRUSR
+#define S_IRUSR 0400
+#define S_IWUSR 0200
+#define S_IXUSR 0100
+#define S_IRWXU 0700
+#endif
+
 #ifndef _S_IFMT
 #define _S_IFMT  S_IFMT
 #define _S_IFREG S_IFREG

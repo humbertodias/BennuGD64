@@ -68,7 +68,6 @@ endif ()
 if (PLATFORM_XBOX OR XBOX)
   target_sources ( bennugd_libretro PRIVATE nxdk_mbstowcs.c )
   set (_nxdk_libretro_common
-    ${LIBRETRO_COMMON_DIR}/vfs/vfs_implementation.c
     ${LIBRETRO_COMMON_DIR}/file/file_path.c
     ${LIBRETRO_COMMON_DIR}/file/file_path_io.c
     ${LIBRETRO_COMMON_DIR}/file/retro_dirent.c
@@ -84,6 +83,11 @@ if (PLATFORM_XBOX OR XBOX)
   )
   set_source_files_properties ( ${_nxdk_libretro_common}
     PROPERTIES COMPILE_OPTIONS "-U_WIN32;-UWIN32;-U_MSC_VER"
+  )
+  # nxdk unistd.h is empty; VFS needs POSIX fd I/O and S_IRUSR.
+  set_source_files_properties (
+    ${LIBRETRO_COMMON_DIR}/vfs/vfs_implementation.c
+    PROPERTIES COMPILE_OPTIONS "-U_WIN32;-UWIN32;-U_MSC_VER;-include;${CMAKE_CURRENT_SOURCE_DIR}/nxdk_vfs_posix.h"
   )
   # POSIX encoding_utf.c needs mbstowcs/wcstombs; nxdk only has mbsrtowcs.
   set_source_files_properties (

@@ -33,7 +33,13 @@ case "${artifact}" in
   *-android-arm64-*)
     platform="Android arm64"
     install='Install `bennugd64.apk` on an arm64-v8a device running Android API 28 or newer.'
-    data='The archive also contains `libmain.so` and `libSDL3.so` for integration and diagnostics.'
+    data='Place `main.dcb` and game assets in `/sdcard/Android/data/org.bennugd.player/files/` after the first launch. Example:
+
+```shell
+adb push platforms/web/demo/fire.dcb /sdcard/Android/data/org.bennugd.player/files/main.dcb
+```
+
+The archive also contains `libmain.so` and `libSDL3.so` for integration and diagnostics.'
     ;;
   *-switch-aarch64-*)
     platform="Nintendo Switch"

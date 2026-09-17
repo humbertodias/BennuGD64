@@ -283,7 +283,11 @@ bash scripts/build.sh android
 
 That configures native `bgdc` (`android-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `libmain.so` with the NDK (`android-arm64`, API 28, arm64-v8a), copies SDL3 Java from FetchContent, and runs Gradle to produce `dist/android-arm64-static/bennugd64.apk`.
 
-Install the debug APK on an arm64 device or emulator (Android 9+). The APK ships `hello.dcb` as `assets/main.dcb`. To ship your own game, replace `assets/main.dcb` (and any extra files) in a copy of `platforms/android/` or add them under the app files directory.
+Install the debug APK on an arm64 device or emulator (Android 9+). The APK ships `hello.dcb` as `assets/main.dcb`. On first launch it is copied to app-specific external storage (`/sdcard/Android/data/org.bennugd.player/files/main.dcb`) only if that file is missing. To ship your own game, replace `assets/main.dcb` (and any extra files) in a copy of `platforms/android/`, or drop `main.dcb` and assets into that `files/` directory after install:
+
+```shell
+adb push platforms/web/demo/fire.dcb /sdcard/Android/data/org.bennugd.player/files/main.dcb
+```
 
 SDL3 is a shared `libSDL3.so` because `SDLActivity` loads it next to `libmain.so`. Modules are linked into `libmain.so`.
 

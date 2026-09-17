@@ -1,5 +1,6 @@
 /*
- * Android interpreter entry: extract bundled DCBs into internal storage.
+ * Android interpreter entry: extract bundled DCBs into app-specific
+ * external storage (SDL_GetAndroidExternalStoragePath).
  */
 
 #include <stdio.h>
@@ -42,12 +43,13 @@ static void android_extract_assets ( const char * dest_dir )
 
 char * bgdi_android_startup( int argc, char * argv[], int * standalone )
 {
-    const char * storage = SDL_GetAndroidInternalStoragePath();
+    const char * storage = SDL_GetAndroidExternalStoragePath();
 
     ( void ) argv;
 
     if ( storage )
     {
+        dir_create( storage );
         android_extract_assets( storage );
         chdir( storage );
         file_addp( storage );

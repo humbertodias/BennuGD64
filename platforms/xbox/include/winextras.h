@@ -225,14 +225,6 @@ static inline UINT GetDoubleClickTime(void)
 #define INVALID_SET_FILE_POINTER ((DWORD)-1)
 #endif
 
-#ifndef SetEndOfFile
-static inline BOOL SetEndOfFile(HANDLE hFile)
-{
-  (void)hFile;
-  return FALSE;
-}
-#endif
-
 #ifndef LPTSTR
 typedef char *LPTSTR;
 #endif

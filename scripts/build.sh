@@ -421,6 +421,13 @@ if [[ "${2:-}" == "libretro" || "${3:-}" == "libretro" || "${4:-}" == "libretro"
   rm -f "${ROOT}/${BUILD_DIR#/src/}/CMakeCache.txt"
   rm -rf "${ROOT}/${BUILD_DIR#/src/}/CMakeFiles"
   scrub_fetchcontent "${ROOT}/${BUILD_DIR#/src/}/_deps"
+  STAGE_HOST="${ROOT}/${STAGE#/src/}"
+  mkdir -p "${STAGE_HOST}" 2>/dev/null || true
+  LIBRETRO_DOCKER_USER=()
+  # Xbox static (and similar) create dist/ as root; -u then cannot mkdir siblings.
+  if [[ -d "${STAGE_HOST}" && -w "${STAGE_HOST}" ]]; then
+    LIBRETRO_DOCKER_USER=(-u "$(id -u):$(id -g)")
+  fi
   TVOS_SDK_ENV=()
   if [[ "${PLATFORM}" == "tvos" ]]; then
     if [[ "${LIBRETRO_SIM}" == "1" ]]; then
@@ -436,7 +443,7 @@ if [[ "${2:-}" == "libretro" || "${3:-}" == "libretro" || "${4:-}" == "libretro"
     fi
   fi
   "${DOCKER_RUN[@]}" \
-    -u "$(id -u):$(id -g)" \
+    "${LIBRETRO_DOCKER_USER[@]}" \
     -v "${ROOT}:/src" \
     -w /src \
     -e HOME=/tmp \

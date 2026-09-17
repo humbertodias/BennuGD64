@@ -26,10 +26,14 @@ endif ()
 if (PLATFORM_VITA OR VITA)
   target_sources (bgdi PRIVATE main_vita.c)
 endif ()
-if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
+if (CMAKE_SYSTEM_NAME STREQUAL "tvOS"
+    OR CMAKE_C_COMPILER_TARGET MATCHES "tvos"
+    OR CMAKE_OSX_SYSROOT MATCHES "AppleTV")
   target_sources (bgdi PRIVATE main_tvos.c)
 endif ()
-if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS"
+    OR CMAKE_C_COMPILER_TARGET MATCHES "iphone"
+    OR CMAKE_OSX_SYSROOT MATCHES "iPhone")
   target_sources (bgdi PRIVATE main_ios.c)
 endif ()
 if (PLATFORM_PS3 OR PS3)

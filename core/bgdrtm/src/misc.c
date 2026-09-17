@@ -432,6 +432,10 @@ void bgdrtm_entry( int argc, char * argv[] )
 
 void bgdrtm_exit( int exit_value )
 {
+#ifdef TARGET_LIBRETRO
+    extern void request_exit_bgd( void );
+    request_exit_bgd();
+#endif
     int n;
     /* Finalize all modules */
     if ( module_finalize_count )
@@ -445,7 +449,11 @@ void bgdrtm_exit( int exit_value )
     close( __bgdrtm_memdev ); __bgdrtm_memdev = -1;
 #endif
 
+#ifndef TARGET_LIBRETRO
     exit( exit_value ) ;
+#else
+    ( void ) exit_value;
+#endif
 }
 
 /* --------------------------------------------------------------------------- */

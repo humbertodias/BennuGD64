@@ -3,7 +3,9 @@
 #
 #   bash scripts/build.sh
 #   bash scripts/build.sh linux shared
+#   bash scripts/build.sh linux libretro
 #   bash scripts/build.sh windows
+#   bash scripts/build.sh windows libretro
 #   bash scripts/build.sh wasm
 #   bash scripts/build.sh android
 #   bash scripts/build.sh switch
@@ -30,23 +32,23 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
-USAGE="usage: $0 linux|windows [static|shared|shell]
-       $0 wasm [shell]
-       $0 android [shell]
-       $0 switch [shell]
-       $0 dreamcast [shell]
-       $0 psp [shell]
-       $0 vita [shell]
-       $0 tvos [device|simulator|shell]
-       $0 ios [device|simulator|shell]
-       $0 ps2 [shell]
-       $0 ps3 [shell]
-       $0 ps4 [shell]
-       $0 xbox [shell]
-       $0 xbox360 [shell]
-       $0 pandora [shell]
-       $0 wii [shell]
-       $0 macos [x86_64|arm64] [static|shared|shell]"
+USAGE="usage: $0 linux|windows [static|shared|libretro|shell]
+       $0 wasm [libretro|shell]
+       $0 android [libretro|shell]
+       $0 switch [libretro|shell]
+       $0 dreamcast [libretro|shell]
+       $0 psp [libretro|shell]
+       $0 vita [libretro|shell]
+       $0 tvos [device|simulator] [libretro|shell]
+       $0 ios [device|simulator] [libretro|shell]
+       $0 ps2 [libretro|shell]
+       $0 ps3 [libretro|shell]
+       $0 ps4 [libretro|shell]
+       $0 xbox [libretro|shell]
+       $0 xbox360 [libretro|shell]
+       $0 pandora [libretro|shell]
+       $0 wii [libretro|shell]
+       $0 macos [x86_64|arm64] [static|shared|libretro|shell]"
 
 if [[ -f "${ROOT}/versions.env" ]]; then
   set -a
@@ -281,6 +283,265 @@ prefetch_github_archive() {
   mv "${top}" "${dest}"
   rm -rf "${tmp}"
 }
+
+if [[ "${2:-}" == "libretro" || "${3:-}" == "libretro" || "${4:-}" == "libretro" ]]; then
+  LIBRETRO_ARCH=""
+  LIBRETRO_SIM=0
+  for arg in "${2:-}" "${3:-}" "${4:-}"; do
+    [[ -z "${arg}" || "${arg}" == "libretro" ]] && continue
+    case "${arg}" in
+      arm64|aarch64) LIBRETRO_ARCH="arm64" ;;
+      x86_64|amd64) LIBRETRO_ARCH="x86_64" ;;
+      simulator) LIBRETRO_SIM=1 ;;
+      device|static|shared) ;;
+      *)
+        echo "${USAGE}" >&2
+        exit 1
+        ;;
+    esac
+  done
+  DOCKER_RUN=(docker run --rm)
+  case "${PLATFORM}" in
+    android|switch|dreamcast|psp|ps2|ps3|ps4|xbox|xbox360|pandora|wii)
+      DOCKER_RUN+=(--platform linux/amd64)
+      ;;
+  esac
+  case "${PLATFORM}" in
+    linux)
+      PRESET="libretro"
+      BUILD_DIR="/src/build-libretro"
+      STAGE="/src/dist/linux-libretro"
+      ;;
+    windows)
+      PRESET="windows-libretro"
+      BUILD_DIR="/src/build-windows-libretro"
+      STAGE="/src/dist/windows-x86_64-libretro"
+      ;;
+    macos)
+      LIBRETRO_ARCH="${LIBRETRO_ARCH:-x86_64}"
+      PRESET="macos-${LIBRETRO_ARCH}-libretro"
+      BUILD_DIR="/src/build-macos-${LIBRETRO_ARCH}-libretro"
+      STAGE="/src/dist/macos-${LIBRETRO_ARCH}-libretro"
+      ;;
+    wasm)
+      PRESET=""
+      BUILD_DIR="/src/build-wasm-libretro"
+      STAGE="/src/dist/web-wasm32-libretro"
+      ;;
+    android)
+      PRESET="android-arm64-libretro"
+      BUILD_DIR="/src/build-android-arm64-libretro"
+      STAGE="/src/dist/android-arm64-libretro"
+      ;;
+    switch)
+      PRESET="switch-aarch64-libretro"
+      BUILD_DIR="/src/build-switch-aarch64-libretro"
+      STAGE="/src/dist/switch-aarch64-libretro"
+      ;;
+    dreamcast)
+      PRESET="dreamcast-sh4-libretro"
+      BUILD_DIR="/src/build-dreamcast-sh4-libretro"
+      STAGE="/src/dist/dreamcast-sh4-libretro"
+      ;;
+    psp)
+      PRESET="psp-mips-libretro"
+      BUILD_DIR="/src/build-psp-mips-libretro"
+      STAGE="/src/dist/psp-mips-libretro"
+      ;;
+    vita)
+      PRESET="vita-arm-libretro"
+      BUILD_DIR="/src/build-vita-arm-libretro"
+      STAGE="/src/dist/vita-arm-libretro"
+      ;;
+    tvos)
+      if [[ "${LIBRETRO_SIM}" == "1" ]]; then
+        PRESET="tvos-simulator-arm64-libretro"
+        BUILD_DIR="/src/build-tvos-simulator-arm64-libretro"
+        STAGE="/src/dist/tvos-simulator-arm64-libretro"
+      else
+        PRESET="tvos-arm64-libretro"
+        BUILD_DIR="/src/build-tvos-arm64-libretro"
+        STAGE="/src/dist/tvos-arm64-libretro"
+      fi
+      ;;
+    ios)
+      if [[ "${LIBRETRO_SIM}" == "1" ]]; then
+        PRESET="ios-simulator-arm64-libretro"
+        BUILD_DIR="/src/build-ios-simulator-arm64-libretro"
+        STAGE="/src/dist/ios-simulator-arm64-libretro"
+      else
+        PRESET="ios-arm64-libretro"
+        BUILD_DIR="/src/build-ios-arm64-libretro"
+        STAGE="/src/dist/ios-arm64-libretro"
+      fi
+      ;;
+    ps2)
+      PRESET="ps2-mips-libretro"
+      BUILD_DIR="/src/build-ps2-mips-libretro"
+      STAGE="/src/dist/ps2-mips-libretro"
+      ;;
+    ps3)
+      PRESET="ps3-ppu-libretro"
+      BUILD_DIR="/src/build-ps3-ppu-libretro"
+      STAGE="/src/dist/ps3-ppu-libretro"
+      ;;
+    ps4)
+      PRESET="ps4-x86_64-libretro"
+      BUILD_DIR="/src/build-ps4-x86_64-libretro"
+      STAGE="/src/dist/ps4-x86_64-libretro"
+      ;;
+    xbox)
+      PRESET="xbox-i386-libretro"
+      BUILD_DIR="/src/build-xbox-i386-libretro"
+      STAGE="/src/dist/xbox-i386-libretro"
+      ;;
+    xbox360)
+      PRESET="xbox360-powerpc-libretro"
+      BUILD_DIR="/src/build-xbox360-powerpc-libretro"
+      STAGE="/src/dist/xbox360-powerpc-libretro"
+      ;;
+    pandora)
+      PRESET="pandora-arm-libretro"
+      BUILD_DIR="/src/build-pandora-arm-libretro"
+      STAGE="/src/dist/pandora-arm-libretro"
+      ;;
+    wii)
+      PRESET="wii-powerpc-libretro"
+      BUILD_DIR="/src/build-wii-powerpc-libretro"
+      STAGE="/src/dist/wii-powerpc-libretro"
+      ;;
+    *)
+      echo "${USAGE}" >&2
+      exit 1
+      ;;
+  esac
+  echo "image: ${IMAGE}"
+  echo "preset: ${PRESET:-wasm-libretro (emcmake)}"
+  echo "version: ${BENNUGD_VERSION}"
+  rm -f "${ROOT}/${BUILD_DIR#/src/}/CMakeCache.txt"
+  rm -rf "${ROOT}/${BUILD_DIR#/src/}/CMakeFiles"
+  scrub_fetchcontent "${ROOT}/${BUILD_DIR#/src/}/_deps"
+  STAGE_HOST="${ROOT}/${STAGE#/src/}"
+  mkdir -p "${STAGE_HOST}" 2>/dev/null || true
+  LIBRETRO_DOCKER_USER=()
+  # Xbox static (and similar) create dist/ as root; -u then cannot mkdir siblings.
+  if [[ -d "${STAGE_HOST}" && -w "${STAGE_HOST}" ]]; then
+    LIBRETRO_DOCKER_USER=(-u "$(id -u):$(id -g)")
+  fi
+  TVOS_SDK_ENV=()
+  if [[ "${PLATFORM}" == "tvos" ]]; then
+    if [[ "${LIBRETRO_SIM}" == "1" ]]; then
+      TVOS_SDK_ENV=(-e APPLETVSIMULATOR_SDK=/opt/apple/AppleTVSimulator.sdk -e CROSS_SDKROOT=/opt/apple/AppleTVSimulator.sdk -e SDKROOT=/opt/apple/AppleTVSimulator.sdk)
+    else
+      TVOS_SDK_ENV=(-e APPLETVOS_SDK=/opt/apple/AppleTVOS.sdk -e CROSS_SDKROOT=/opt/apple/AppleTVOS.sdk -e SDKROOT=/opt/apple/AppleTVOS.sdk)
+    fi
+  elif [[ "${PLATFORM}" == "ios" ]]; then
+    if [[ "${LIBRETRO_SIM}" == "1" ]]; then
+      TVOS_SDK_ENV=(-e IPHONESIMULATOR_SDK=/opt/apple/iPhoneSimulator.sdk -e CROSS_SDKROOT=/opt/apple/iPhoneSimulator.sdk -e SDKROOT=/opt/apple/iPhoneSimulator.sdk)
+    else
+      TVOS_SDK_ENV=(-e IPHONEOS_SDK=/opt/apple/iPhoneOS.sdk -e CROSS_SDKROOT=/opt/apple/iPhoneOS.sdk -e SDKROOT=/opt/apple/iPhoneOS.sdk)
+    fi
+  fi
+  "${DOCKER_RUN[@]}" \
+    "${LIBRETRO_DOCKER_USER[@]}" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_SWITCH_REF="${SDL3_SWITCH_REF:-switch-sdl-3.4}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    -e ANDROID_API="${ANDROID_API:-28}" \
+    -e PRESET="${PRESET}" \
+    -e BUILD_DIR="${BUILD_DIR}" \
+    -e STAGE="${STAGE}" \
+    -e PLATFORM="${PLATFORM}" \
+    "${TVOS_SDK_ENV[@]}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS 2>/dev/null || true
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      if [[ "${PLATFORM}" == "switch" ]]; then
+        COMMON+=(-DBENNUGD_SDL3_SWITCH_REF="${SDL3_SWITCH_REF}")
+      fi
+      if [[ "${PLATFORM}" == "wasm" ]]; then
+        set +eu
+        # shellcheck disable=SC1091
+        source "${EMSDK}/emsdk_env.sh"
+        set -euo pipefail
+        export EM_CACHE="${HOME}/emscripten-cache"
+        mkdir -p "${EM_CACHE}"
+        emcmake cmake -S /src -B "${BUILD_DIR}" -G Ninja \
+          -DCMAKE_BUILD_TYPE="${BUILD_TYPE}" \
+          -DUSE_LIBDES=ON \
+          -DBENNUGD_BUNDLE_DEPS=ON \
+          -DSTATIC_MODULES=ON \
+          -DINTERPRETER_ONLY=ON \
+          -DBENNUGD_LIBRETRO=ON \
+          "${COMMON[@]}"
+        cmake --build "${BUILD_DIR}"
+        cmake --install "${BUILD_DIR}" --prefix "${STAGE}"
+        exit 0
+      fi
+      if command -v osxcross-conf >/dev/null; then
+        eval "$(osxcross-conf)"
+        export OSXCROSS_TARGET_DIR="${OSXCROSS_TARGET_DIR:-/opt/osxcross/target}"
+        unset MACOSX_DEPLOYMENT_TARGET || true
+        unset OSX_VERSION_MIN || true
+        if [[ -n "${CROSS_SDKROOT:-}" ]]; then
+          export SDKROOT="${CROSS_SDKROOT}"
+        fi
+      fi
+      if [[ "${PLATFORM}" == "android" ]]; then
+        test -n "${ANDROID_NDK:-}"
+        COMMON+=(-DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM="android-${ANDROID_API}" -DANDROID_STL=c++_shared)
+      fi
+      cmake --preset "${PRESET}" "${COMMON[@]}"
+      cmake --build --preset "${PRESET}"
+      mkdir -p "${STAGE}"
+      cmake --install "${BUILD_DIR}" --prefix "${STAGE}"
+      CORE=""
+      for cand in \
+        "${BUILD_DIR}/bennugd_libretro.so" \
+        "${BUILD_DIR}/bennugd_libretro.dll" \
+        "${BUILD_DIR}/bennugd_libretro.dylib" \
+        "${BUILD_DIR}/bennugd_libretro.a" \
+        "${BUILD_DIR}/bennugd_libretro.lib"
+      do
+        if [[ -f "${cand}" ]]; then
+          CORE="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${CORE}" ]]; then
+        CORE="$(find "${BUILD_DIR}" \( \
+          -name bennugd_libretro.so -o -name bennugd_libretro.dll \
+          -o -name bennugd_libretro.dylib -o -name bennugd_libretro.a \
+          -o -name bennugd_libretro.lib \) ! -path '*/CMakeFiles/*' | head -n 1 || true)"
+      fi
+      test -n "${CORE}"
+      test -s "${CORE}"
+      cp -f "${CORE}" "${STAGE}/"
+      cp -f /src/platforms/libretro/bennugd_libretro.info "${STAGE}/"
+      bash /src/scripts/generate-install-md.sh \
+        "bennugd64-${BENNUGD_VERSION}-$(basename "${STAGE}")" "${STAGE}"
+      test -s "${STAGE}/$(basename "${CORE}")"
+      test -s "${STAGE}/INSTALL.md"
+      if [[ "${PLATFORM}" == "macos" ]]; then
+        bash /src/scripts/macos/codesign.sh "${STAGE}"
+      fi
+    '
+  exit 0
+fi
 
 if [[ "${PLATFORM}" == "tvos" || "${PLATFORM}" == "ios" ]]; then
   case "${SECOND}" in
@@ -1767,7 +2028,7 @@ if [[ "${PLATFORM}" == "macos" ]]; then
   for arg in "${SECOND}" "${3:-}"; do
     [[ -z "${arg}" ]] && continue
     case "${arg}" in
-      static|shared) LINKAGE="${arg}" ;;
+      static|shared|libretro) LINKAGE="${arg}" ;;
       arm64|aarch64) MACOS_ARCH="arm64" ;;
       x86_64|amd64) MACOS_ARCH="x86_64" ;;
       *)
@@ -1819,7 +2080,7 @@ fi
 
 LINKAGE="${SECOND}"
 case "${LINKAGE}" in
-  static|shared) ;;
+  static|shared|libretro) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -1865,7 +2126,7 @@ docker run --rm \
       -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
     cmake --build --preset "${PRESET}"
     cmake --install "${BUILD_DIR}" --prefix "${STAGE}"
-    if [[ "${PRESET}" != windows-* ]]; then
+    if [[ "${PRESET}" != windows-* && "${PRESET}" != *libretro* ]]; then
       ctest --preset "${PRESET}" --output-on-failure
     fi
   '

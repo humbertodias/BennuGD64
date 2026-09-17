@@ -39,6 +39,40 @@ irm https://raw.githubusercontent.com/humbertodias/BennuGD64/main/scripts/instal
 It installs `bgdc` (compiler) and `bgdi` (interpreter).
 Shared builds also include `libbgdrtm` and load plugins from `modules/`.
 
+Libretro core (`bennugd_libretro`):
+
+```shell
+bash scripts/build.sh macos arm64 libretro
+bash scripts/build.sh linux libretro
+bash scripts/build.sh windows libretro
+bash scripts/build.sh android libretro
+bash scripts/build.sh switch libretro
+```
+
+Load the core in [RetroArch](https://www.retroarch.com/) with `-L` and open a `.dcb` / `.dat`. Put game assets next to that file.
+
+macOS (Apple Silicon):
+
+```shell
+/Applications/RetroArch.app/Contents/MacOS/RetroArch \
+  -L dist/macos-arm64-libretro/bennugd_libretro.dylib \
+  /path/to/game/main.dcb
+```
+
+Linux:
+
+```shell
+retroarch -L dist/linux-libretro/bennugd_libretro.so /path/to/game/main.dcb
+```
+
+Windows (from Git Bash or PowerShell, after a MinGW build):
+
+```shell
+retroarch.exe -L dist/windows-x86_64-libretro/bennugd_libretro.dll C:\path\to\game\main.dcb
+```
+
+Pass `libretro` after any other platform in `scripts/build.sh` (same Docker image as the standalone build). Desktop, Android, iOS, tvOS, and Pandora produce a shared core; most consoles produce a static `bennugd_libretro.a` for linking into RetroArch.
+
 ## Build
 
 Only Docker is required; no local compiler or CMake installation is needed. See [BUILDING.md](BUILDING.md)
@@ -48,8 +82,10 @@ bash scripts/build.sh android
 bash scripts/build.sh dreamcast
 bash scripts/build.sh ios
 bash scripts/build.sh linux
+bash scripts/build.sh linux libretro
 bash scripts/build.sh macos
 bash scripts/build.sh macos arm64
+bash scripts/build.sh macos arm64 libretro
 bash scripts/build.sh pandora
 bash scripts/build.sh ps2
 bash scripts/build.sh ps3
@@ -61,6 +97,7 @@ bash scripts/build.sh vita
 bash scripts/build.sh wasm
 bash scripts/build.sh wii
 bash scripts/build.sh windows
+bash scripts/build.sh windows libretro
 ```
 
 ## Getting started

@@ -72,6 +72,9 @@
 #if defined(TARGET_XBOX)
 #include "libjoy_xbox.h"
 #endif
+#if defined(TARGET_LIBRETRO)
+#include "libjoy_libretro.h"
+#endif
 
 #if defined(TARGET_WII)
 #define libjoy_plat_num          libjoy_wii_num
@@ -127,7 +130,21 @@
 #define libjoy_plat_finalize     libjoy_xbox_module_finalize
 #endif
 
-#if defined(TARGET_WII) || defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX)
+#if defined(TARGET_LIBRETRO)
+#define libjoy_plat_num          libjoy_libretro_num
+#define libjoy_plat_name         libjoy_libretro_name
+#define libjoy_plat_buttons      libjoy_libretro_buttons
+#define libjoy_plat_axes         libjoy_libretro_axes
+#define libjoy_plat_hats         libjoy_libretro_hats
+#define libjoy_plat_get_button   libjoy_libretro_get_button
+#define libjoy_plat_get_position libjoy_libretro_get_position
+#define libjoy_plat_get_hat      libjoy_libretro_get_hat
+#define libjoy_plat_get_accel    libjoy_libretro_get_accel
+#define libjoy_plat_initialize   libjoy_libretro_module_initialize
+#define libjoy_plat_finalize     libjoy_libretro_module_finalize
+#endif
+
+#if defined(TARGET_WII) || defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_LIBRETRO)
 #define LIBJOY_NATIVE_PLATFORM
 #endif
 

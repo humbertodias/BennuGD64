@@ -27,6 +27,17 @@
       }
     },
     {
+      "name": "libretro",
+      "inherits": "base",
+      "displayName": "Host libretro core (bennugd_libretro)",
+      "binaryDir": "${sourceDir}/build-libretro",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
       "name": "shared",
       "inherits": "base",
       "displayName": "Host, shared modules",
@@ -47,6 +58,13 @@
       "inherits": "shared",
       "displayName": "MinGW-w64 Windows x86_64, shared modules",
       "binaryDir": "${sourceDir}/build-windows-shared",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/mingw-w64-x86_64.cmake"
+    },
+    {
+      "name": "windows-libretro",
+      "inherits": "libretro",
+      "displayName": "MinGW-w64 Windows x86_64 libretro core",
+      "binaryDir": "${sourceDir}/build-windows-libretro",
       "toolchainFile": "${sourceDir}/cmake/toolchains/mingw-w64-x86_64.cmake"
     },
     {
@@ -432,12 +450,190 @@
       "displayName": "osxcross macOS arm64, shared modules",
       "binaryDir": "${sourceDir}/build-macos-arm64-shared",
       "toolchainFile": "${sourceDir}/cmake/toolchains/osxcross-arm64.cmake"
+    },
+    {
+      "name": "macos-x86_64-libretro",
+      "inherits": "libretro",
+      "displayName": "osxcross macOS x86_64 libretro core",
+      "binaryDir": "${sourceDir}/build-macos-x86_64-libretro",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/osxcross-x86_64.cmake"
+    },
+    {
+      "name": "macos-arm64-libretro",
+      "inherits": "libretro",
+      "displayName": "osxcross macOS arm64 libretro core",
+      "binaryDir": "${sourceDir}/build-macos-arm64-libretro",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/osxcross-arm64.cmake"
+    },
+    {
+      "name": "android-arm64-libretro",
+      "inherits": "android-arm64",
+      "displayName": "Android arm64-v8a libretro core",
+      "binaryDir": "${sourceDir}/build-android-arm64-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "switch-aarch64-libretro",
+      "inherits": "switch-aarch64",
+      "displayName": "Nintendo Switch libretro core",
+      "binaryDir": "${sourceDir}/build-switch-aarch64-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "dreamcast-sh4-libretro",
+      "inherits": "dreamcast-sh4",
+      "displayName": "Sega Dreamcast libretro core",
+      "binaryDir": "${sourceDir}/build-dreamcast-sh4-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "psp-mips-libretro",
+      "inherits": "psp-mips",
+      "displayName": "PlayStation Portable libretro core",
+      "binaryDir": "${sourceDir}/build-psp-mips-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "vita-arm-libretro",
+      "inherits": "vita-arm",
+      "displayName": "PlayStation Vita libretro core",
+      "binaryDir": "${sourceDir}/build-vita-arm-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "tvos-arm64-libretro",
+      "inherits": "tvos-arm64",
+      "displayName": "tvOS arm64 libretro core",
+      "binaryDir": "${sourceDir}/build-tvos-arm64-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "tvos-simulator-arm64-libretro",
+      "inherits": "tvos-simulator-arm64",
+      "displayName": "tvOS Simulator libretro core",
+      "binaryDir": "${sourceDir}/build-tvos-simulator-arm64-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "ios-arm64-libretro",
+      "inherits": "ios-arm64",
+      "displayName": "iOS arm64 libretro core",
+      "binaryDir": "${sourceDir}/build-ios-arm64-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "ios-simulator-arm64-libretro",
+      "inherits": "ios-simulator-arm64",
+      "displayName": "iOS Simulator libretro core",
+      "binaryDir": "${sourceDir}/build-ios-simulator-arm64-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "ps2-mips-libretro",
+      "inherits": "ps2-mips",
+      "displayName": "PlayStation 2 libretro core",
+      "binaryDir": "${sourceDir}/build-ps2-mips-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "ps3-ppu-libretro",
+      "inherits": "ps3-ppu",
+      "displayName": "PlayStation 3 libretro core",
+      "binaryDir": "${sourceDir}/build-ps3-ppu-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "ps4-x86_64-libretro",
+      "inherits": "ps4-x86_64",
+      "displayName": "PlayStation 4 libretro core",
+      "binaryDir": "${sourceDir}/build-ps4-x86_64-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "xbox-i386-libretro",
+      "inherits": "xbox-i386",
+      "displayName": "Original Xbox libretro core",
+      "binaryDir": "${sourceDir}/build-xbox-i386-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "xbox360-powerpc-libretro",
+      "inherits": "xbox360-powerpc",
+      "displayName": "Xbox 360 libretro core",
+      "binaryDir": "${sourceDir}/build-xbox360-powerpc-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "pandora-arm-libretro",
+      "inherits": "pandora-arm",
+      "displayName": "OpenPandora libretro core",
+      "binaryDir": "${sourceDir}/build-pandora-arm-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "wii-powerpc-libretro",
+      "inherits": "wii-powerpc",
+      "displayName": "Nintendo Wii libretro core",
+      "binaryDir": "${sourceDir}/build-wii-powerpc-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "static",
       "configurePreset": "static"
+    },
+    {
+      "name": "libretro",
+      "configurePreset": "libretro"
     },
     {
       "name": "shared",
@@ -450,6 +646,10 @@
     {
       "name": "windows-shared",
       "configurePreset": "windows-shared"
+    },
+    {
+      "name": "windows-libretro",
+      "configurePreset": "windows-libretro"
     },
     {
       "name": "wasi",
@@ -706,6 +906,78 @@
     {
       "name": "macos-arm64-shared",
       "configurePreset": "macos-arm64-shared"
+    },
+    {
+      "name": "macos-x86_64-libretro",
+      "configurePreset": "macos-x86_64-libretro"
+    },
+    {
+      "name": "macos-arm64-libretro",
+      "configurePreset": "macos-arm64-libretro"
+    },
+    {
+      "name": "android-arm64-libretro",
+      "configurePreset": "android-arm64-libretro"
+    },
+    {
+      "name": "switch-aarch64-libretro",
+      "configurePreset": "switch-aarch64-libretro"
+    },
+    {
+      "name": "dreamcast-sh4-libretro",
+      "configurePreset": "dreamcast-sh4-libretro"
+    },
+    {
+      "name": "psp-mips-libretro",
+      "configurePreset": "psp-mips-libretro"
+    },
+    {
+      "name": "vita-arm-libretro",
+      "configurePreset": "vita-arm-libretro"
+    },
+    {
+      "name": "tvos-arm64-libretro",
+      "configurePreset": "tvos-arm64-libretro"
+    },
+    {
+      "name": "tvos-simulator-arm64-libretro",
+      "configurePreset": "tvos-simulator-arm64-libretro"
+    },
+    {
+      "name": "ios-arm64-libretro",
+      "configurePreset": "ios-arm64-libretro"
+    },
+    {
+      "name": "ios-simulator-arm64-libretro",
+      "configurePreset": "ios-simulator-arm64-libretro"
+    },
+    {
+      "name": "ps2-mips-libretro",
+      "configurePreset": "ps2-mips-libretro"
+    },
+    {
+      "name": "ps3-ppu-libretro",
+      "configurePreset": "ps3-ppu-libretro"
+    },
+    {
+      "name": "ps4-x86_64-libretro",
+      "configurePreset": "ps4-x86_64-libretro"
+    },
+    {
+      "name": "xbox-i386-libretro",
+      "configurePreset": "xbox-i386-libretro"
+    },
+    {
+      "name": "xbox360-powerpc-libretro",
+      "configurePreset": "xbox360-powerpc-libretro"
+    },
+    {
+      "name": "pandora-arm-libretro",
+      "configurePreset": "pandora-arm-libretro"
+    },
+    {
+      "name": "wii-powerpc-libretro",
+      "configurePreset": "wii-powerpc-libretro"
     }
   ],
   "testPresets": [

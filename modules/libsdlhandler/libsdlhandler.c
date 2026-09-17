@@ -32,6 +32,9 @@
 #ifdef TARGET_EMSCRIPTEN
 #include "libsdlhandler_emscripten.h"
 #endif
+#ifdef TARGET_LIBRETRO
+#include "libsdlhandler_libretro.h"
+#endif
 #ifdef TARGET_WII
 #include "libsdlhandler_wii.h"
 #endif
@@ -55,6 +58,8 @@ static void  dump_new_events( void )
 {
 #ifdef TARGET_EMSCRIPTEN
     libsdlhandler_emscripten_pump();
+#elif defined(TARGET_LIBRETRO)
+    libsdlhandler_libretro_pump();
 #elif defined(TARGET_PS2)
     libsdlhandler_ps2_pump();
 #elif defined(TARGET_VITA)

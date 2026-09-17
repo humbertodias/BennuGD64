@@ -55,6 +55,55 @@
 #include "files.h"
 #include "files_native.h"
 
+#ifdef TARGET_LIBRETRO
+struct RFILE;
+struct gzFile_libretro;
+extern struct RFILE * fopen_libretro ( const char * filename, const char * mode );
+extern int fclose_libretro( struct RFILE* file);
+extern int feof_libretro(struct RFILE *stream);
+extern int fflush_libretro(struct RFILE *stream);
+extern size_t fread_libretro(void *ptr, size_t size, size_t nmemb, struct RFILE *stream);
+extern int fseek_libretro(struct RFILE *stream, long int offset, int whence);
+extern long int ftell_libretro(struct RFILE *stream);
+extern size_t fwrite_libretro(const void *ptr, size_t size, size_t nmemb, struct RFILE *stream);
+extern int remove_libretro(const char *filename);
+extern int rename_libretro(const char *old_filename, const char *new_filename);
+extern char *fgets_libretro(char *str, int n, struct RFILE *stream);
+extern struct gzFile_libretro* gzopen_libretro(const char* path, const char* mode);
+extern int gzclose_libretro(struct gzFile_libretro* file);
+extern int64_t gzread_libretro(struct gzFile_libretro* file, void* buf, size_t len);
+extern int gzeof_libretro(struct gzFile_libretro* file);
+extern int64_t gzwrite_libretro(struct gzFile_libretro* file, const void* buf, size_t len);
+extern long int gztell_libretro (struct gzFile_libretro* file );
+extern long int gzseek_libretro(struct gzFile_libretro* file, long int offset, int whence);
+extern int gzrewind_libretro(struct gzFile_libretro* file);
+extern char * gzgets_libretro(struct gzFile_libretro* file, char *buf, size_t len);
+#ifdef feof
+#undef feof
+#endif
+#define fopen(filename,mode)                            fopen_libretro(filename, mode)
+#define fclose(stream)                                  fclose_libretro((struct RFILE*)(stream))
+#define feof(stream)                                    feof_libretro((struct RFILE*)(stream))
+#define fflush(stream)                                  fflush_libretro((struct RFILE*)(stream))
+#define fread(ptr,size,nmemb,stream)                    fread_libretro(ptr,size,nmemb,(struct RFILE*)(stream))
+#define fseek(stream,offset,whence)                     fseek_libretro((struct RFILE*)(stream),offset,whence)
+#define ftell(stream)                                   ftell_libretro((struct RFILE*)(stream))
+#define fwrite(ptr,size,nmemb,stream)                   fwrite_libretro(ptr,size,nmemb,(struct RFILE*)(stream))
+#define remove(filename)                                remove_libretro(filename)
+#define rename(old_filename,new_filename)               rename_libretro(old_filename,new_filename)
+#define fgets(str, n, stream)                           fgets_libretro(str, n, (struct RFILE*)(stream))
+#define rewind(stream)                                  fseek_libretro((struct RFILE*)(stream), 0, SEEK_SET)
+#define gzopen(path, mode)                              gzopen_libretro(path,mode)
+#define gzclose(stream)                                 gzclose_libretro((struct gzFile_libretro*)(stream))
+#define gzread(stream,buf,len)                          gzread_libretro((struct gzFile_libretro*)(stream),buf,len)
+#define gzeof(stream)                                   gzeof_libretro((struct gzFile_libretro*)(stream))
+#define gzwrite(stream,buf,len)                         gzwrite_libretro((struct gzFile_libretro*)(stream), buf,len)
+#define gztell(stream)                                  gztell_libretro((struct gzFile_libretro*)(stream))
+#define gzseek(stream,offset,whence)                    gzseek_libretro((struct gzFile_libretro*)(stream),offset,whence)
+#define gzrewind(stream)                                gzrewind_libretro((struct gzFile_libretro*)(stream))
+#define gzgets(stream, buf, len)                        gzgets_libretro((struct gzFile_libretro*)(stream),buf,len)
+#endif
+
 #define MAX_POSSIBLE_PATHS  128
 
 char * possible_paths[MAX_POSSIBLE_PATHS] = { NULL } ;

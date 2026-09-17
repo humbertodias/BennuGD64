@@ -550,6 +550,12 @@ void gr_unlock_screen()
         }
     }
 #endif
+#ifdef TARGET_LIBRETRO
+    {
+        extern void suspend_bgd( void );
+        suspend_bgd();
+    }
+#endif
 }
 
 /* --------------------------------------------------------------------------- */

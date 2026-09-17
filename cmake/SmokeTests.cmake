@@ -46,7 +46,7 @@ elseif (_can_run_native)
       -DPATTERN=BGDC|Compiler
       -P "${_smoke_dir}/smoke_banner.cmake"
   )
-  if (TARGET bgdi)
+  if (TARGET bgdi AND NOT BENNUGD_LIBRETRO)
     add_test (
       NAME smoke.bgdi.help
       COMMAND "${CMAKE_COMMAND}"

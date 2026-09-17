@@ -7,7 +7,10 @@ include_directories (
   ../../bgdrtm/include
 )
 
-if (ANDROID)
+if (BENNUGD_LIBRETRO)
+  add_library ( bgdi STATIC main.c )
+  target_compile_definitions ( bgdi PRIVATE SDL_MAIN_HANDLED=1 )
+elseif (ANDROID)
   add_library ( bgdi SHARED main.c )
   set_target_properties ( bgdi PROPERTIES OUTPUT_NAME "main" )
 else ()
@@ -23,10 +26,14 @@ endif ()
 if (PLATFORM_VITA OR VITA)
   target_sources (bgdi PRIVATE main_vita.c)
 endif ()
-if (CMAKE_SYSTEM_NAME STREQUAL "tvOS")
+if (CMAKE_SYSTEM_NAME STREQUAL "tvOS"
+    OR CMAKE_C_COMPILER_TARGET MATCHES "tvos"
+    OR CMAKE_OSX_SYSROOT MATCHES "AppleTV")
   target_sources (bgdi PRIVATE main_tvos.c)
 endif ()
-if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS"
+    OR CMAKE_C_COMPILER_TARGET MATCHES "iphone"
+    OR CMAKE_OSX_SYSROOT MATCHES "iPhone")
   target_sources (bgdi PRIVATE main_ios.c)
 endif ()
 if (PLATFORM_PS3 OR PS3)
@@ -120,6 +127,7 @@ endif ()
 if (NINTENDO_WII OR PLATFORM_WII)
   target_sources (bgdi PRIVATE main_wii.c main_wii_posix.c)
 endif ()
+
 if (WIN32 AND NOT PLATFORM_XBOX AND NOT XBOX AND NOT PLATFORM_XBOX360 AND NOT XBOX360)
   target_sources (bgdi PRIVATE main_win32.c)
 endif ()
@@ -142,6 +150,7 @@ else ()
   )
 endif ()
 
+if (NOT BENNUGD_LIBRETRO)
 if (ANDROID)
   target_link_libraries (
     bgdi
@@ -495,4 +504,5 @@ endif ()
 
 if (EMSCRIPTEN)
   bennugd_emscripten_link (bgdi)
+endif ()
 endif ()

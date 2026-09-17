@@ -218,6 +218,12 @@ static inline UINT GetDoubleClickTime(void)
 #ifndef CREATE_NEW
 #define CREATE_NEW 1
 #endif
+#ifndef TRUNCATE_EXISTING
+#define TRUNCATE_EXISTING 5
+#endif
+#ifndef INVALID_SET_FILE_POINTER
+#define INVALID_SET_FILE_POINTER ((DWORD)-1)
+#endif
 
 #ifndef LPTSTR
 typedef char *LPTSTR;

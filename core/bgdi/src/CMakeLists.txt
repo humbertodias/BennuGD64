@@ -10,6 +10,9 @@ include_directories (
 if (ANDROID)
   add_library ( bgdi SHARED main.c )
   set_target_properties ( bgdi PROPERTIES OUTPUT_NAME "main" )
+elseif (BENNUGD_LIBRETRO)
+  add_library ( bgdi STATIC main.c )
+  target_compile_definitions ( bgdi PRIVATE SDL_MAIN_HANDLED=1 )
 else ()
   add_executable (
     bgdi

@@ -31,6 +31,9 @@ endif ()
 if (PLATFORM_XBOX OR XBOX)
   target_sources (mod_sound PRIVATE mod_sound_xbox.c)
 endif ()
+if (BENNUGD_LIBRETRO)
+  target_sources (mod_sound PRIVATE mod_sound_libretro.c)
+endif ()
 
 target_link_libraries (
   mod_sound

@@ -29,6 +29,9 @@ if (PLATFORM_XBOX OR XBOX)
   target_sources (joy PRIVATE libjoy_xbox.c)
   target_link_libraries (joy Xbox::Nxdk)
 endif ()
+if (BENNUGD_LIBRETRO)
+  target_sources (joy PRIVATE libjoy_libretro.c)
+endif ()
 
 target_link_libraries (
   joy

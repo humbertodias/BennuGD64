@@ -63,6 +63,9 @@
 #ifdef TARGET_XBOX
 #include "mod_sound_xbox.h"
 #endif
+#ifdef TARGET_LIBRETRO
+#include "mod_sound_libretro.h"
+#endif
 
 #ifdef MODSOUND_PS4_DUMMY_AUDIO
 /* Reuse the module's existing no-audio API behavior while keeping exports. */
@@ -299,7 +302,7 @@ static int sound_init()
     modsound_xbox_adjust_spec( &spec );
 #endif
 
-#if defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX)
+#if defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_LIBRETRO)
     mixer = MIX_CreateMixer( &spec );
 #else
     mixer = MIX_CreateMixerDevice( SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec );
@@ -385,6 +388,14 @@ static int sound_init()
         music_track = NULL;
         MIX_DestroyMixer( mixer );
         mixer = NULL;
+        MIX_Quit();
+        return -1;
+    }
+#endif
+#ifdef TARGET_LIBRETRO
+    if ( modsound_libretro_start_output( mixer ) != 0 )
+    {
+        fprintf( stderr, "[SOUND] No se pudo iniciar mixer libretro\n" );
         MIX_Quit();
         return -1;
     }

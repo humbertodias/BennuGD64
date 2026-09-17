@@ -18,6 +18,7 @@ No local compiler, CMake, MinGW, Emscripten, Android SDK, devkitPro, KallistiOS,
 ```shell
 bash scripts/build.sh linux
 bash scripts/build.sh linux shared
+bash scripts/build.sh linux libretro
 bash scripts/build.sh wasm
 bash scripts/build.sh android
 bash scripts/build.sh switch
@@ -36,13 +37,15 @@ bash scripts/build.sh wii
 bash scripts/build.sh macos
 bash scripts/build.sh macos arm64
 bash scripts/build.sh macos arm64 shared
+bash scripts/build.sh macos arm64 libretro
 bash scripts/build.sh windows
 bash scripts/build.sh windows shared
+bash scripts/build.sh windows libretro
 ```
 
 | Command | Image | Output |
 |---------|-------|--------|
-| `linux` / `linux shared` | `docker/Dockerfile.linux` (`--target linux`) | `dist/linux-{static,shared}/` |
+| `linux` / `linux shared` / `linux libretro` | `docker/Dockerfile.linux` (`--target linux`) | `dist/linux-{static,shared,libretro}/` |
 | `wasm` | `docker/Dockerfile.wasm` | `dist/web-wasm32-static/` |
 | `android` | `docker/Dockerfile.android` | `dist/android-arm64-static/` (`bennugd64.apk`) |
 | `switch` | `docker/Dockerfile.switch` | `dist/switch-aarch64-static/` (`bennugd64.nro`) |
@@ -58,9 +61,9 @@ bash scripts/build.sh windows shared
 | `ps4` | `docker/Dockerfile.ps4` | `dist/ps4-x86_64-static/` (`bennugd64.pkg`) |
 | `pandora` | `docker/Dockerfile.pandora` | `dist/pandora-arm-static/` (`bennugd64.pnd`) |
 | `wii` | `docker/Dockerfile.wii` | `dist/wii-powerpc-static/` (`apps/bennugd64/boot.dol`) |
-| `macos` / `macos shared` | `docker/Dockerfile.macos` | `dist/macos-x86_64-{static,shared}/` |
-| `macos arm64` / `macos arm64 shared` | `docker/Dockerfile.macos` | `dist/macos-arm64-{static,shared}/` |
-| `windows` / `windows shared` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared}/` |
+| `macos` / `macos shared` / `macos libretro` | `docker/Dockerfile.macos` | `dist/macos-x86_64-{static,shared,libretro}/` |
+| `macos arm64` / `macos arm64 shared` / `macos arm64 libretro` | `docker/Dockerfile.macos` | `dist/macos-arm64-{static,shared,libretro}/` |
+| `windows` / `windows shared` / `windows libretro` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared,libretro}/` |
 
 The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native `bgdc` + osxcross `bgdi.app`; iOS: native `bgdc` + osxcross `bgdi.app`; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; PS4: native `bgdc` + OpenOrbis `bgdi.elf` + `create-fself` / `PkgTool`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
 
@@ -103,6 +106,9 @@ MinGW-w64 on Windows). Presets in `CMakePresets.json`:
 | Preset | Build dir | Notes |
 |--------|-----------|--------|
 | `static` / `shared` | `build-static` / `build-shared` | Host OS |
+| `libretro` | `build-libretro` | Host `bennugd_libretro` core (static modules, dummy SDL) |
+| `windows-libretro` | `build-windows-libretro` | MinGW-w64 `bennugd_libretro.dll` |
+| `macos-x86_64-libretro` / `macos-arm64-libretro` | `build-macos-*-libretro` | osxcross `bennugd_libretro.dylib` |
 | `windows-static` / `windows-shared` | `build-windows-*` | MinGW-w64 from Linux |
 | `wasi` | `build-wasi` | `bgdc.wasm` |
 | `wasm-host` | `build-host` | Native `bgdc` for wasm demos |

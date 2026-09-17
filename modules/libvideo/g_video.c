@@ -86,6 +86,12 @@
 #ifdef TARGET_WIN32
 #include "g_video_win32.h"
 #endif
+#ifdef TARGET_LIBRETRO
+extern int libretro_depth;
+extern int libretro_scale_override;
+extern int bennugd_content_width;
+extern int bennugd_content_height;
+#endif
 
 /* --------------------------------------------------------------------------- */
 
@@ -275,6 +281,10 @@ void gr_video_present( SDL_Surface * src )
 
     if ( !src ) return ;
 
+#ifdef TARGET_LIBRETRO
+    ( void ) src;
+    return;
+#endif
 #ifdef TARGET_PS4
     gr_video_ps4_present( src );
     return;
@@ -351,6 +361,12 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 
     if ( !src ) return ;
 
+#ifdef TARGET_LIBRETRO
+    ( void ) src;
+    ( void ) rects;
+    ( void ) count;
+    return;
+#endif
 #ifdef TARGET_PS4
     gr_video_ps4_present_rects( src, rects, count );
     return;
@@ -453,7 +469,7 @@ static SDL_Surface * gr_create_shadow_surface( int width, int height, int depth 
 
 static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 {
-#if defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX)
+#if defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_LIBRETRO)
     ( void ) width;
     ( void ) height;
     ( void ) window_flags;
@@ -606,6 +622,11 @@ int gr_set_icon( GRAPH * map )
 
 int gr_set_mode( int width, int height, int depth )
 {
+#ifdef TARGET_LIBRETRO
+    depth = libretro_depth;
+    bennugd_content_width = width;
+    bennugd_content_height = height;
+#endif
     int n ;
     int surface_width;
     int surface_height;
@@ -629,6 +650,13 @@ int gr_set_mode( int width, int height, int depth )
     frameless = ( GLODWORD( libvideo, GRAPH_MODE ) & MODE_FRAMELESS ) ? 1 : 0 ;
     waitvsync = ( GLODWORD( libvideo, GRAPH_MODE ) & MODE_WAITVSYNC ) ? 1 : 0 ;
     scale_mode = GLODWORD( libvideo, SCALE_MODE );
+#ifdef TARGET_LIBRETRO
+    if ( libretro_scale_override >= 0 )
+    {
+        scale_mode = libretro_scale_override;
+        enable_scale = ( scale_mode != SCALE_NONE );
+    }
+#endif
     full_screen |= GLODWORD( libvideo, FULL_SCREEN );
 #ifdef TARGET_SWITCH
     gr_video_switch_apply_mode();
@@ -911,7 +939,7 @@ int gr_set_mode( int width, int height, int depth )
     if ( !gr_video_psp_ready_present( screen->w, screen->h ) ) return -1;
 #endif
 
-#if !defined(TARGET_PS4) && !defined(TARGET_XBOX360) && !defined(TARGET_XBOX)
+#if !defined(TARGET_PS4) && !defined(TARGET_XBOX360) && !defined(TARGET_XBOX) && !defined(TARGET_LIBRETRO)
 
     SDL_SetWindowMouseGrab( window, grab_input ? true : false ) ;
     SDL_SetWindowKeyboardGrab( window, grab_input ? true : false ) ;
@@ -955,7 +983,7 @@ int gr_set_mode( int width, int height, int depth )
 
     scr_initialized = 1 ;
 
-#if !defined(TARGET_PS4) && !defined(TARGET_XBOX360) && !defined(TARGET_XBOX)
+#if !defined(TARGET_PS4) && !defined(TARGET_XBOX360) && !defined(TARGET_XBOX) && !defined(TARGET_LIBRETRO)
 
     SDL_HideCursor() ;
 #endif

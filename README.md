@@ -39,6 +39,16 @@ irm https://raw.githubusercontent.com/humbertodias/BennuGD64/main/scripts/instal
 It installs `bgdc` (compiler) and `bgdi` (interpreter).
 Shared builds also include `libbgdrtm` and load plugins from `modules/`.
 
+Libretro core (`bennugd_libretro`):
+
+```shell
+bash scripts/build.sh linux libretro
+bash scripts/build.sh windows libretro
+bash scripts/build.sh macos arm64 libretro
+```
+
+Load `bennugd_libretro.so` / `.dll` / `.dylib` from `dist/` in RetroArch and open a `.dcb` / `.dat` game.
+
 ## Build
 
 Only Docker is required; no local compiler or CMake installation is needed. See [BUILDING.md](BUILDING.md)
@@ -48,8 +58,10 @@ bash scripts/build.sh android
 bash scripts/build.sh dreamcast
 bash scripts/build.sh ios
 bash scripts/build.sh linux
+bash scripts/build.sh linux libretro
 bash scripts/build.sh macos
 bash scripts/build.sh macos arm64
+bash scripts/build.sh macos arm64 libretro
 bash scripts/build.sh pandora
 bash scripts/build.sh ps2
 bash scripts/build.sh ps3
@@ -61,6 +73,7 @@ bash scripts/build.sh vita
 bash scripts/build.sh wasm
 bash scripts/build.sh wii
 bash scripts/build.sh windows
+bash scripts/build.sh windows libretro
 ```
 
 ## Getting started

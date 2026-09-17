@@ -46,6 +46,10 @@
 #ifdef TARGET_WII
 #include "g_frame_wii.h"
 #endif
+#ifdef TARGET_LIBRETRO
+#include <stdbool.h>
+extern bool retro_enable_frame_limiter;
+#endif
 #ifdef TARGET_PS4
 #include "g_frame_ps4.h"
 #endif
@@ -211,7 +215,10 @@ void gr_wait_frame()
     FPS_count++ ;
 
     /* -------------- */
-
+#ifdef TARGET_LIBRETRO
+    if ( retro_enable_frame_limiter )
+    {
+#endif
     if ( fps_value )
     {
         FPS_count_sync++ ;
@@ -260,7 +267,9 @@ void gr_wait_frame()
             }
         }
     }
-
+#ifdef TARGET_LIBRETRO
+    }
+#endif
     /* Si paso 1 segundo o más desde la última lectura */
     if ( frame_ticks - FPS_init >= 1000 )
     {

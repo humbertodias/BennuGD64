@@ -3,7 +3,9 @@
 #
 #   bash scripts/build.sh
 #   bash scripts/build.sh linux shared
+#   bash scripts/build.sh linux libretro
 #   bash scripts/build.sh windows
+#   bash scripts/build.sh windows libretro
 #   bash scripts/build.sh wasm
 #   bash scripts/build.sh android
 #   bash scripts/build.sh switch
@@ -30,7 +32,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "${ROOT}"
 
-USAGE="usage: $0 linux|windows [static|shared|shell]
+USAGE="usage: $0 linux|windows [static|shared|libretro|shell]
        $0 wasm [shell]
        $0 android [shell]
        $0 switch [shell]
@@ -46,7 +48,7 @@ USAGE="usage: $0 linux|windows [static|shared|shell]
        $0 xbox360 [shell]
        $0 pandora [shell]
        $0 wii [shell]
-       $0 macos [x86_64|arm64] [static|shared|shell]"
+       $0 macos [x86_64|arm64] [static|shared|libretro|shell]"
 
 if [[ -f "${ROOT}/versions.env" ]]; then
   set -a
@@ -1767,7 +1769,7 @@ if [[ "${PLATFORM}" == "macos" ]]; then
   for arg in "${SECOND}" "${3:-}"; do
     [[ -z "${arg}" ]] && continue
     case "${arg}" in
-      static|shared) LINKAGE="${arg}" ;;
+      static|shared|libretro) LINKAGE="${arg}" ;;
       arm64|aarch64) MACOS_ARCH="arm64" ;;
       x86_64|amd64) MACOS_ARCH="x86_64" ;;
       *)
@@ -1819,7 +1821,7 @@ fi
 
 LINKAGE="${SECOND}"
 case "${LINKAGE}" in
-  static|shared) ;;
+  static|shared|libretro) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -1865,7 +1867,7 @@ docker run --rm \
       -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
     cmake --build --preset "${PRESET}"
     cmake --install "${BUILD_DIR}" --prefix "${STAGE}"
-    if [[ "${PRESET}" != windows-* ]]; then
+    if [[ "${PRESET}" != windows-* && "${PRESET}" != *libretro* ]]; then
       ctest --preset "${PRESET}" --output-on-failure
     fi
   '

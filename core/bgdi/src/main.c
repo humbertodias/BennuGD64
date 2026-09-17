@@ -100,6 +100,9 @@
 #ifdef TARGET_WIN32
 #include "main_win32.h"
 #endif
+#ifdef TARGET_LIBRETRO
+#define SDL_MAIN_HANDLED
+#endif
 
 /* ---------------------------------------------------------------------- */
 
@@ -123,7 +126,11 @@ static int embedded    = 0;  /* 1 only if this is a stub with an embedded DCB */
  *
  */
 
+#ifdef TARGET_LIBRETRO
+int bgdi_main( int argc, char *argv[] )
+#else
 int main( int argc, char *argv[] )
+#endif
 {
     char * filename = NULL, dcbname[ __MAX_PATH ], *ptr, *arg0, *ext ;
     int i, j, ret = -1;

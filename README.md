@@ -42,13 +42,36 @@ Shared builds also include `libbgdrtm` and load plugins from `modules/`.
 Libretro core (`bennugd_libretro`):
 
 ```shell
+bash scripts/build.sh macos arm64 libretro
 bash scripts/build.sh linux libretro
 bash scripts/build.sh windows libretro
 bash scripts/build.sh android libretro
 bash scripts/build.sh switch libretro
 ```
 
-Pass `libretro` after any platform in `scripts/build.sh` (same Docker image as the standalone build). Load the core from `dist/` in RetroArch and open a `.dcb` / `.dat` game. Desktop, Android, iOS, tvOS, and Pandora produce a shared core; most consoles produce a static `bennugd_libretro.a`.
+Load the core in [RetroArch](https://www.retroarch.com/) with `-L` and open a `.dcb` / `.dat`. Put game assets next to that file.
+
+macOS (Apple Silicon):
+
+```shell
+/Applications/RetroArch.app/Contents/MacOS/RetroArch \
+  -L dist/macos-arm64-libretro/bennugd_libretro.dylib \
+  /path/to/game/main.dcb
+```
+
+Linux:
+
+```shell
+retroarch -L dist/linux-libretro/bennugd_libretro.so /path/to/game/main.dcb
+```
+
+Windows (from Git Bash or PowerShell, after a MinGW build):
+
+```shell
+retroarch.exe -L dist/windows-x86_64-libretro/bennugd_libretro.dll C:\path\to\game\main.dcb
+```
+
+Pass `libretro` after any other platform in `scripts/build.sh` (same Docker image as the standalone build). Desktop, Android, iOS, tvOS, and Pandora produce a shared core; most consoles produce a static `bennugd_libretro.a` for linking into RetroArch.
 
 ## Build
 

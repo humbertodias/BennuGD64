@@ -67,6 +67,31 @@ bash scripts/build.sh windows libretro
 
 The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native `bgdc` + osxcross `bgdi.app`; iOS: native `bgdc` + osxcross `bgdi.app`; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; PS4: native `bgdc` + OpenOrbis `bgdi.elf` + `create-fself` / `PkgTool`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
 
+## Libretro (RetroArch)
+
+`scripts/build.sh <platform> libretro` installs `bennugd_libretro` under `dist/`. On desktop, load that core with RetroArch `-L` and a `.dcb` / `.dat` as content. Assets (FPG, WAV, …) must live in the same directory as the DCB.
+
+```shell
+bash scripts/build.sh macos arm64 libretro
+/Applications/RetroArch.app/Contents/MacOS/RetroArch \
+  -L dist/macos-arm64-libretro/bennugd_libretro.dylib \
+  /path/to/game/main.dcb
+```
+
+```shell
+bash scripts/build.sh linux libretro
+retroarch -L dist/linux-libretro/bennugd_libretro.so /path/to/game/main.dcb
+```
+
+```shell
+bash scripts/build.sh windows libretro
+retroarch.exe -L dist/windows-x86_64-libretro/bennugd_libretro.dll C:\path\to\game\main.dcb
+```
+
+Intel Mac: `dist/macos-x86_64-libretro/bennugd_libretro.dylib`. Optional: copy `platforms/libretro/bennugd_libretro.info` next to the core if you install it into RetroArch’s `cores/` folder.
+
+Android, iOS, and tvOS also produce a shared object/dylib. Consoles that cannot `dlopen` install a static `bennugd_libretro.a` for linking into a RetroArch build for that platform.
+
 ```shell
 ./scripts/build.sh linux shell
 ./scripts/build.sh android shell

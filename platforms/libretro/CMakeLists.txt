@@ -10,7 +10,7 @@ else ()
   set ( CORE_LIBRARY_TYPE SHARED )
 endif ()
 
-add_library ( bennugd_libretro ${CORE_LIBRARY_TYPE}
+set (_libretro_sources
   ${LIBRETRO_COMMON_DIR}/libco/libco.c
   ${LIBRETRO_COMMON_DIR}/vfs/vfs_implementation.c
   ${LIBRETRO_COMMON_DIR}/file/file_path.c
@@ -26,10 +26,22 @@ add_library ( bennugd_libretro ${CORE_LIBRARY_TYPE}
   ${LIBRETRO_COMMON_DIR}/streams/file_stream_transforms.c
   ${LIBRETRO_COMMON_DIR}/compat/compat_posix_string.c
   ${LIBRETRO_COMMON_DIR}/compat/fopen_utf8.c
-  ${LIBRETRO_COMMON_DIR}/rthreads/rthreads.c
   libretro.c
   filesystem.c
   filestream_gzip.c
+)
+
+# gx_pthread.h typedefs pthread_t as lwp_t; libogc already has pthread_t.
+if (NINTENDO_WII OR PLATFORM_WII OR GEKKO)
+  list (APPEND _libretro_sources rthreads_stub.c)
+  set (_libretro_have_threads 0)
+else ()
+  list (APPEND _libretro_sources ${LIBRETRO_COMMON_DIR}/rthreads/rthreads.c)
+  set (_libretro_have_threads 1)
+endif ()
+
+add_library ( bennugd_libretro ${CORE_LIBRARY_TYPE}
+  ${_libretro_sources}
 )
 
 check_symbol_exists ( posix_memalign stdlib.h BENNUGD_LIBRETRO_HAVE_POSIX_MEMALIGN )
@@ -41,7 +53,7 @@ endif ()
 
 target_compile_definitions ( bennugd_libretro PRIVATE
   HAVE_ZLIB=1
-  HAVE_THREADS=1
+  HAVE_THREADS=${_libretro_have_threads}
   SDL_MAIN_HANDLED=1
 )
 

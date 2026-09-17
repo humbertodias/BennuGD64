@@ -500,7 +500,35 @@ if [[ "${2:-}" == "libretro" || "${3:-}" == "libretro" || "${4:-}" == "libretro"
       fi
       cmake --preset "${PRESET}" "${COMMON[@]}"
       cmake --build --preset "${PRESET}"
+      mkdir -p "${STAGE}"
       cmake --install "${BUILD_DIR}" --prefix "${STAGE}"
+      CORE=""
+      for cand in \
+        "${BUILD_DIR}/bennugd_libretro.so" \
+        "${BUILD_DIR}/bennugd_libretro.dll" \
+        "${BUILD_DIR}/bennugd_libretro.dylib" \
+        "${BUILD_DIR}/bennugd_libretro.a" \
+        "${BUILD_DIR}/bennugd_libretro.lib"
+      do
+        if [[ -f "${cand}" ]]; then
+          CORE="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${CORE}" ]]; then
+        CORE="$(find "${BUILD_DIR}" \( \
+          -name bennugd_libretro.so -o -name bennugd_libretro.dll \
+          -o -name bennugd_libretro.dylib -o -name bennugd_libretro.a \
+          -o -name bennugd_libretro.lib \) ! -path '*/CMakeFiles/*' | head -n 1 || true)"
+      fi
+      test -n "${CORE}"
+      test -s "${CORE}"
+      cp -f "${CORE}" "${STAGE}/"
+      cp -f /src/platforms/libretro/bennugd_libretro.info "${STAGE}/"
+      bash /src/scripts/generate-install-md.sh \
+        "bennugd64-${BENNUGD_VERSION}-$(basename "${STAGE}")" "${STAGE}"
+      test -s "${STAGE}/$(basename "${CORE}")"
+      test -s "${STAGE}/INSTALL.md"
       if [[ "${PLATFORM}" == "macos" ]]; then
         bash /src/scripts/macos/codesign.sh "${STAGE}"
       fi

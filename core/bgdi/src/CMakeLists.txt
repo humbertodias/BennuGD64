@@ -124,9 +124,10 @@ endif ()
 if (NINTENDO_WII OR PLATFORM_WII)
   target_sources (bgdi PRIVATE main_wii.c main_wii_posix.c)
 endif ()
+endif ()
+
 if (WIN32 AND NOT PLATFORM_XBOX AND NOT XBOX AND NOT PLATFORM_XBOX360 AND NOT XBOX360)
   target_sources (bgdi PRIVATE main_win32.c)
-endif ()
 endif ()
 
 add_dependencies ( bgdi bennugd_git_header )

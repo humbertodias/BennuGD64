@@ -58,6 +58,15 @@ if (PLATFORM_PS3 OR PS3)
   )
 endif ()
 
+# nxdk is Win32 without _wfopen / UTF-16. libretro-common's LEGACY_WIN32 path uses fopen.
+if (PLATFORM_XBOX OR XBOX)
+  set_source_files_properties (
+    ${LIBRETRO_COMMON_DIR}/compat/fopen_utf8.c
+    ${LIBRETRO_COMMON_DIR}/vfs/vfs_implementation.c
+    PROPERTIES COMPILE_DEFINITIONS LEGACY_WIN32
+  )
+endif ()
+
 check_symbol_exists ( posix_memalign stdlib.h BENNUGD_LIBRETRO_HAVE_POSIX_MEMALIGN )
 if ( BENNUGD_LIBRETRO_HAVE_POSIX_MEMALIGN )
   target_compile_definitions ( bennugd_libretro PRIVATE HAVE_POSIX_MEMALIGN=1 )

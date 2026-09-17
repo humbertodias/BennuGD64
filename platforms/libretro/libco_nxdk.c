@@ -90,10 +90,11 @@ co_delete (cothread_t handle)
   nx_co_t *t = (nx_co_t *) handle;
   if (!t || t->primary)
     return;
-  TerminateThread (t->thd, 0);
-  CloseHandle (t->thd);
-  CloseHandle (t->gate);
-  free (t);
+  /* nxdk has no TerminateThread. Drop our handle; the parked thread
+   * keeps waiting on gate until the XBE exits. */
+  if (t->thd)
+    CloseHandle (t->thd);
+  t->thd = NULL;
 }
 
 void

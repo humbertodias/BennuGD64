@@ -42,6 +42,10 @@ if (PLATFORM_PS4 OR PS4)
 endif ()
 if (PLATFORM_XBOX360 OR XBOX360)
   target_sources (render PRIVATE g_frame_xbox360.c)
+  # xenon-gcc 16 ICE in RTL expand (optabs) when vectorizing this file at -O3 -maltivec.
+  set_property (SOURCE g_fade.c APPEND PROPERTY COMPILE_OPTIONS
+    -fno-tree-vectorize
+    -fno-tree-slp-vectorize)
 endif ()
 if (PLATFORM_XBOX OR XBOX)
   target_sources (render PRIVATE g_frame_xbox.c)

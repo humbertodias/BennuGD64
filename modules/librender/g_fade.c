@@ -61,22 +61,30 @@ static void activate_vpalette()
         }
         else
         {
+            int fade_r = fade_pos.r ;
+            int fade_g = fade_pos.g ;
+            int fade_b = fade_pos.b ;
+
             for ( n = 0 ; n < 256 ; n++ )
             {
-                if ( fade_pos.r <= 100 )
-                    vpalette[ n ].r = sys_pixel_format->palette->rgb[ n ].r * fade_pos.r / 100;
-                else
-                    vpalette[ n ].r = sys_pixel_format->palette->rgb[ n ].r + ( 255 - sys_pixel_format->palette->rgb[ n ].r ) * ( fade_pos.r - 100 ) / 100;
+                int src_r = sys_pixel_format->palette->rgb[ n ].r ;
+                int src_g = sys_pixel_format->palette->rgb[ n ].g ;
+                int src_b = sys_pixel_format->palette->rgb[ n ].b ;
 
-                if ( fade_pos.g <= 100 )
-                    vpalette[ n ].g = sys_pixel_format->palette->rgb[ n ].g * fade_pos.g / 100;
+                if ( fade_r <= 100 )
+                    vpalette[ n ].r = ( uint8_t ) ( src_r * fade_r / 100 );
                 else
-                    vpalette[ n ].g = sys_pixel_format->palette->rgb[ n ].g + ( 255 - sys_pixel_format->palette->rgb[ n ].g ) * ( fade_pos.g - 100 ) / 100;
+                    vpalette[ n ].r = ( uint8_t ) ( src_r + ( 255 - src_r ) * ( fade_r - 100 ) / 100 );
 
-                if ( fade_pos.b <= 100 )
-                    vpalette[ n ].b = sys_pixel_format->palette->rgb[ n ].b * fade_pos.b / 100;
+                if ( fade_g <= 100 )
+                    vpalette[ n ].g = ( uint8_t ) ( src_g * fade_g / 100 );
                 else
-                    vpalette[ n ].b = sys_pixel_format->palette->rgb[ n ].b + ( 255 - sys_pixel_format->palette->rgb[ n ].b ) * ( fade_pos.b - 100 ) / 100;
+                    vpalette[ n ].g = ( uint8_t ) ( src_g + ( 255 - src_g ) * ( fade_g - 100 ) / 100 );
+
+                if ( fade_b <= 100 )
+                    vpalette[ n ].b = ( uint8_t ) ( src_b * fade_b / 100 );
+                else
+                    vpalette[ n ].b = ( uint8_t ) ( src_b + ( 255 - src_b ) * ( fade_b - 100 ) / 100 );
             }
 
             if ( scale_screen )

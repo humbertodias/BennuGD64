@@ -24,4 +24,6 @@
 #define O_BINARY 0
 #endif
 
+int open (const char *path, int flags, ...);
+
 #endif

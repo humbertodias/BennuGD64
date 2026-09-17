@@ -27,4 +27,15 @@
 /* libretro VFS POSIX path calls mkdir(path, mode); nxdk only has _mkdir. */
 int mkdir (const char *path, int mode);
 
+#include <stddef.h>
+#include <stdio.h>
+#include <sys/types.h>
+
+ssize_t read (int fd, void *buf, size_t n);
+ssize_t write (int fd, const void *buf, size_t n);
+off_t lseek (int fd, off_t offset, int whence);
+int close (int fd);
+int ftruncate (int fd, off_t length);
+int fileno (FILE *stream);
+
 #endif

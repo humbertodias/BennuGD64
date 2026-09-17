@@ -61,6 +61,7 @@ endif ()
 # nxdk looks like Win32 to libretro-common but has no Windows.h, _wfopen,
 # MultiByteToWideChar, or fcntl.h. Compile those files as a POSIX host.
 if (PLATFORM_XBOX OR XBOX)
+  target_sources ( bennugd_libretro PRIVATE nxdk_mbstowcs.c )
   set (_nxdk_libretro_common
     ${LIBRETRO_COMMON_DIR}/libco/libco.c
     ${LIBRETRO_COMMON_DIR}/vfs/vfs_implementation.c
@@ -68,7 +69,6 @@ if (PLATFORM_XBOX OR XBOX)
     ${LIBRETRO_COMMON_DIR}/file/file_path_io.c
     ${LIBRETRO_COMMON_DIR}/file/retro_dirent.c
     ${LIBRETRO_COMMON_DIR}/string/stdstring.c
-    ${LIBRETRO_COMMON_DIR}/encodings/encoding_utf.c
     ${LIBRETRO_COMMON_DIR}/time/rtime.c
     ${LIBRETRO_COMMON_DIR}/compat/compat_strl.c
     ${LIBRETRO_COMMON_DIR}/compat/compat_strldup.c
@@ -80,6 +80,11 @@ if (PLATFORM_XBOX OR XBOX)
   )
   set_source_files_properties ( ${_nxdk_libretro_common}
     PROPERTIES COMPILE_OPTIONS "-U_WIN32;-UWIN32;-U_MSC_VER"
+  )
+  # POSIX encoding_utf.c needs mbstowcs/wcstombs; nxdk only has mbsrtowcs.
+  set_source_files_properties (
+    ${LIBRETRO_COMMON_DIR}/encodings/encoding_utf.c
+    PROPERTIES COMPILE_OPTIONS "-U_WIN32;-UWIN32;-U_MSC_VER;-include;${CMAKE_CURRENT_SOURCE_DIR}/nxdk_mbstowcs.h"
   )
 endif ()
 

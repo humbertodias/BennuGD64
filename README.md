@@ -108,5 +108,6 @@ Learn the Bennu language with the [BennuGD documentation](https://divhub.github.
 * [Web IDE](https://humbertodias.github.io/BennuGD64/ide/) - edit `.prg` files, compile with `bgdc.wasm`, and run them in the browser.
 * [API reference](https://humbertodias.github.io/BennuGD64/docs/) - Doxygen documentation for the C runtime, compiler, and modules.
 * [FPG Editor](https://github.com/humbertodias/fpg-editor/) - create and edit FPG files easily.
+* [In-game debugger](DEBUG.md) - compile with `bgdc -g`, import `mod_debug`, and step Bennu processes in `bgdi`.
 
 Enjoy!

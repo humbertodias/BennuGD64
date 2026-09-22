@@ -25,7 +25,7 @@ The console is installed only when **all** of the following are true:
 ## Compile and run
 
 ```shell
-bgdc -g -o game.dcb game.prg
+bgdc -g game.prg
 bgdi game.dcb
 ```
 

@@ -407,6 +407,24 @@ static const char * console_getcommand( int offset )
 
 /* --------------------------------------------------------------------------- */
 
+/* Map a key event to a console character. KEYDOWN reports the unshifted
+ * keycode (e.g. '='), so Shift+= must go through the layout (SDL3) or
+ * we would never insert '+'. */
+static int console_printable_key( Bennu_Keysym k )
+{
+    SDL_Keycode ch;
+
+    if ( k.sym == SDLK_KP_PLUS ) return '+' ;
+    if ( k.sym == SDLK_KP_MINUS ) return '-' ;
+    if ( k.sym == SDLK_KP_MULTIPLY ) return '*' ;
+    if ( k.sym == SDLK_KP_DIVIDE ) return '/' ;
+
+    ch = SDL_GetKeyFromScancode( k.scancode, k.mod, true );
+    if ( ch >= 32 && ch <= 255 ) return ( int ) ch ;
+    if ( k.sym >= 32 && k.sym <= 255 ) return ( int ) k.sym ;
+    return 0 ;
+}
+
 static void console_getkey( int key, int sym )
 {
     static int history_offset = 0;
@@ -442,9 +460,12 @@ static void console_getkey( int key, int sym )
         }
     }
 
-    if ( key == SDLK_BACKSPACE && *console_input ) console_input[strlen( console_input )-1] = 0 ;
-    if ( key == SDLK_ESCAPE ) *console_input = 0 ;
-    if ( key == SDLK_RETURN )
+    /* SDL3: RETURN/BACKSPACE/ESCAPE are below 32, so they arrive as key==0.
+     * Dispatch those from `sym`. Printable input still uses `key`. */
+    if ( ( key == SDLK_BACKSPACE || sym == SDLK_BACKSPACE ) && *console_input )
+        console_input[strlen( console_input )-1] = 0 ;
+    if ( key == SDLK_ESCAPE || sym == SDLK_ESCAPE ) *console_input = 0 ;
+    if ( key == SDLK_RETURN || sym == SDLK_RETURN || sym == SDLK_KP_ENTER )
     {
 
         console_scroll_pos = 0 ;
@@ -2593,7 +2614,7 @@ static int console_keyboard_handler_cb( Bennu_Keysym k )
                 }
             }
 
-            if ( !( k.mod & KMOD_LALT ) ) console_getkey( ( k.sym >= 32 && k.sym < 256 ) ? k.sym : 0, k.sym ) ;
+            if ( !( k.mod & KMOD_LALT ) ) console_getkey( console_printable_key( k ), k.sym ) ;
             return 1;
         }
     }

@@ -442,9 +442,12 @@ static void console_getkey( int key, int sym )
         }
     }
 
-    if ( key == SDLK_BACKSPACE && *console_input ) console_input[strlen( console_input )-1] = 0 ;
-    if ( key == SDLK_ESCAPE ) *console_input = 0 ;
-    if ( key == SDLK_RETURN )
+    /* SDL3: RETURN/BACKSPACE/ESCAPE are below 32, so they arrive as key==0.
+     * Dispatch those from `sym`. Printable input still uses `key`. */
+    if ( ( key == SDLK_BACKSPACE || sym == SDLK_BACKSPACE ) && *console_input )
+        console_input[strlen( console_input )-1] = 0 ;
+    if ( key == SDLK_ESCAPE || sym == SDLK_ESCAPE ) *console_input = 0 ;
+    if ( key == SDLK_RETURN || sym == SDLK_RETURN || sym == SDLK_KP_ENTER )
     {
 
         console_scroll_pos = 0 ;

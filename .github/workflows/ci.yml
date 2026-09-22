@@ -491,6 +491,9 @@ jobs:
           OS graphics/audio libraries may still be required at runtime.
           EOF
           extra=()
+          # Hyphenated tags (1.0.0-rc.1) are prereleases; GitHub will not
+          # accept --latest on those. Stable tags are marked latest after
+          # every asset is uploaded (create_at of the tag commit is not enough).
           if [[ "$TAG" == *-* ]]; then
             extra+=(--prerelease)
           fi
@@ -517,4 +520,8 @@ jobs:
               exit 1
             fi
           done
+          if [[ "$TAG" != *-* ]]; then
+            gh release edit "$TAG" --latest
+            echo "Marked $TAG as the latest release"
+          fi
 

@@ -113,8 +113,8 @@ The archive also contains `libmain.so` and `libSDL3.so` for integration and diag
     ;;
   *-zeebo-arm-*)
     platform="Zeebo"
-    install='`bgdi.elf` is a big-endian ARMv6 soft-float ELF that exports `AEEMod_Load`. Qualcomm `elf2mod` is required before it can be loaded as a BREW module; this package does not include that tool.'
-    data='Place `main.dcb` beside `bgdi.elf`. File I/O uses newlib stubs until a BREW filesystem is wired in.'
+    install='Copy `mif/` and `mod/` to the root of the SD card (`sd:/mif/bgdi.mif` and `sd:/mod/bgdi/bgdi.mod`). On the console, open EMAPPLET, Field Test, Memory Copy. `bgdi.elf` is the little-endian ARMv6 ELF that was packed into the module.'
+    data='`main.dcb` is already in `mod/bgdi/`. Saves belong in `mod/bgdi/udata/`. Copy this console'"'"'s test signature to `mod/bgdi/bgdi.sig`; that file is issued for the handset IMEI and is not part of this package.'
     ;;
   *-wii-powerpc-*)
     platform="Nintendo Wii"

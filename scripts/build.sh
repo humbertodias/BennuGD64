@@ -1962,6 +1962,14 @@ if [[ "${PLATFORM}" == "zeebo" ]]; then
     "https://github.com/libsdl-org/SDL/archive/refs/tags/${SDL3_REF:-release-3.4.14}.tar.gz"
   prefetch_github_archive "${ROOT}/build-zeebo-arm/_deps/sdl3_mixer-src" \
     "https://github.com/libsdl-org/SDL_mixer/archive/refs/tags/${SDL3_MIXER_REF:-release-3.2.4}.tar.gz"
+  ELF2MOD_X="${ROOT}/docker/zeebo/bin/elf2mod/src/gnu/elf2mod.x"
+  if [[ -n "${ZEEBO_TOOLSET:-}" && -f "${ZEEBO_TOOLSET}/bin/elf2mod/src/gnu/elf2mod.x" ]]; then
+    ELF2MOD_X="${ZEEBO_TOOLSET}/bin/elf2mod/src/gnu/elf2mod.x"
+    echo "elf2mod script: ${ZEEBO_TOOLSET}"
+  fi
+  python3 "${ROOT}/scripts/zeebo-elf2mod-script.py" \
+    "${ELF2MOD_X}" \
+    "${ROOT}/build-zeebo-arm/elf2mod-zeebo.x"
   docker run --platform linux/amd64 --rm \
     -u "$(id -u):$(id -g)" \
     -v "${ROOT}:/src" \
@@ -1974,10 +1982,11 @@ if [[ "${PLATFORM}" == "zeebo" ]]; then
     -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
     -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
     -e ZEEBO_TOOLCHAIN=/opt/zeebo \
+    -e ZEEBO_ELF2MOD_X=/src/build-zeebo-arm/elf2mod-zeebo.x \
     "${IMAGE}" \
     bash -c 'set -euo pipefail
       unset CC CXX CFLAGS CXXFLAGS
-      test -x /opt/zeebo/bin/armeb-none-eabi-gcc
+      test -x /opt/zeebo/bin/arm-none-eabi-gcc
       HOST_BUILD=/src/build-zeebo-host
       ZEEBO_BUILD=/src/build-zeebo-arm
       STAGE=/src/dist/zeebo-arm-static
@@ -1992,8 +2001,13 @@ if [[ "${PLATFORM}" == "zeebo" ]]; then
       cmake --preset zeebo-host "${COMMON[@]}"
       cmake --build --preset zeebo-host
       /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
+      ZEEBO_MOD=()
+      if [[ -n "${ZEEBO_ELF2MOD_X:-}" ]]; then
+        ZEEBO_MOD=(-DZEEBO_ELF2MOD_X="${ZEEBO_ELF2MOD_X}")
+      fi
       cmake --preset zeebo-arm \
         "${COMMON[@]}" \
+        "${ZEEBO_MOD[@]}" \
         -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src" \
         -DFETCHCONTENT_SOURCE_DIR_LIBPNG="${ZEEBO_BUILD}/_deps/libpng-src" \
         -DFETCHCONTENT_SOURCE_DIR_SDL3="${ZEEBO_BUILD}/_deps/sdl3-src" \
@@ -2001,7 +2015,7 @@ if [[ "${PLATFORM}" == "zeebo" ]]; then
       cmake --build --preset zeebo-arm
       ELF="${ZEEBO_BUILD}/core/bgdi/src/bgdi.elf"
       test -s "${ELF}"
-      armeb-none-eabi-readelf -h "${ELF}" | grep -q "big endian"
+      arm-none-eabi-readelf -h "${ELF}" | grep -q "little endian"
       rm -rf "${STAGE}"
       mkdir -p "${STAGE}"
       cmake --install "${ZEEBO_BUILD}" --prefix "${STAGE}"
@@ -2014,6 +2028,29 @@ if [[ "${PLATFORM}" == "zeebo" ]]; then
       test -s "${STAGE}/main.dcb"
       test -s "${STAGE}/INSTALL.md"
     '
+  python3 "${ROOT}/scripts/zeebo-elf2mod-prep.py" \
+    "${ROOT}/dist/zeebo-arm-static/bgdi.elf" \
+    "${ROOT}/build-zeebo-arm/bgdi.modin.elf"
+  ZEEBO_STAGE="${ROOT}/dist/zeebo-arm-static"
+  mkdir -p "${ZEEBO_STAGE}/mif" "${ZEEBO_STAGE}/mod/bgdi/udata"
+  cp "${ROOT}/platforms/zeebo/bgdi.mif" "${ZEEBO_STAGE}/mif/bgdi.mif"
+  cp "${ZEEBO_STAGE}/main.dcb" "${ZEEBO_STAGE}/mod/bgdi/main.dcb"
+  ZEEBO_WINE_MOUNT=()
+  if [[ -n "${ZEEBO_TOOLSET:-}" && -f "${ZEEBO_TOOLSET}/bin/elf2mod.exe" ]]; then
+    ZEEBO_WINE_MOUNT=(-v "${ZEEBO_TOOLSET}:/opt/brew-toolset:ro")
+  fi
+  docker run --platform linux/amd64 --rm \
+    -v "${ZEEBO_STAGE}:/stage" \
+    -v "${ROOT}/build-zeebo-arm:/work" \
+    "${ZEEBO_WINE_MOUNT[@]}" \
+    -e WINEDEBUG=-all \
+    "${IMAGE}" \
+    bash -lc "test -x /opt/brew-toolset/bin/elf2mod.exe && wine /opt/brew-toolset/bin/elf2mod.exe -output /stage/mod/bgdi/bgdi.mod /work/bgdi.modin.elf && chown $(id -u):$(id -g) /stage/mod/bgdi/bgdi.mod"
+  test -s "${ZEEBO_STAGE}/mif/bgdi.mif"
+  test -s "${ZEEBO_STAGE}/mod/bgdi/bgdi.mod"
+  test -s "${ZEEBO_STAGE}/mod/bgdi/main.dcb"
+  bash "${ROOT}/scripts/generate-install-md.sh" \
+    "bennugd64-${BENNUGD_VERSION}-zeebo-arm-static" "${ROOT}/dist/zeebo-arm-static"
   exit 0
 fi
 

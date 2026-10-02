@@ -497,6 +497,20 @@ if (PLATFORM_ZEEBO OR ZEEBO)
     m
   )
   target_link_options (bgdi PRIVATE "-Wl,--undefined=AEEMod_Load")
+  if (NOT ZEEBO_ELF2MOD_X AND DEFINED ENV{ZEEBO_ELF2MOD_X})
+    set (ZEEBO_ELF2MOD_X "$ENV{ZEEBO_ELF2MOD_X}")
+  endif ()
+  if (ZEEBO_ELF2MOD_X AND EXISTS "${ZEEBO_ELF2MOD_X}")
+    # Qualcomm elf2mod.x. -EL matches the little-endian modules Zeebx loads.
+    set (ZEEBO_ELF2MOD_X "${ZEEBO_ELF2MOD_X}" CACHE FILEPATH "Qualcomm elf2mod linker script" FORCE)
+    target_link_options (bgdi PRIVATE
+      "-nostartfiles"
+      "-Wl,-EL"
+      "-Wl,--entry=AEEMod_Load"
+      "-Wl,--emit-relocs"
+      "-Wl,-T,${ZEEBO_ELF2MOD_X}"
+    )
+  endif ()
 endif ()
 
 if (NINTENDO_WII OR PLATFORM_WII)

@@ -36,6 +36,7 @@ Makefile
 *.dylib
 *.dll
 *.exe
+!docker/zeebo/bin/elf2mod.exe
 
 # Project binaries (the executables only, never core/bgdi or core/bgdc sources)
 /bgdi

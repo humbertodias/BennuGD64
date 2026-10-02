@@ -1,0 +1,17 @@
+# Optional thin image. CI uses docker/Dockerfile.zeebo, which already
+# contains Wine and elf2mod.exe.
+
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    WINEDEBUG=-all
+
+RUN dpkg --add-architecture i386 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends wine wine32 \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /opt/brew-toolset/bin/elf2mod/src/gnu
+
+COPY zeebo/bin/elf2mod.exe /opt/brew-toolset/bin/elf2mod.exe
+COPY zeebo/bin/elf2mod/src/gnu/elf2mod.x /opt/brew-toolset/bin/elf2mod/src/gnu/elf2mod.x
+RUN chmod 755 /opt/brew-toolset/bin/elf2mod.exe

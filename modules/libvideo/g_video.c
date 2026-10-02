@@ -300,6 +300,10 @@ void gr_video_present( SDL_Surface * src )
     gr_video_xbox_present( src );
     return;
 #endif
+#ifdef TARGET_ZEEBO
+    gr_video_zeebo_present( src );
+    return;
+#endif
 
     if ( !window ) return ;
 
@@ -380,6 +384,12 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 #endif
 #ifdef TARGET_XBOX
     gr_video_xbox_present_rects( src, rects, count );
+    return;
+#endif
+#ifdef TARGET_ZEEBO
+    ( void ) rects;
+    ( void ) count;
+    gr_video_zeebo_present( src );
     return;
 #endif
 

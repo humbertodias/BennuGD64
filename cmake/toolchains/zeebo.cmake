@@ -1,7 +1,8 @@
-# Cross-compile Zeebo homebrew with the big-endian ARM11 newlib toolchain.
+# Cross-compile Zeebo homebrew with the little-endian ARM11 newlib toolchain.
 #   cmake --preset zeebo-arm
 # Requires ZEEBO_TOOLCHAIN (typically /opt/zeebo) from docker/Dockerfile.zeebo.
-# ABI: ARMv6, ARM state, soft-float, big-endian (MSM7201A / BREW).
+# ABI: ARMv6, ARM state, soft-float, little-endian. Shipped BREW modules and
+# Zeebx are little-endian; elf2mod writes the MOD header in that byte order.
 
 if (DEFINED ENV{ZEEBO_TOOLCHAIN} AND IS_DIRECTORY "$ENV{ZEEBO_TOOLCHAIN}")
   set (ZEEBO_TOOLCHAIN "$ENV{ZEEBO_TOOLCHAIN}")
@@ -9,7 +10,7 @@ else ()
   set (ZEEBO_TOOLCHAIN "/opt/zeebo")
 endif ()
 
-set (ZEEBO_HOST "armeb-none-eabi")
+set (ZEEBO_HOST "arm-none-eabi")
 set (ZEEBO_TRIPLE_PREFIX "${ZEEBO_TOOLCHAIN}/bin/${ZEEBO_HOST}")
 set (ZEEBO_SYSROOT "${ZEEBO_TOOLCHAIN}/${ZEEBO_HOST}")
 
@@ -43,7 +44,7 @@ set (CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 set (CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY)
 set_property (GLOBAL PROPERTY TARGET_SUPPORTS_SHARED_LIBS FALSE)
 
-# ARM1136J-S has no VFP. BREW on this SoC is big-endian; the triple is armeb.
+# ARM1136J-S has no VFP. BREW modules on Zeebo are little-endian.
 set (_bennugd_zeebo_arch "-marm -march=armv6 -mtune=arm1136j-s -mfloat-abi=soft")
 # arm-none-eabi defaults to AAPCS short enums. SDL3 requires int-sized enums.
 set (CMAKE_C_FLAGS_INIT "-O2 -ffunction-sections -fdata-sections -fno-pic -fno-short-enums -D__ZEEBO__=1 -DTARGET_ZEEBO ${_bennugd_zeebo_arch}")

@@ -5,9 +5,11 @@
 #     bennugd64-zeebo cmake --preset zeebo-arm
 #
 # Toolchain only: does not clone this repo or bake Bennu into the image.
-# The console is an ARM1136 (ARMv6, soft-float, big-endian) running BREW.
-# Ubuntu's gcc-arm-none-eabi multilibs are little-endian, so this image
-# builds a single armeb-none-eabi GCC + newlib and links with nosys.
+# The console is an ARM1136 (ARMv6, soft-float) running BREW. Shipped modules
+# are little-endian, so the compiler used for bgdi is Ubuntu's arm-none-eabi.
+# The armeb toolchain below stays in the image from the original layer; cmake
+# does not use it.
+# Qualcomm elf2mod.exe is included so CI can pack bgdi.elf into bgdi.mod.
 
 FROM ubuntu:22.04
 
@@ -100,6 +102,31 @@ RUN set -eux; \
     armeb-none-eabi-readelf -h /tmp/zeebo-smoke.elf | grep -E 'Data:|Machine:|Flags:'; \
     rm -f /tmp/zeebo-smoke.elf; \
     chmod -R a+rX /opt/zeebo
+
+# 32-bit Wine exists only to run elf2mod.exe. Keep this layer after the
+# toolchain so a tool update does not rebuild GCC.
+RUN dpkg --add-architecture i386 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+        wine wine32 gcc-arm-none-eabi libnewlib-arm-none-eabi \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /opt/brew-toolset/bin/elf2mod/src/gnu /opt/zeebo/bin \
+    && test -d /usr/lib/arm-none-eabi/include \
+    && ln -sfn /usr/lib/arm-none-eabi /opt/zeebo/arm-none-eabi \
+    && for tool in gcc g++ ar ranlib strip nm objcopy objdump readelf; do \
+         ln -sfn "/usr/bin/arm-none-eabi-${tool}" "/opt/zeebo/bin/arm-none-eabi-${tool}"; \
+       done \
+    && echo 'int main(void){return 0;}' \
+         | arm-none-eabi-gcc -marm -march=armv6 -mtune=arm1136j-s -mfloat-abi=soft \
+             -specs=nosys.specs -o /tmp/zeebo-smoke.elf -xc - \
+    && arm-none-eabi-readelf -h /tmp/zeebo-smoke.elf | grep -q "little endian" \
+    && rm -f /tmp/zeebo-smoke.elf
+
+COPY zeebo/bin/elf2mod.exe /opt/brew-toolset/bin/elf2mod.exe
+COPY zeebo/bin/elf2mod/src/gnu/elf2mod.x /opt/brew-toolset/bin/elf2mod/src/gnu/elf2mod.x
+RUN chmod 755 /opt/brew-toolset/bin/elf2mod.exe
+
+ENV WINEDEBUG=-all
 
 WORKDIR /src
 CMD ["bash"]

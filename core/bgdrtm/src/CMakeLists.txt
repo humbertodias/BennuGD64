@@ -41,6 +41,7 @@ if (PLATFORM_ZEEBO OR ZEEBO)
   target_sources (bgdrtm PRIVATE
     "${CMAKE_SOURCE_DIR}/platforms/zeebo/zeebo_dirent.c"
     "${CMAKE_SOURCE_DIR}/platforms/zeebo/zeebo_posix.c"
+    "${CMAKE_SOURCE_DIR}/platforms/zeebo/zeebo_file.c"
   )
 endif ()
 

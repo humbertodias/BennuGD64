@@ -615,6 +615,48 @@ if (NOT sdl3_POPULATED)
       if (NOT _zeebo_math_private_text STREQUAL _zeebo_math_private_original)
         file (WRITE "${_zeebo_math_private}" "${_zeebo_math_private_text}")
       endif ()
+      # ARMv6 GCC atomics lower a memory barrier to `mcr p15`. Zeebx's
+      # dynarmic build aborts on that coprocessor op. The guest is one
+      # core, so a compiler barrier and the plain CAS fallback are enough.
+      set (_zeebo_sdl_atomic_h "${sdl3_SOURCE_DIR}/include/SDL3/SDL_atomic.h")
+      file (READ "${_zeebo_sdl_atomic_h}" _zeebo_sdl_atomic_h_text)
+      string (REPLACE
+        "__asm__ __volatile__ (\"mcr p15, 0, %0, c7, c10, 5\" : : \"r\"(0) : \"memory\")"
+        "__asm__ __volatile__ (\"\" : : : \"memory\")"
+        _zeebo_sdl_atomic_h_text "${_zeebo_sdl_atomic_h_text}")
+      string (REPLACE
+        "#elif SDL_HAS_BUILTIN(__atomic_thread_fence) || (defined(__GNUC__) && (__GNUC__ >= 5))"
+        "#elif !defined(__ZEEBO__) && (SDL_HAS_BUILTIN(__atomic_thread_fence) || (defined(__GNUC__) && (__GNUC__ >= 5)))"
+        _zeebo_sdl_atomic_h_text "${_zeebo_sdl_atomic_h_text}")
+      file (WRITE "${_zeebo_sdl_atomic_h}" "${_zeebo_sdl_atomic_h_text}")
+      foreach (_zeebo_atomic_src IN ITEMS
+          "${sdl3_SOURCE_DIR}/src/atomic/SDL_atomic.c"
+          "${sdl3_SOURCE_DIR}/src/atomic/SDL_spinlock.c")
+        file (READ "${_zeebo_atomic_src}" _zeebo_atomic_src_text)
+        if (NOT _zeebo_atomic_src_text MATCHES "undef HAVE_GCC_ATOMICS")
+          string (REPLACE
+            "#include \"SDL_internal.h\""
+            "#include \"SDL_internal.h\"\n#ifdef __ZEEBO__\n#undef HAVE_GCC_ATOMICS\n#undef HAVE_GCC_SYNC_LOCK_TEST_AND_SET\n#endif"
+            _zeebo_atomic_src_text "${_zeebo_atomic_src_text}")
+          string (REPLACE
+            "#if (defined(__GNUC__) && (__GNUC__ >= 5)) || (defined(__clang__) && defined(HAVE_GCC_ATOMICS))"
+            "#if !defined(__ZEEBO__) && ((defined(__GNUC__) && (__GNUC__ >= 5)) || (defined(__clang__) && defined(HAVE_GCC_ATOMICS)))"
+            _zeebo_atomic_src_text "${_zeebo_atomic_src_text}")
+          string (REPLACE
+            "#else\n#if SDL_HAS_BUILTIN(__atomic_load_n)\n#define HAVE_ATOMIC_LOAD_N 1\n#endif\n#if SDL_HAS_BUILTIN(__atomic_exchange_n)\n#define HAVE_ATOMIC_EXCHANGE_N 1\n#endif\n#endif"
+            "#elif !defined(__ZEEBO__)\n#if SDL_HAS_BUILTIN(__atomic_load_n)\n#define HAVE_ATOMIC_LOAD_N 1\n#endif\n#if SDL_HAS_BUILTIN(__atomic_exchange_n)\n#define HAVE_ATOMIC_EXCHANGE_N 1\n#endif\n#endif"
+            _zeebo_atomic_src_text "${_zeebo_atomic_src_text}")
+          string (REPLACE
+            "#elif defined(__GNUC__) && defined(__arm__)\n    int result;\n    __asm__ __volatile__(\n        \"ldrex %0, [%2]\\nteq   %0, #0\\nstrexeq %0, %1, [%2]\""
+            "#elif defined(__ZEEBO__)\n    if (*lock == 0) {\n        *lock = 1;\n        return true;\n    }\n    return false;\n\n#elif defined(__GNUC__) && defined(__arm__)\n    int result;\n    __asm__ __volatile__(\n        \"ldrex %0, [%2]\\nteq   %0, #0\\nstrexeq %0, %1, [%2]\""
+            _zeebo_atomic_src_text "${_zeebo_atomic_src_text}")
+          string (REPLACE
+            "#else\n    SDL_MemoryBarrierRelease();\n    *lock = 0;\n#endif"
+            "#elif defined(__ZEEBO__)\n    *lock = 0;\n\n#else\n    SDL_MemoryBarrierRelease();\n    *lock = 0;\n#endif"
+            _zeebo_atomic_src_text "${_zeebo_atomic_src_text}")
+          file (WRITE "${_zeebo_atomic_src}" "${_zeebo_atomic_src_text}")
+        endif ()
+      endforeach ()
     endif ()
   endif ()
   if (PLATFORM_XBOX OR XBOX)

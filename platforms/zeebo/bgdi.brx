@@ -1,0 +1,43 @@
+<BREWRes Name="bgdi" VERSION="1">
+<Strings Encoding="Unicode">
+	<String Id="20" Name="IDS_MIF_NAME">
+		<Text>BennuGD64</Text>
+	</String>
+	<String Id="8" Name="IDS_MIF_VERSION">
+		<Text>4.0.2</Text>
+	</String>
+</Strings>
+<Binaries/>
+<BREWMif>
+	<Module Encoding="Unicode">
+		<!--Version = IDS_MIF_VERSION-->
+		<Privileges>
+			<Privilege Level="File"/>
+		</Privileges>
+		<Exported>
+			<Class CLSID="0x0100B6D1"/>
+		</Exported>
+		<MimeTypes/>
+		<Imported/>
+		<ACLs>
+			<ACL Type="fs">
+				<ACLEntry Path="/">
+					<Rights Exact=" r" SubTree="rw">
+						<Group CLSID="Everyone"/>
+					</Rights>
+				</ACLEntry>
+			</ACL>
+		</ACLs>
+	</Module>
+	<Applets>
+		<Applet BaseId="20" CLSID="0x0100B6D1">
+			<!--Name = IDS_MIF_NAME-->
+			<Type>Game</Type>
+			<Applethost>0x00000000</Applethost>
+			<Flags/>
+			<Environment/>
+			<Notifications/>
+		</Applet>
+	</Applets>
+</BREWMif>
+</BREWRes>

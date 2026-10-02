@@ -167,7 +167,7 @@ MinGW-w64 on Windows). Presets in `CMakePresets.json`:
 | `pandora-host` | `build-pandora-host` | Native `bgdc` for Pandora demo DCBs |
 | `pandora-arm` | `build-pandora-arm` | Ångström `bgdi` (needs `TOOLCHAIN=/opt/openpandora`) |
 | `zeebo-host` | `build-zeebo-host` | Native `bgdc` for Zeebo demo DCBs |
-| `zeebo-arm` | `build-zeebo-arm` | armeb-none-eabi `bgdi.elf` (needs `ZEEBO_TOOLCHAIN=/opt/zeebo`) |
+| `zeebo-arm` | `build-zeebo-arm` | arm-none-eabi `bgdi.elf` (needs `ZEEBO_TOOLCHAIN=/opt/zeebo`) |
 | `wii-host` | `build-wii-host` | Native `bgdc` for Wii demo DCBs |
 | `wii-powerpc` | `build-wii-powerpc` | libogc `bgdi.elf` (needs `DEVKITPRO`) |
 | `macos-x86_64-static` / `macos-x86_64-shared` | `build-macos-x86_64-*` | osxcross `o64-clang` |
@@ -583,13 +583,22 @@ SDL3 is the official Linux X11 software backend (the Ångström sysroot has no G
 
 ## Zeebo
 
-Needs Docker. `docker/Dockerfile.zeebo` builds a big-endian ARM11 toolchain (`armeb-none-eabi`, soft-float, newlib) for **linux/amd64**. The first image build compiles binutils, GCC, and newlib; later runs reuse `bennugd64-zeebo`. It does not clone this repo or bake Bennu into the image.
+Needs Docker. `docker/Dockerfile.zeebo` provides a little-endian ARM11 compiler (`arm-none-eabi`, soft-float, newlib) for **linux/amd64**. Later runs reuse `bennugd64-zeebo`. It does not clone this repo or bake Bennu into the image.
 
 ```shell
 bash scripts/build.sh zeebo
 ```
 
-That configures native `bgdc` (`zeebo-host`), compiles `platforms/web/demo/*.prg`, and cross-compiles `bgdi.elf` (`zeebo-arm`) into `dist/zeebo-arm-static/`. The folder ships `hello.dcb` as `main.dcb`. The ELF is ARMv6, ARM state, soft-float, big-endian, and exports `AEEMod_Load`. Qualcomm's `elf2mod` is not in the image; use it to turn `bgdi.elf` into a BREW `.mod`.
+That configures native `bgdc` (`zeebo-host`), compiles `platforms/web/demo/*.prg`, and cross-compiles `bgdi.elf` (`zeebo-arm`) into `dist/zeebo-arm-static/`. The ELF is ARMv6, ARM state, soft-float, little-endian, and exports `AEEMod_Load`. The image includes Qualcomm `elf2mod.exe` and 32-bit Wine. The same command writes the SD card layout:
+
+```text
+mif/bgdi.mif
+mod/bgdi/bgdi.mod
+mod/bgdi/main.dcb
+mod/bgdi/udata/
+```
+
+Copy `mif/` and `mod/` to the root of the SD card. The `.mif` names the applet BennuGD64 (class `0x0100B6D1`) and comes from `platforms/zeebo/bgdi.brx`. Put this console's test signature at `mod/bgdi/bgdi.sig`. That signature is issued for the handset IMEI, so the build does not create it. Set `ZEEBO_TOOLSET` only to replace the `elf2mod` copy in the image.
 
 SDL3 uses the dummy video driver and a software renderer at the console's VGA size, 640×480. There is no hardware FPU.
 

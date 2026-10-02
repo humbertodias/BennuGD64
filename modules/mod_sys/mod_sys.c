@@ -166,6 +166,8 @@ static const char * modsys_running_os_name( void )
     return "Xbox";
 #elif defined(TARGET_PANDORA)
     return "Pandora";
+#elif defined(TARGET_ZEEBO)
+    return "Zeebo";
 #elif defined(TARGET_SWITCH)
     return "Switch";
 #elif defined(TARGET_ANDROID)

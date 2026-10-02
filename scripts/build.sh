@@ -22,6 +22,7 @@
 #   bash scripts/build.sh xbox
 #   bash scripts/build.sh xbox360
 #   bash scripts/build.sh pandora
+#   bash scripts/build.sh zeebo
 #   bash scripts/build.sh wii
 #   bash scripts/build.sh macos
 #   bash scripts/build.sh macos arm64
@@ -47,6 +48,7 @@ USAGE="usage: $0 linux|windows [static|shared|libretro|shell]
        $0 xbox [libretro|shell]
        $0 xbox360 [libretro|shell]
        $0 pandora [libretro|shell]
+       $0 zeebo [libretro|shell]
        $0 wii [libretro|shell]
        $0 macos [x86_64|arm64] [static|shared|libretro|shell]"
 
@@ -65,7 +67,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|ps4|xbox|xbox360|pandora|wii|macos) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|ps4|xbox|xbox360|pandora|zeebo|wii|macos) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -169,6 +171,15 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
       -t bennugd64-pandora \
       -f docker/Dockerfile.pandora \
       docker/
+  elif [[ "${PLATFORM}" == "zeebo" ]]; then
+    docker build \
+      --platform linux/amd64 \
+      --build-arg ZEEBO_BINUTILS_VERSION="${ZEEBO_BINUTILS_VERSION:-2.42}" \
+      --build-arg ZEEBO_GCC_VERSION="${ZEEBO_GCC_VERSION:-13.3.0}" \
+      --build-arg ZEEBO_NEWLIB_VERSION="${ZEEBO_NEWLIB_VERSION:-4.4.0.20231231}" \
+      -t bennugd64-zeebo \
+      -f docker/Dockerfile.zeebo \
+      docker/
   elif [[ "${PLATFORM}" == "wii" ]]; then
     docker build \
       --platform linux/amd64 \
@@ -202,7 +213,7 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
 fi
 
 if [[ "${SECOND}" == "shell" ]]; then
-  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "ps3" || "${PLATFORM}" == "ps4" || "${PLATFORM}" == "xbox" || "${PLATFORM}" == "xbox360" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "wii" ]]; then
+  if [[ "${PLATFORM}" == "android" || "${PLATFORM}" == "switch" || "${PLATFORM}" == "dreamcast" || "${PLATFORM}" == "psp" || "${PLATFORM}" == "ps2" || "${PLATFORM}" == "ps3" || "${PLATFORM}" == "ps4" || "${PLATFORM}" == "xbox" || "${PLATFORM}" == "xbox360" || "${PLATFORM}" == "pandora" || "${PLATFORM}" == "zeebo" || "${PLATFORM}" == "wii" ]]; then
     exec docker run --platform linux/amd64 --rm -it \
       -v "${ROOT}:/src" \
       -w /src \
@@ -257,7 +268,8 @@ reuse_fetchcontent_src() {
     "${ROOT}/build-ps4-host/_deps/${name}" \
     "${ROOT}/build-xbox-host/_deps/${name}" \
     "${ROOT}/build-xbox360-host/_deps/${name}" \
-    "${ROOT}/build-pandora-host/_deps/${name}"
+    "${ROOT}/build-pandora-host/_deps/${name}" \
+    "${ROOT}/build-zeebo-host/_deps/${name}"
   do
     if [[ -f "${cand}/CMakeLists.txt" ]]; then
       echo "reuse: ${cand} -> ${dest}"
@@ -302,7 +314,7 @@ if [[ "${2:-}" == "libretro" || "${3:-}" == "libretro" || "${4:-}" == "libretro"
   done
   DOCKER_RUN=(docker run --rm)
   case "${PLATFORM}" in
-    android|switch|dreamcast|psp|ps2|ps3|ps4|xbox|xbox360|pandora|wii)
+    android|switch|dreamcast|psp|ps2|ps3|ps4|xbox|xbox360|pandora|zeebo|wii)
       DOCKER_RUN+=(--platform linux/amd64)
       ;;
   esac
@@ -404,6 +416,11 @@ if [[ "${2:-}" == "libretro" || "${3:-}" == "libretro" || "${4:-}" == "libretro"
       PRESET="pandora-arm-libretro"
       BUILD_DIR="/src/build-pandora-arm-libretro"
       STAGE="/src/dist/pandora-arm-libretro"
+      ;;
+    zeebo)
+      PRESET="zeebo-arm-libretro"
+      BUILD_DIR="/src/build-zeebo-arm-libretro"
+      STAGE="/src/dist/zeebo-arm-libretro"
       ;;
     wii)
       PRESET="wii-powerpc-libretro"
@@ -1926,6 +1943,76 @@ if [[ "${PLATFORM}" == "pandora" ]]; then
       cp "${PNDDIR}/"* "${STAGE}/" 2>/dev/null || true
       test -s "${STAGE}/bennugd64.pnd"
       test -s "${STAGE}/bgdi"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "zeebo" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: zeebo-host + zeebo-arm"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-zeebo-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-zeebo-arm/_deps"
+  rm -f "${ROOT}/build-zeebo-arm/CMakeCache.txt"
+  rm -rf "${ROOT}/build-zeebo-arm/CMakeFiles"
+  mkdir -p "${ROOT}/build-zeebo-arm/_deps"
+  prefetch_github_archive "${ROOT}/build-zeebo-arm/_deps/libpng-src" \
+    "https://github.com/pnggroup/libpng/archive/refs/tags/v${LIBPNG_VERSION:-1.6.47}.tar.gz"
+  prefetch_github_archive "${ROOT}/build-zeebo-arm/_deps/sdl3-src" \
+    "https://github.com/libsdl-org/SDL/archive/refs/tags/${SDL3_REF:-release-3.4.14}.tar.gz"
+  prefetch_github_archive "${ROOT}/build-zeebo-arm/_deps/sdl3_mixer-src" \
+    "https://github.com/libsdl-org/SDL_mixer/archive/refs/tags/${SDL3_MIXER_REF:-release-3.2.4}.tar.gz"
+  docker run --platform linux/amd64 --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    -e ZEEBO_TOOLCHAIN=/opt/zeebo \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -x /opt/zeebo/bin/armeb-none-eabi-gcc
+      HOST_BUILD=/src/build-zeebo-host
+      ZEEBO_BUILD=/src/build-zeebo-arm
+      STAGE=/src/dist/zeebo-arm-static
+      FETCH_DIR="${HOST_BUILD}/_deps"
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset zeebo-host "${COMMON[@]}"
+      cmake --build --preset zeebo-host
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
+      cmake --preset zeebo-arm \
+        "${COMMON[@]}" \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${FETCH_DIR}/zlib-src" \
+        -DFETCHCONTENT_SOURCE_DIR_LIBPNG="${ZEEBO_BUILD}/_deps/libpng-src" \
+        -DFETCHCONTENT_SOURCE_DIR_SDL3="${ZEEBO_BUILD}/_deps/sdl3-src" \
+        -DFETCHCONTENT_SOURCE_DIR_SDL3_MIXER="${ZEEBO_BUILD}/_deps/sdl3_mixer-src"
+      cmake --build --preset zeebo-arm
+      ELF="${ZEEBO_BUILD}/core/bgdi/src/bgdi.elf"
+      test -s "${ELF}"
+      armeb-none-eabi-readelf -h "${ELF}" | grep -q "big endian"
+      rm -rf "${STAGE}"
+      mkdir -p "${STAGE}"
+      cmake --install "${ZEEBO_BUILD}" --prefix "${STAGE}"
+      cp "${ELF}" "${STAGE}/bgdi.elf"
+      cp /src/platforms/web/demo/*.dcb "${STAGE}/"
+      cp /src/platforms/web/demo/hello.dcb "${STAGE}/main.dcb"
+      bash /src/scripts/generate-install-md.sh \
+        "bennugd64-${BENNUGD_VERSION}-zeebo-arm-static" "${STAGE}"
+      test -s "${STAGE}/bgdi.elf"
+      test -s "${STAGE}/main.dcb"
+      test -s "${STAGE}/INSTALL.md"
     '
   exit 0
 fi

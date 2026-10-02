@@ -124,6 +124,9 @@ endif ()
 if (PLATFORM_PANDORA OR OPENPANDORA)
   target_sources (bgdi PRIVATE main_pandora.c)
 endif ()
+if (PLATFORM_ZEEBO OR ZEEBO)
+  target_sources (bgdi PRIVATE main_zeebo.c)
+endif ()
 if (NINTENDO_WII OR PLATFORM_WII)
   target_sources (bgdi PRIVATE main_wii.c main_wii_posix.c)
 endif ()
@@ -484,6 +487,16 @@ if (PLATFORM_PANDORA OR OPENPANDORA)
     asound
     atomic
   )
+endif ()
+
+if (PLATFORM_ZEEBO OR ZEEBO)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+    m
+  )
+  target_link_options (bgdi PRIVATE "-Wl,--undefined=AEEMod_Load")
 endif ()
 
 if (NINTENDO_WII OR PLATFORM_WII)

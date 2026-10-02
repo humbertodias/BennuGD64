@@ -87,6 +87,7 @@ bash scripts/build.sh macos
 bash scripts/build.sh macos arm64
 bash scripts/build.sh macos arm64 libretro
 bash scripts/build.sh pandora
+bash scripts/build.sh zeebo
 bash scripts/build.sh ps2
 bash scripts/build.sh ps3
 bash scripts/build.sh ps4

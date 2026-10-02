@@ -167,6 +167,15 @@ jobs:
             shared: false
             libretro: true
             timeout: 150
+          - platform: zeebo
+            artifact: zeebo-arm
+            dist_static: dist/zeebo-arm-static
+            dist_libretro: dist/zeebo-arm-libretro
+            dist_shared: ""
+            docker_target: ""
+            shared: false
+            libretro: true
+            timeout: 210
           - platform: wii
             artifact: wii-powerpc
             dist_static: dist/wii-powerpc-static
@@ -274,6 +283,9 @@ jobs:
             IPHONEOS_SDK_NAME=${{ env.IPHONEOS_SDK_NAME }}
             IPHONEOS_SDK_REPO=${{ env.IPHONEOS_SDK_REPO }}
             IPHONEOS_SDK_REF=${{ env.IPHONEOS_SDK_REF }}
+            ZEEBO_BINUTILS_VERSION=${{ env.ZEEBO_BINUTILS_VERSION }}
+            ZEEBO_GCC_VERSION=${{ env.ZEEBO_GCC_VERSION }}
+            ZEEBO_NEWLIB_VERSION=${{ env.ZEEBO_NEWLIB_VERSION }}
             EMSCRIPTEN_VERSION=${{ env.EMSCRIPTEN_VERSION }}
             ANDROID_NDK_VERSION=${{ env.ANDROID_NDK_VERSION }}
             ANDROID_CMDLINE_TOOLS=${{ env.ANDROID_CMDLINE_TOOLS }}
@@ -442,7 +454,7 @@ jobs:
             bash scripts/generate-install-md.sh "$base" "$art_dir"
             find "$art_dir" \( -path '*/bgdi.app/bgdi' -o -name sim-install.sh \) -exec chmod +x {} +
             case "$base" in
-              *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*psp*|*vita*|*ps2*|*ps3*|*ps4*|*xbox*|*xbox360*|*pandora*|*wii*|*tvos*|*ios*)
+              *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*psp*|*vita*|*ps2*|*ps3*|*ps4*|*xbox*|*xbox360*|*pandora*|*zeebo*|*wii*|*tvos*|*ios*)
                 (cd artifacts && zip -r "$GITHUB_WORKSPACE/release-assets/${base}.zip" "$base")
                 ;;
               *)
@@ -461,9 +473,9 @@ jobs:
           set -euo pipefail
           NOTES="$(mktemp)"
           cat > "$NOTES" <<'EOF'
-          Builds of `bgdc` and `bgdi` for Linux, Windows, macOS, WebAssembly, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, PlayStation Vita, Apple tvOS, Apple iOS, PlayStation 2, PlayStation 3, PlayStation 4, Original Xbox, Xbox 360, OpenPandora, and Nintendo Wii.
+          Builds of `bgdc` and `bgdi` for Linux, Windows, macOS, WebAssembly, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, PlayStation Vita, Apple tvOS, Apple iOS, PlayStation 2, PlayStation 3, PlayStation 4, Original Xbox, Xbox 360, OpenPandora, Zeebo, and Nintendo Wii.
 
-          Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared|libretro>.tar.gz` (`.zip` on Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, tvOS, iOS, PS2, PS3, PS4, Xbox, Pandora, and Wii):
+          Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared|libretro>.tar.gz` (`.zip` on Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, tvOS, iOS, PS2, PS3, PS4, Xbox, Pandora, Zeebo, and Wii):
           - **static** — modules linked into `bgdi`
           - **shared** — modules as `.so`/`.dll`/`.dylib` under `modules/`
           - **libretro** — RetroArch core (`bennugd_libretro.so` / `.dll` / `.dylib`, or `.a`/`.lib` on consoles without shared libraries)
@@ -484,10 +496,11 @@ jobs:
           - **xbox-i386-static** — nxdk homebrew (`default.xbe` + `bennugd64.iso` for xemu); softmodded Original Xbox or xemu, game data in `D:\bennugd64\` or beside the XBE
           - **xbox360-powerpc-static** — libXenon homebrew (`xenon.elf`); copy to FAT32 USB and boot with XeLL, game data in `uda:/bennugd64/`
           - **pandora-arm-static** — homebrew PND (`bennugd64.pnd`); copy to the Pandora SD card, or run `./bgdi` next to `main.dcb`
+          - **zeebo-arm-static** — ARM11 big-endian soft-float ELF (`bgdi.elf`); put `main.dcb` next to it. Pack with Qualcomm `elf2mod` for a BREW `.mod` (`AEEMod_Load`)
           - **wii-powerpc-static** — homebrew DOL (`apps/bennugd64/boot.dol`); copy the folder to the SD card and launch from the Homebrew Channel
 
           Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-          Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, PS2, PS3, PS4, Xbox 360, Pandora, Wii, macOS (x86_64 and arm64), tvOS, and iOS CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.vita` (`vitasdk/vitasdk`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.ps3` (`hldtux/ps3dev`), `docker/Dockerfile.ps4` (OpenOrbis), `docker/Dockerfile.xbox360` (`free60/libxenon`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), `docker/Dockerfile.wii` (`devkitpro/devkitppc`), `docker/Dockerfile.macos` (osxcross), `docker/Dockerfile.tvos` (osxcross + AppleTVOS/AppleTVSimulator.sdk), and `docker/Dockerfile.ios` (osxcross + iPhoneOS/iPhoneSimulator.sdk).
+          Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, PS2, PS3, PS4, Xbox 360, Pandora, Wii, macOS (x86_64 and arm64), tvOS, and iOS CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.vita` (`vitasdk/vitasdk`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.ps3` (`hldtux/ps3dev`), `docker/Dockerfile.ps4` (OpenOrbis), `docker/Dockerfile.xbox360` (`free60/libxenon`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), `docker/Dockerfile.zeebo` (armeb-none-eabi + newlib), `docker/Dockerfile.wii` (`devkitpro/devkitppc`), `docker/Dockerfile.macos` (osxcross), `docker/Dockerfile.tvos` (osxcross + AppleTVOS/AppleTVSimulator.sdk), and `docker/Dockerfile.ios` (osxcross + iPhoneOS/iPhoneSimulator.sdk).
           OS graphics/audio libraries may still be required at runtime.
           EOF
           extra=()

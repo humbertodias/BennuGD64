@@ -111,6 +111,11 @@ The archive also contains `libmain.so` and `libSDL3.so` for integration and diag
     install='Copy `bennugd64.pnd` to an application directory on the Pandora SD card, or run `./bgdi` directly.'
     data='For direct execution, place `main.dcb` and its assets beside `bgdi`.'
     ;;
+  *-zeebo-arm-*)
+    platform="Zeebo"
+    install='`bgdi.elf` is a big-endian ARMv6 soft-float ELF that exports `AEEMod_Load`. Qualcomm `elf2mod` is required before it can be loaded as a BREW module; this package does not include that tool.'
+    data='Place `main.dcb` beside `bgdi.elf`. File I/O uses newlib stubs until a BREW filesystem is wired in.'
+    ;;
   *-wii-powerpc-*)
     platform="Nintendo Wii"
     install='Copy the included `apps/bennugd64/` folder to the SD card and launch it from the Homebrew Channel.'

@@ -404,6 +404,26 @@
       }
     },
     {
+      "name": "zeebo-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile Zeebo demo DCBs",
+      "binaryDir": "${sourceDir}/build-zeebo-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "zeebo-arm",
+      "inherits": "base",
+      "displayName": "Zeebo interpreter (bgdi.elf)",
+      "binaryDir": "${sourceDir}/build-zeebo-arm",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/zeebo.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
       "name": "wii-host",
       "inherits": "static",
       "displayName": "Native bgdc used to compile Wii demo DCBs",
@@ -610,6 +630,16 @@
       "inherits": "pandora-arm",
       "displayName": "OpenPandora libretro core",
       "binaryDir": "${sourceDir}/build-pandora-arm-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "zeebo-arm-libretro",
+      "inherits": "zeebo-arm",
+      "displayName": "Zeebo libretro core",
+      "binaryDir": "${sourceDir}/build-zeebo-arm-libretro",
       "cacheVariables": {
         "INTERPRETER_ONLY": "ON",
         "BENNUGD_LIBRETRO": "ON"
@@ -878,6 +908,20 @@
       ]
     },
     {
+      "name": "zeebo-host",
+      "configurePreset": "zeebo-host",
+      "targets": [
+        "bgdc"
+      ]
+    },
+    {
+      "name": "zeebo-arm",
+      "configurePreset": "zeebo-arm",
+      "targets": [
+        "bgdi"
+      ]
+    },
+    {
       "name": "wii-host",
       "configurePreset": "wii-host",
       "targets": [
@@ -974,6 +1018,10 @@
     {
       "name": "pandora-arm-libretro",
       "configurePreset": "pandora-arm-libretro"
+    },
+    {
+      "name": "zeebo-arm-libretro",
+      "configurePreset": "zeebo-arm-libretro"
     },
     {
       "name": "wii-powerpc-libretro",

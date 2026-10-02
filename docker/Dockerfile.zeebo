@@ -1,0 +1,105 @@
+# Zeebo (Tectoy) homebrew toolchain (linux/amd64).
+#   docker build --platform linux/amd64 -t bennugd64-zeebo \
+#     -f docker/Dockerfile.zeebo docker/
+#   docker run --platform linux/amd64 --rm -v "$PWD":/src -w /src \
+#     bennugd64-zeebo cmake --preset zeebo-arm
+#
+# Toolchain only: does not clone this repo or bake Bennu into the image.
+# The console is an ARM1136 (ARMv6, soft-float, big-endian) running BREW.
+# Ubuntu's gcc-arm-none-eabi multilibs are little-endian, so this image
+# builds a single armeb-none-eabi GCC + newlib and links with nosys.
+
+FROM ubuntu:22.04
+
+ARG ZEEBO_BINUTILS_VERSION=2.42
+ARG ZEEBO_GCC_VERSION=13.3.0
+ARG ZEEBO_NEWLIB_VERSION=4.4.0.20231231
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=zeebo \
+    PATH="/opt/zeebo/bin:${PATH}" \
+    ZEEBO_TOOLCHAIN=/opt/zeebo
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        bison \
+        build-essential \
+        ca-certificates \
+        cmake \
+        flex \
+        git \
+        libgmp-dev \
+        libmpc-dev \
+        libmpfr-dev \
+        ninja-build \
+        pkg-config \
+        python3 \
+        texinfo \
+        wget \
+        xz-utils \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*'
+
+RUN set -eux; \
+    mkdir -p /tmp/src /opt/zeebo; \
+    cd /tmp/src; \
+    wget -q "https://ftp.gnu.org/gnu/binutils/binutils-${ZEEBO_BINUTILS_VERSION}.tar.xz"; \
+    wget -q "https://ftp.gnu.org/gnu/gcc/gcc-${ZEEBO_GCC_VERSION}/gcc-${ZEEBO_GCC_VERSION}.tar.xz"; \
+    wget -q "https://sourceware.org/pub/newlib/newlib-${ZEEBO_NEWLIB_VERSION}.tar.gz"; \
+    tar -xf "binutils-${ZEEBO_BINUTILS_VERSION}.tar.xz"; \
+    tar -xf "gcc-${ZEEBO_GCC_VERSION}.tar.xz"; \
+    tar -xf "newlib-${ZEEBO_NEWLIB_VERSION}.tar.gz"; \
+    mkdir build-binutils && cd build-binutils; \
+    "../binutils-${ZEEBO_BINUTILS_VERSION}/configure" \
+        --target=armeb-none-eabi \
+        --prefix=/opt/zeebo \
+        --disable-nls \
+        --disable-werror \
+        --with-sysroot=/opt/zeebo/armeb-none-eabi; \
+    make -j"$(nproc)"; \
+    make install; \
+    cd /tmp/src; \
+    mkdir build-gcc && cd build-gcc; \
+    "../gcc-${ZEEBO_GCC_VERSION}/configure" \
+        --target=armeb-none-eabi \
+        --prefix=/opt/zeebo \
+        --with-sysroot=/opt/zeebo/armeb-none-eabi \
+        --with-arch=armv6 \
+        --with-float=soft \
+        --with-mode=arm \
+        --disable-multilib \
+        --disable-shared \
+        --disable-nls \
+        --disable-threads \
+        --disable-tls \
+        --disable-libssp \
+        --disable-libgomp \
+        --disable-libquadmath \
+        --enable-languages=c,c++ \
+        --with-newlib \
+        --without-headers \
+        --with-gnu-as \
+        --with-gnu-ld; \
+    make -j"$(nproc)" all-gcc all-target-libgcc; \
+    make install-gcc install-target-libgcc; \
+    cd /tmp/src; \
+    mkdir build-newlib && cd build-newlib; \
+    "../newlib-${ZEEBO_NEWLIB_VERSION}/configure" \
+        --target=armeb-none-eabi \
+        --prefix=/opt/zeebo \
+        --enable-newlib-io-long-long \
+        --enable-newlib-io-c99-formats \
+        --enable-newlib-register-fini; \
+    make -j"$(nproc)" CFLAGS_FOR_TARGET="-O2 -ffunction-sections -fdata-sections -march=armv6 -mtune=arm1136j-s -mfloat-abi=soft -marm"; \
+    make install; \
+    cd /tmp/src/build-gcc; \
+    make -j"$(nproc)" all-target-libstdc++-v3; \
+    make install-target-libstdc++-v3; \
+    cd /; \
+    rm -rf /tmp/src; \
+    echo 'int main(void){return 0;}' | armeb-none-eabi-gcc -specs=nosys.specs -o /tmp/zeebo-smoke.elf -xc -; \
+    armeb-none-eabi-readelf -h /tmp/zeebo-smoke.elf | grep -E 'Data:|Machine:|Flags:'; \
+    rm -f /tmp/zeebo-smoke.elf; \
+    chmod -R a+rX /opt/zeebo
+
+WORKDIR /src
+CMD ["bash"]

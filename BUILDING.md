@@ -11,9 +11,9 @@
 | `docker/` | Toolchain images |
 | `scripts/` | `build.sh`, installers, and per-target helpers (`apple/`, `macos/`, `vita/`, `wii/`) |
 
-## Docker (Linux, Windows, web, Android, Switch, Dreamcast, PSP, Vita, tvOS, iOS, PS2, PS3, PS4, Pandora, Wii, and macOS)
+## Docker (Linux, Windows, web, Android, Switch, Dreamcast, PSP, Vita, tvOS, iOS, PS2, PS3, PS4, Pandora, Zeebo, Wii, and macOS)
 
-No local compiler, CMake, MinGW, Emscripten, Android SDK, devkitPro, KallistiOS, pspdev, vitasdk, ps2dev, ps3dev, OpenOrbis, Ångström toolchain, or osxcross. Only [Docker](https://www.docker.com/get-started/).
+No local compiler, CMake, MinGW, Emscripten, Android SDK, devkitPro, KallistiOS, pspdev, vitasdk, ps2dev, ps3dev, OpenOrbis, Ångström toolchain, Zeebo GCC, or osxcross. Only [Docker](https://www.docker.com/get-started/).
 
 ```shell
 bash scripts/build.sh linux
@@ -33,6 +33,7 @@ bash scripts/build.sh ps2
 bash scripts/build.sh ps3
 bash scripts/build.sh ps4
 bash scripts/build.sh pandora
+bash scripts/build.sh zeebo
 bash scripts/build.sh wii
 bash scripts/build.sh macos
 bash scripts/build.sh macos arm64
@@ -60,12 +61,13 @@ bash scripts/build.sh windows libretro
 | `ps3` | `docker/Dockerfile.ps3` | `dist/ps3-ppu-static/` (`bennugd64.pkg`) |
 | `ps4` | `docker/Dockerfile.ps4` | `dist/ps4-x86_64-static/` (`bennugd64.pkg`) |
 | `pandora` | `docker/Dockerfile.pandora` | `dist/pandora-arm-static/` (`bennugd64.pnd`) |
+| `zeebo` | `docker/Dockerfile.zeebo` | `dist/zeebo-arm-static/` (`bgdi.elf`) |
 | `wii` | `docker/Dockerfile.wii` | `dist/wii-powerpc-static/` (`apps/bennugd64/boot.dol`) |
 | `macos` / `macos shared` / `macos libretro` | `docker/Dockerfile.macos` | `dist/macos-x86_64-{static,shared,libretro}/` |
 | `macos arm64` / `macos arm64 shared` / `macos arm64 libretro` | `docker/Dockerfile.macos` | `dist/macos-arm64-{static,shared,libretro}/` |
 | `windows` / `windows shared` / `windows libretro` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared,libretro}/` |
 
-The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native `bgdc` + osxcross `bgdi.app`; iOS: native `bgdc` + osxcross `bgdi.app`; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; PS4: native `bgdc` + OpenOrbis `bgdi.elf` + `create-fself` / `PkgTool`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
+The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native `bgdc` + osxcross `bgdi.app`; iOS: native `bgdc` + osxcross `bgdi.app`; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; PS4: native `bgdc` + OpenOrbis `bgdi.elf` + `create-fself` / `PkgTool`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Zeebo: native `bgdc` + armeb-none-eabi `bgdi.elf`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
 
 ## Libretro (RetroArch)
 
@@ -105,11 +107,12 @@ Android, iOS, and tvOS also produce a shared object/dylib. Consoles that cannot 
 ./scripts/build.sh ps3 shell
 ./scripts/build.sh ps4 shell
 ./scripts/build.sh pandora shell
+./scripts/build.sh zeebo shell
 ./scripts/build.sh wii shell
 ./scripts/build.sh macos shell
 ```
 
-Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, **Android (NDK)**, **Switch (devkitA64)**, **Dreamcast (KallistiOS)**, **PSP (pspdev)**, **PS Vita (vitasdk)**, **PS2 (ps2dev)**, **PS3 (PSL1GHT)**, **PS4 (OpenOrbis)**, **OpenPandora (Ångström)**, **Wii (devkitPPC)**, **macOS (osxcross)**, **tvOS (osxcross)**, or **iOS (osxcross)** in the config picker. The repo is mounted at `/src`, same as `build.sh`.
+Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, **Android (NDK)**, **Switch (devkitA64)**, **Dreamcast (KallistiOS)**, **PSP (pspdev)**, **PS Vita (vitasdk)**, **PS2 (ps2dev)**, **PS3 (PSL1GHT)**, **PS4 (OpenOrbis)**, **OpenPandora (Ångström)**, **Zeebo (armeb-none-eabi)**, **Wii (devkitPPC)**, **macOS (osxcross)**, **tvOS (osxcross)**, or **iOS (osxcross)** in the config picker. The repo is mounted at `/src`, same as `build.sh`.
 
 The first `macos` image build downloads a macOS SDK (Xcode license) and compiles [osxcross](https://github.com/tpoechtrager/osxcross); later runs reuse `bennugd64-macos`. SDL3 is built from FetchContent (not `osxcross-macports` / SDL2). SDK 10.10 is too old for SDL3; the image uses MacOSX 14.5 with deployment target 11.0.
 
@@ -163,6 +166,8 @@ MinGW-w64 on Windows). Presets in `CMakePresets.json`:
 | `ps4-x86_64` | `build-ps4-x86_64` | OpenOrbis `bgdi.elf` (needs `OO_PS4_TOOLCHAIN`) |
 | `pandora-host` | `build-pandora-host` | Native `bgdc` for Pandora demo DCBs |
 | `pandora-arm` | `build-pandora-arm` | Ångström `bgdi` (needs `TOOLCHAIN=/opt/openpandora`) |
+| `zeebo-host` | `build-zeebo-host` | Native `bgdc` for Zeebo demo DCBs |
+| `zeebo-arm` | `build-zeebo-arm` | armeb-none-eabi `bgdi.elf` (needs `ZEEBO_TOOLCHAIN=/opt/zeebo`) |
 | `wii-host` | `build-wii-host` | Native `bgdc` for Wii demo DCBs |
 | `wii-powerpc` | `build-wii-powerpc` | libogc `bgdi.elf` (needs `DEVKITPRO`) |
 | `macos-x86_64-static` / `macos-x86_64-shared` | `build-macos-x86_64-*` | osxcross `o64-clang` |
@@ -576,6 +581,18 @@ That configures native `bgdc` (`pandora-host`), compiles `platforms/web/demo/*.p
 
 SDL3 is the official Linux X11 software backend (the Ångström sysroot has no GLES). Modules are linked into `bgdi`.
 
+## Zeebo
+
+Needs Docker. `docker/Dockerfile.zeebo` builds a big-endian ARM11 toolchain (`armeb-none-eabi`, soft-float, newlib) for **linux/amd64**. The first image build compiles binutils, GCC, and newlib; later runs reuse `bennugd64-zeebo`. It does not clone this repo or bake Bennu into the image.
+
+```shell
+bash scripts/build.sh zeebo
+```
+
+That configures native `bgdc` (`zeebo-host`), compiles `platforms/web/demo/*.prg`, and cross-compiles `bgdi.elf` (`zeebo-arm`) into `dist/zeebo-arm-static/`. The folder ships `hello.dcb` as `main.dcb`. The ELF is ARMv6, ARM state, soft-float, big-endian, and exports `AEEMod_Load`. Qualcomm's `elf2mod` is not in the image; use it to turn `bgdi.elf` into a BREW `.mod`.
+
+SDL3 uses the dummy video driver and a software renderer at the console's VGA size, 640×480. There is no hardware FPU.
+
 ## Nintendo Wii
 
 Needs Docker. `docker/Dockerfile.wii` is a toolchain image (`devkitpro/devkitppc` plus host gcc, CMake, Ninja) built for **linux/amd64** (devkitPPC host tools are x86_64; on Apple Silicon Docker uses qemu). It does not clone this repo or bake Bennu into the image.
@@ -640,7 +657,7 @@ The install scripts download the latest GitHub Release for your platform, unpack
 
 GitHub Actions (`.github/workflows/ci.yml`):
 
-- Docker platforms share one `build` job keyed by `matrix.platform` (`linux`, `windows`, `macos`/osxcross, `wasm`, `android`, `switch`, `dreamcast`, `psp`, `vita`, `ps2`, `ps3`, `ps4`, `pandora`, `wii`, `tvos`, `ios`): `docker/Dockerfile.$platform` then `scripts/build.sh`. Linux, Windows, and osxcross (x86_64 and arm64) also build shared modules. Pages deploys the `web-wasm32-static` artifact.
+- Docker platforms share one `build` job keyed by `matrix.platform` (`linux`, `windows`, `macos`/osxcross, `wasm`, `android`, `switch`, `dreamcast`, `psp`, `vita`, `ps2`, `ps3`, `ps4`, `pandora`, `zeebo`, `wii`, `tvos`, `ios`): `docker/Dockerfile.$platform` then `scripts/build.sh`. Linux, Windows, and osxcross (x86_64 and arm64) also build shared modules. Pages deploys the `web-wasm32-static` artifact.
 - WASI — host `cmake --preset wasi` + CTest (Wasmtime) → `bennugd64-<tag>-wasi-wasm32-static.zip`
 
-On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`; Switch zip for `switch-aarch64-static`; Dreamcast zip for `dreamcast-sh4-static`; PSP zip for `psp-mips-static`; Vita zip for `vita-arm-static`; tvOS zips for `tvos-arm64-static` and `tvos-simulator-arm64-static`; iOS zips for `ios-arm64-static` and `ios-simulator-arm64-static`; PS2 zip for `ps2-mips-static`; PS3 zip for `ps3-ppu-static`; PS4 zip for `ps4-x86_64-static`; Pandora zip for `pandora-arm-static`; Wii zip for `wii-powerpc-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`; the Switch NRO links SDL3 statically from the devkitPro fork; the Dreamcast CDI links SDL3 statically from the GPF Dreamcast fork; the PSP PBP links SDL3 statically from the pspdev packages; the Vita VPK links official SDL3 statically from FetchContent; the tvOS `.app` links official SDL3 statically with Metal; the iOS `.app` links official SDL3 statically with Metal; the PS2 ISO links official SDL3 statically from FetchContent; the PS3 PKG links SDL3 statically from the onesixromcom PSL1GHT fork; the Pandora PND links official SDL3 statically against the Ångström sysroot; the Wii DOL links SDL3 statically from the libogc2 fork). OS graphics/audio libraries may still be required at runtime on native builds.
+On any git tag (for example `1.2.3`), that tag is the version in the `bgdc`/`bgdi` banners, `BUILD_INFO.txt`, and archive names (`bennugd64-<tag>-<os>-<arch>-static` or `-shared`; wasm zips for `web-wasm32-static` and `wasi-wasm32-static`; Android zip for `android-arm64-static`; Switch zip for `switch-aarch64-static`; Dreamcast zip for `dreamcast-sh4-static`; PSP zip for `psp-mips-static`; Vita zip for `vita-arm-static`; tvOS zips for `tvos-arm64-static` and `tvos-simulator-arm64-static`; iOS zips for `ios-arm64-static` and `ios-simulator-arm64-static`; PS2 zip for `ps2-mips-static`; PS3 zip for `ps3-ppu-static`; PS4 zip for `ps4-x86_64-static`; Pandora zip for `pandora-arm-static`; Zeebo zip for `zeebo-arm-static`; Wii zip for `wii-powerpc-static`). The workflow publishes a GitHub Release with archives that embed zlib, libpng, SDL3, SDL3_mixer and the bundled DES library statically (WASI archives embed only zlib and DES; the Android APK ships shared `libSDL3.so` + `libmain.so`; the Switch NRO links SDL3 statically from the devkitPro fork; the Dreamcast CDI links SDL3 statically from the GPF Dreamcast fork; the PSP PBP links SDL3 statically from the pspdev packages; the Vita VPK links official SDL3 statically from FetchContent; the tvOS `.app` links official SDL3 statically with Metal; the iOS `.app` links official SDL3 statically with Metal; the PS2 ISO links official SDL3 statically from FetchContent; the PS3 PKG links SDL3 statically from the onesixromcom PSL1GHT fork; the Pandora PND links official SDL3 statically against the Ångström sysroot; the Wii DOL links SDL3 statically from the libogc2 fork). OS graphics/audio libraries may still be required at runtime on native builds.

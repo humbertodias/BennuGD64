@@ -77,6 +77,9 @@
 #ifdef TARGET_PANDORA
 #include "g_video_pandora.h"
 #endif
+#ifdef TARGET_ZEEBO
+#include "g_video_zeebo.h"
+#endif
 #ifdef TARGET_WII
 #include "g_video_wii.h"
 #endif
@@ -510,6 +513,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 #ifdef TARGET_PANDORA
     gr_video_pandora_adjust_window( &width, &height, &window_flags );
 #endif
+#ifdef TARGET_ZEEBO
+    gr_video_zeebo_adjust_window( &width, &height, &window_flags );
+#endif
 #ifdef TARGET_WII
     gr_video_wii_adjust_window( &width, &height, &window_flags );
 #endif
@@ -704,6 +710,13 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_PANDORA
     gr_video_pandora_apply_mode();
+#endif
+#ifdef TARGET_ZEEBO
+    gr_video_zeebo_apply_mode();
+    GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
+    GLODWORD( libvideo, GRAPH_MODE ) = MODE_16BITS | MODE_FULLSCREEN;
+    depth = 16;
+    enable_scale = 0;
 #endif
 #ifdef TARGET_WII
     gr_video_wii_apply_mode();
@@ -1094,6 +1107,8 @@ void __bgdexport( libvideo, module_initialize )()
 
 #elif defined(TARGET_PANDORA)
     gr_video_pandora_module_initialize();
+#elif defined(TARGET_ZEEBO)
+    gr_video_zeebo_module_initialize();
 #else
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
 #endif

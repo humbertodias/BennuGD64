@@ -657,6 +657,17 @@ if (NOT sdl3_POPULATED)
           file (WRITE "${_zeebo_atomic_src}" "${_zeebo_atomic_src_text}")
         endif ()
       endforeach ()
+      # The dummy driver pretends the desktop is 1024x768. Streets of Rage
+      # then renders that size. The Zeebo screen is 640x480.
+      set (_zeebo_dummy "${sdl3_SOURCE_DIR}/src/video/dummy/SDL_nullvideo.c")
+      if (EXISTS "${_zeebo_dummy}")
+        file (READ "${_zeebo_dummy}" _zeebo_dummy_text)
+        string (REPLACE
+          "mode.w = 1024;\n    mode.h = 768;"
+          "mode.w = 640;\n    mode.h = 480;"
+          _zeebo_dummy_text "${_zeebo_dummy_text}")
+        file (WRITE "${_zeebo_dummy}" "${_zeebo_dummy_text}")
+      endif ()
     endif ()
   endif ()
   if (PLATFORM_XBOX OR XBOX)

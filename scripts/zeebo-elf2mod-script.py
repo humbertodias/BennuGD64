@@ -21,7 +21,7 @@ src = src.replace(
 # not zeros: a zero word is an illegal instruction and Zeebx stops there.
 src = src.replace(
     "  . = 0x0;         /* The ro-base is at 0 */\n",
-    "  . = 0x0;         /* The ro-base is at 0 */\n"
+    "  . = 0x10200;     /* Zeebx maps the ELF at MODULE_BASE + elf2mod's 0x200 */\n"
     "  .ro_pad : {\n"
     "    LONG(0xe1a00000); LONG(0xe1a00000); LONG(0xe1a00000); LONG(0xe1a00000);\n"
     "    LONG(0xe1a00000); LONG(0xe1a00000); LONG(0xe1a00000); LONG(0xe1a00000);\n"
@@ -30,6 +30,7 @@ src = src.replace(
 )
 src = src.replace(
     "  .data           : { *(.data .data.* .gnu.linkonce.d.*) } : ER_RW\n",
+    "  . = ALIGN(16);\n"
     "  .rw_pad : { . = . + 0x10; } :ER_RW\n"
     "  .data           : { *(.data .data.* .gnu.linkonce.d.*) }\n",
     1,

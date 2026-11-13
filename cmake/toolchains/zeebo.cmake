@@ -1,6 +1,6 @@
 # Cross-compile Zeebo homebrew with the little-endian ARM11 newlib toolchain.
 #   cmake --preset zeebo-arm
-# Requires ZEEBO_TOOLCHAIN (typically /opt/zeebo) from docker/Dockerfile.zeebo.
+# Requires ZEEBO_TOOLCHAIN (typically /opt/zeebo) from hldtux/zeebo-sdk.
 # ABI: ARMv6, ARM state, soft-float, little-endian. Shipped BREW modules and
 # Zeebx are little-endian; elf2mod writes the MOD header in that byte order.
 

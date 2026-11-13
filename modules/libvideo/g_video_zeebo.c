@@ -11,6 +11,11 @@
 #include "sdl3_compat.h"
 
 #define AEECLSID_DIB 0x01001045u
+#define ZEEBO_MODULE_BASE 0x00010000u
+/* Appended after GetALSContext. Old emulators stop at version 1 and never see it. */
+#define ZEEBO_PRESENT_SLOT 117
+
+typedef uint32_t ( *zeebo_present_fn )( const void * pixels, uint32_t w, uint32_t h, uint32_t pitch );
 
 typedef int ( *zeebo_getbmp_fn )( void * display, void ** out );
 typedef int ( *zeebo_qi_fn )( void * bitmap, uint32_t clsid, void ** out );
@@ -64,6 +69,40 @@ static int zeebo_open_screen( void )
     return 1;
 }
 
+static void zeebo_scale2( const uint8_t * src, int src_pitch, int sw, int sh )
+{
+    int x, y;
+
+    for ( y = 0; y < sh; y++ )
+    {
+        const uint16_t * srow = ( const uint16_t * )( src + y * src_pitch );
+        uint16_t * d0 = ( uint16_t * )( zeebo_pbmp + ( y * 2 ) * zeebo_pitch );
+        uint16_t * d1 = ( uint16_t * )( ( uint8_t * )d0 + zeebo_pitch );
+
+        for ( x = 0; x < sw; x++ )
+        {
+            uint16_t p = srow[x];
+            d0[x * 2] = p;
+            d0[x * 2 + 1] = p;
+        }
+        memcpy( d1, d0, ( size_t )sw * 4u );
+    }
+}
+
+static int zeebo_present_bulk( const uint8_t * pixels, int w, int h, int pitch )
+{
+    uint32_t ver = *( volatile uint32_t * )( uintptr_t )( ZEEBO_MODULE_BASE - 8 );
+    void ** table;
+    zeebo_present_fn fn;
+
+    if ( ver < 2 ) return 0;
+    table = *( void *** )( uintptr_t )( ZEEBO_MODULE_BASE - 4 );
+    if ( !table ) return 0;
+    fn = ( zeebo_present_fn )( uintptr_t )table[ZEEBO_PRESENT_SLOT];
+    if ( !fn ) return 0;
+    return fn( pixels, ( uint32_t )w, ( uint32_t )h, ( uint32_t )pitch ) == 0;
+}
+
 static void zeebo_blit_rgb565( const uint8_t * src, int src_pitch, int sw, int sh )
 {
     int x, y;
@@ -73,6 +112,12 @@ static void zeebo_blit_rgb565( const uint8_t * src, int src_pitch, int sw, int s
         int row = sw * 2;
         for ( y = 0; y < sh; y++ )
             memcpy( zeebo_pbmp + y * zeebo_pitch, src + y * src_pitch, row );
+        return;
+    }
+
+    if ( sw > 0 && sh > 0 && zeebo_dw == sw * 2 && zeebo_dh == sh * 2 )
+    {
+        zeebo_scale2( src, src_pitch, sw, sh );
         return;
     }
 
@@ -117,19 +162,31 @@ void gr_video_zeebo_present( SDL_Surface * src )
     int rgb565;
 
     if ( !src || !src->pixels || src->w <= 0 || src->h <= 0 ) return;
-    if ( !zeebo_open_screen() ) return;
 
     rgb565 = ( src->format == SDL_PIXELFORMAT_RGB565 ) ||
              ( bennu_surface_bpp( src ) == 16 && bennu_surface_rmask( src ) == 0xF800 );
     if ( !rgb565 )
     {
         converted = SDL_ConvertSurface( src, SDL_PIXELFORMAT_RGB565 );
-        if ( !converted || !converted->pixels ) 
+        if ( !converted || !converted->pixels )
         {
             if ( converted ) SDL_DestroySurface( converted );
             return;
         }
         frame = converted;
+    }
+
+    /* Bulk path first. Opening the device bitmap watches every later store. */
+    if ( zeebo_present_bulk( frame->pixels, frame->w, frame->h, frame->pitch ) )
+    {
+        if ( converted ) SDL_DestroySurface( converted );
+        return;
+    }
+
+    if ( !zeebo_open_screen() )
+    {
+        if ( converted ) SDL_DestroySurface( converted );
+        return;
     }
 
     zeebo_blit_rgb565( frame->pixels, frame->pitch, frame->w, frame->h );

@@ -174,9 +174,6 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
   elif [[ "${PLATFORM}" == "zeebo" ]]; then
     docker build \
       --platform linux/amd64 \
-      --build-arg ZEEBO_BINUTILS_VERSION="${ZEEBO_BINUTILS_VERSION:-2.42}" \
-      --build-arg ZEEBO_GCC_VERSION="${ZEEBO_GCC_VERSION:-13.3.0}" \
-      --build-arg ZEEBO_NEWLIB_VERSION="${ZEEBO_NEWLIB_VERSION:-4.4.0.20231231}" \
       -t bennugd64-zeebo \
       -f docker/Dockerfile.zeebo \
       docker/
@@ -1962,10 +1959,14 @@ if [[ "${PLATFORM}" == "zeebo" ]]; then
     "https://github.com/libsdl-org/SDL/archive/refs/tags/${SDL3_REF:-release-3.4.14}.tar.gz"
   prefetch_github_archive "${ROOT}/build-zeebo-arm/_deps/sdl3_mixer-src" \
     "https://github.com/libsdl-org/SDL_mixer/archive/refs/tags/${SDL3_MIXER_REF:-release-3.2.4}.tar.gz"
-  ELF2MOD_X="${ROOT}/docker/zeebo/bin/elf2mod/src/gnu/elf2mod.x"
+  ELF2MOD_X="${ROOT}/build-zeebo-arm/elf2mod.x"
   if [[ -n "${ZEEBO_TOOLSET:-}" && -f "${ZEEBO_TOOLSET}/bin/elf2mod/src/gnu/elf2mod.x" ]]; then
     ELF2MOD_X="${ZEEBO_TOOLSET}/bin/elf2mod/src/gnu/elf2mod.x"
     echo "elf2mod script: ${ZEEBO_TOOLSET}"
+  else
+    docker run --platform linux/amd64 --rm "${IMAGE}" \
+      cat /opt/brew-toolset/bin/elf2mod/src/gnu/elf2mod.x \
+      > "${ELF2MOD_X}"
   fi
   python3 "${ROOT}/scripts/zeebo-elf2mod-script.py" \
     "${ELF2MOD_X}" \

@@ -61,7 +61,7 @@ bash scripts/build.sh windows libretro
 | `ps3` | `docker/Dockerfile.ps3` | `dist/ps3-ppu-static/` (`bennugd64.pkg`) |
 | `ps4` | `docker/Dockerfile.ps4` | `dist/ps4-x86_64-static/` (`bennugd64.pkg`) |
 | `pandora` | `docker/Dockerfile.pandora` | `dist/pandora-arm-static/` (`bennugd64.pnd`) |
-| `zeebo` | `docker/Dockerfile.zeebo` | `dist/zeebo-arm-static/` (`bgdi.elf`) |
+| `zeebo` | `docker/Dockerfile.zeebo` (`hldtux/zeebo-sdk`) | `dist/zeebo-arm-static/` (`bgdi.elf`) |
 | `wii` | `docker/Dockerfile.wii` | `dist/wii-powerpc-static/` (`apps/bennugd64/boot.dol`) |
 | `macos` / `macos shared` / `macos libretro` | `docker/Dockerfile.macos` | `dist/macos-x86_64-{static,shared,libretro}/` |
 | `macos arm64` / `macos arm64 shared` / `macos arm64 libretro` | `docker/Dockerfile.macos` | `dist/macos-arm64-{static,shared,libretro}/` |
@@ -583,7 +583,7 @@ SDL3 is the official Linux X11 software backend (the Ångström sysroot has no G
 
 ## Zeebo
 
-Needs Docker. `docker/Dockerfile.zeebo` provides a little-endian ARM11 compiler (`arm-none-eabi`, soft-float, newlib) for **linux/amd64**. Later runs reuse `bennugd64-zeebo`. It does not clone this repo or bake Bennu into the image.
+Needs Docker. `docker/Dockerfile.zeebo` starts from [`hldtux/zeebo-sdk`](https://hub.docker.com/r/hldtux/zeebo-sdk), published from [humbertodias/docker-brew-sdk](https://github.com/humbertodias/docker-brew-sdk). That image provides a little-endian ARM11 compiler (`arm-none-eabi`, soft-float, newlib) and Wine/`elf2mod` for **linux/amd64**. Later runs reuse `bennugd64-zeebo`. It does not clone this repo or bake Bennu into the image.
 
 ```shell
 bash scripts/build.sh zeebo

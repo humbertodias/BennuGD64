@@ -42,6 +42,7 @@ if (PLATFORM_ZEEBO OR ZEEBO)
     "${CMAKE_SOURCE_DIR}/platforms/zeebo/zeebo_dirent.c"
     "${CMAKE_SOURCE_DIR}/platforms/zeebo/zeebo_posix.c"
     "${CMAKE_SOURCE_DIR}/platforms/zeebo/zeebo_file.c"
+    "${CMAKE_SOURCE_DIR}/platforms/zeebo/zeebo_time.c"
   )
 endif ()
 

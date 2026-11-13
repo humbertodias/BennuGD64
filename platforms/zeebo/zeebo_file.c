@@ -251,11 +251,11 @@ int _isatty( int fd )
 }
 
 /* nosys grows the heap from `end`, inside the module. Zeebx only maps 1 MB
- * past that image, and the interpreter asks for 256 KB blocks. The guest
- * heap at 0x10000000 is 64 MB; newlib takes the upper 16 MB so it does not
- * sit on the first bytes BREW MALLOC hands out. */
-#define ZEEBO_SBRK_BASE 0x13000000u
-#define ZEEBO_SBRK_END  0x14000000u
+ * past that image, and the interpreter asks for 256 KB blocks. newlib uses
+ * the 64 MB Zeebx maps at 0x14000000, just after the BREW heap, so a title
+ * screen that fills 16 MB does not make the next malloc write to address 0. */
+#define ZEEBO_SBRK_BASE 0x14000000u
+#define ZEEBO_SBRK_END  0x18000000u
 
 void * _sbrk( int incr )
 {

@@ -1,5 +1,5 @@
 {
-  "name": "BennuGD64 Zeebo (armeb-none-eabi)",
+  "name": "BennuGD64 Zeebo (arm-none-eabi)",
   "image": "hldtux/zeebo-sdk",
   "runArgs": ["--platform=linux/amd64"],
   "workspaceFolder": "/src",

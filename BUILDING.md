@@ -67,7 +67,7 @@ bash scripts/build.sh windows libretro
 | `macos arm64` / `macos arm64 shared` / `macos arm64 libretro` | `docker/Dockerfile.macos` | `dist/macos-arm64-{static,shared,libretro}/` |
 | `windows` / `windows shared` / `windows libretro` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared,libretro}/` |
 
-The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native `bgdc` + osxcross `bgdi.app`; iOS: native `bgdc` + osxcross `bgdi.app`; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; PS4: native `bgdc` + OpenOrbis `bgdi.elf` + `create-fself` / `PkgTool`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Zeebo: native `bgdc` + armeb-none-eabi `bgdi.elf`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
+The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native `bgdc` + osxcross `bgdi.app`; iOS: native `bgdc` + osxcross `bgdi.app`; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; PS4: native `bgdc` + OpenOrbis `bgdi.elf` + `create-fself` / `PkgTool`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Zeebo: native `bgdc` + arm-none-eabi `bgdi.elf` + `elf2mod`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
 
 ## Libretro (RetroArch)
 
@@ -112,7 +112,7 @@ Android, iOS, and tvOS also produce a shared object/dylib. Consoles that cannot 
 ./scripts/build.sh macos shell
 ```
 
-Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, **Android (NDK)**, **Switch (devkitA64)**, **Dreamcast (KallistiOS)**, **PSP (pspdev)**, **PS Vita (vitasdk)**, **PS2 (ps2dev)**, **PS3 (PSL1GHT)**, **PS4 (OpenOrbis)**, **OpenPandora (Ångström)**, **Zeebo (armeb-none-eabi)**, **Wii (devkitPPC)**, **macOS (osxcross)**, **tvOS (osxcross)**, or **iOS (osxcross)** in the config picker. The repo is mounted at `/src`, same as `build.sh`.
+Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, **Android (NDK)**, **Switch (devkitA64)**, **Dreamcast (KallistiOS)**, **PSP (pspdev)**, **PS Vita (vitasdk)**, **PS2 (ps2dev)**, **PS3 (PSL1GHT)**, **PS4 (OpenOrbis)**, **OpenPandora (Ångström)**, **Zeebo (arm-none-eabi)**, **Wii (devkitPPC)**, **macOS (osxcross)**, **tvOS (osxcross)**, or **iOS (osxcross)** in the config picker. The repo is mounted at `/src`, same as `build.sh`.
 
 The first `macos` image build downloads a macOS SDK (Xcode license) and compiles [osxcross](https://github.com/tpoechtrager/osxcross); later runs reuse `bennugd64-macos`. SDL3 is built from FetchContent (not `osxcross-macports` / SDL2). SDK 10.10 is too old for SDL3; the image uses MacOSX 14.5 with deployment target 11.0.
 
@@ -598,7 +598,7 @@ mod/bgdi/main.dcb
 mod/bgdi/udata/
 ```
 
-Copy `mif/` and `mod/` to the root of the SD card. The `.mif` names the applet BennuGD64 (class `0x0100B6D1`) and comes from `platforms/zeebo/bgdi.brx`. Put this console's test signature at `mod/bgdi/bgdi.sig`. That signature is issued for the handset IMEI, so the build does not create it. Set `ZEEBO_TOOLSET` only to replace the `elf2mod` copy in the image.
+Copy `mif/` and `mod/` to the root of the SD card. The `.mif` names the applet BennuGD64 (class `0x0100B6D1`) and comes from `platforms/zeebo/bgdi.brx`. Put this console's test signature at `mod/bgdi/bgdi.sig`. That signature is issued for the handset IMEI, so the build does not create it. `elf2mod` comes from the image. Set `ZEEBO_TOOLSET` only to mount a different copy over `/opt/brew-toolset`.
 
 SDL3 uses the dummy video driver and a software renderer at the console's VGA size, 640×480. There is no hardware FPU.
 

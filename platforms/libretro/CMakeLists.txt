@@ -124,6 +124,14 @@ if ( CMAKE_C_COMPILER_ID MATCHES "MSVC" )
   set_source_files_properties ( ${LIBRETRO_COMMON_DIR}/libco/libco.c PROPERTIES COMPILE_OPTIONS "/wd4005" )
 endif ()
 
+# arm-none-eabi's <stdint.h> does not set newlib's __int64_t_defined.
+# Any libretro-common file that reaches retro_common_api.h first then
+# rejects inttypes.h.
+if (PLATFORM_ZEEBO OR ZEEBO)
+  target_compile_options ( bennugd_libretro PRIVATE
+    "SHELL:-include ${CMAKE_CURRENT_SOURCE_DIR}/zeebo_inttypes.h" )
+endif ()
+
 set_target_properties ( bennugd_libretro PROPERTIES
   PREFIX ""
   OUTPUT_NAME "bennugd_libretro"

@@ -1,6 +1,6 @@
 [![CI/CD](https://github.com/humbertodias/BennuGD64/actions/workflows/ci.yml/badge.svg)](https://github.com/humbertodias/BennuGD64/actions/workflows/ci.yml)
 [![GitHub Pages](https://github.com/humbertodias/BennuGD64/actions/workflows/pages.yml/badge.svg)](https://github.com/humbertodias/BennuGD64/actions/workflows/pages.yml)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/humbertodias/BennuGD64)
+[![Ask DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-blue?logo=bookstack)](https://deepwiki.com/humbertodias/BennuGD64)
 ![GitHub all releases](https://img.shields.io/github/downloads/humbertodias/BennuGD64/total)
 
 # BennuGD64

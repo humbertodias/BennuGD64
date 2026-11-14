@@ -1154,9 +1154,18 @@ if (PLATFORM_PS4 OR PS4)
 endif ()
 
 if (PLATFORM_DREAMCAST OR DREAMCAST)
-  # GPF SDL tracks keys via key_states[]; KallistiOS 2.x uses matrix[].
+  # GPF SDL tracks keys via key_states[]. KallistiOS before the key_state_t
+  # union only has matrix[]. Current KOS has both fields; leave SDL alone then.
   set (_kbd "${sdl3_SOURCE_DIR}/src/video/dreamcast/SDL_dreamcastkeyboard.c")
-  if (EXISTS "${_kbd}")
+  set (_kos_kbd "$ENV{KOS_BASE}/kernel/arch/dreamcast/include/dc/maple/keyboard.h")
+  set (_kos_key_states FALSE)
+  if (EXISTS "${_kos_kbd}")
+    file (READ "${_kos_kbd}" _kos_kbd_txt)
+    if (_kos_kbd_txt MATCHES "bool is_down")
+      set (_kos_key_states TRUE)
+    endif ()
+  endif ()
+  if (NOT _kos_key_states AND EXISTS "${_kbd}")
     file (READ "${_kbd}" _kbd_txt)
     if (_kbd_txt MATCHES "key_states\\[i\\]\\.was_down")
       string (REPLACE
@@ -1289,8 +1298,18 @@ if (NOT NO_SOUND)
       endif ()
     endif ()
     if (PLATFORM_DREAMCAST OR DREAMCAST)
+      # Older KallistiOS typedefs int8/uint8 in arch/types.h. That header is
+      # gone on current KOS; stripping the aliases then leaves them undefined.
+      set (_kos_types "$ENV{KOS_BASE}/kernel/arch/dreamcast/include/arch/types.h")
+      set (_kos_has_int8 FALSE)
+      if (EXISTS "${_kos_types}")
+        file (READ "${_kos_types}" _kos_types_txt)
+        if (_kos_types_txt MATCHES "typedef[^\n]*[ \t]int8;")
+          set (_kos_has_int8 TRUE)
+        endif ()
+      endif ()
       set (_stb "${sdl3_mixer_SOURCE_DIR}/src/decoder_stb_vorbis.c")
-      if (EXISTS "${_stb}")
+      if (_kos_has_int8 AND EXISTS "${_stb}")
         file (READ "${_stb}" _stb_txt)
         string (REPLACE
           "typedef Uint8 uint8;\ntypedef Sint8 int8;\ntypedef Uint16 uint16;\ntypedef Sint16 int16;\ntypedef Uint32 uint32;\ntypedef Sint32 int32;\n"

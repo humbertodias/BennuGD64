@@ -5,17 +5,67 @@
 #     bennugd64-dreamcast cmake --preset dreamcast-sh4
 #
 # Toolchain only: does not clone this repo or bake Bennu into the image.
-# SH4 compiler, KallistiOS, CMake, Ninja, and mkdcdisc come from
+# SH4 compiler, CMake, Ninja, and mkdcdisc come from
 # kallistios/dc-kos-toolchain (GCC 14). mkdcdisc writes IP.BIN itself.
+#
+# That Hub image is the 2025-05-10 KallistiOS snapshot. GPF SDL
+# (dreamcastSDL3) uses pvr_filter_mode_t / pvr_txr_shading_mode_t and
+# pvr_scene_begin_rtt(), which landed later. Replace the KOS tree and
+# rebuild libkallisti with the image's sh-elf GCC. Keep the image
+# entrypoint and environ.sh.master; the new doc/environ.sh.sample still
+# points at /opt/toolchains/dc.
 
 FROM kallistios/dc-kos-toolchain:latest
 
 ENV PLATFORM=dreamcast \
     PATH="/opt/toolchains/dc/bin:/opt/toolchains/dc/sh-elf/bin:/opt/toolchains/dc/kos/utils/build_wrappers:${PATH}"
 
+# KallistiOS master, 2026-11-14. Has the PVR typedefs and pvr_scene_begin_rtt().
+ARG KOS_GIT_REF=6b1248c4df60a31f1459c40576c02670a522f046
+
+WORKDIR /tmp
+
 RUN apk add --no-cache zip \
     && git config --system --add safe.directory '*' \
+    && cp -a /opt/toolchains/dc/kos/entrypoint.sh /tmp/kos-entrypoint.sh \
+    && cp -a /opt/toolchains/dc/kos/environ.sh.master /tmp/kos-environ.sh.master \
+    && rm -rf /opt/toolchains/dc/kos \
+    && git init /opt/toolchains/dc/kos \
+    && git -C /opt/toolchains/dc/kos remote add origin https://github.com/KallistiOS/KallistiOS.git \
+    && git -C /opt/toolchains/dc/kos fetch --depth 1 origin "${KOS_GIT_REF}" \
+    && git -C /opt/toolchains/dc/kos checkout --detach FETCH_HEAD \
+    && cp -a /tmp/kos-entrypoint.sh /opt/toolchains/dc/kos/entrypoint.sh \
+    && cp -a /tmp/kos-environ.sh.master /opt/toolchains/dc/kos/environ.sh.master \
+    && bash -c 'set -eo pipefail; . /opt/toolchains/dc/kos/environ.sh.master && make -C "${KOS_BASE}/utils" -j"$(nproc)" && make -C "${KOS_BASE}/kernel" -j"$(nproc)"' \
     && chmod -R a+rX /opt/toolchains
+
+# sh-elf newlib 4.5 still has the April 2025 KOS sys/sched.h, which defined
+# pthread_*_t itself. Current KOS owns those types in include/sys/_pthreadtypes.h,
+# and newlib's sched.h includes that header first. Keep the old mappings only
+# when the KOS header was not included.
+RUN <<'EOS'
+set -eu
+f=/opt/toolchains/dc/sh-elf/sh-elf/include/sys/sched.h
+grep -q "maps pthread types to KOS types" "$f"
+if ! grep -q "__SYS_PTHREADTYPES_H" "$f"; then
+  awk '
+    /maps pthread types to KOS types/ && !guarded {
+      print "#ifndef __SYS_PTHREADTYPES_H"
+      guarded = 1
+    }
+    guarded && /__END_DECLS/ {
+      print "#endif /* !__SYS_PTHREADTYPES_H */"
+      guarded = 0
+    }
+    { print }
+  ' "$f" > /tmp/sched.h
+  mv /tmp/sched.h "$f"
+fi
+# bgdi links -lpthread. The addon uses the types from include/sys/_pthreadtypes.h,
+# so it has to be built after the sys/sched.h guard above.
+bash -c 'set -eo pipefail; . /opt/toolchains/dc/kos/environ.sh.master && make -C "${KOS_BASE}/addons/libpthread" -j"$(nproc)"'
+chmod -R a+rX /opt/toolchains/dc/kos/addons/lib
+EOS
 
 WORKDIR /src
 CMD ["bash"]

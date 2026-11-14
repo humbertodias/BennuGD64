@@ -34,6 +34,9 @@ endif ()
 if (BENNUGD_LIBRETRO)
   target_sources (mod_sound PRIVATE mod_sound_libretro.c)
 endif ()
+if (PLATFORM_ZEEBO OR ZEEBO)
+  target_sources (mod_sound PRIVATE mod_sound_zeebo.c)
+endif ()
 
 target_link_libraries (
   mod_sound

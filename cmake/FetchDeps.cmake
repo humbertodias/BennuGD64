@@ -35,7 +35,7 @@ if (PLATFORM_PS3 OR PS3)
 endif ()
 # Static archives must be PIC so they can later link into .so/.dylib modules.
 # Switch/Dreamcast/PSP/Vita/PS2/Pandora/Wii homebrew uses the toolchain PIE/KOS/pspdev/vitasdk/libogc flags instead.
-if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_VITA AND NOT VITA AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PS3 AND NOT PS3 AND NOT PLATFORM_PS4 AND NOT PS4 AND NOT PLATFORM_XBOX AND NOT XBOX AND NOT PLATFORM_XBOX360 AND NOT XBOX360 AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
+if (NOT EMSCRIPTEN AND NOT CMAKE_SYSTEM_NAME MATCHES "WASI" AND NOT NINTENDO_SWITCH AND NOT PLATFORM_DREAMCAST AND NOT DREAMCAST AND NOT PLATFORM_PSP AND NOT PSP AND NOT PLATFORM_VITA AND NOT VITA AND NOT PLATFORM_PS2 AND NOT PS2 AND NOT PLATFORM_PS3 AND NOT PS3 AND NOT PLATFORM_PS4 AND NOT PS4 AND NOT PLATFORM_XBOX AND NOT XBOX AND NOT PLATFORM_XBOX360 AND NOT XBOX360 AND NOT PLATFORM_ZEEBO AND NOT ZEEBO AND NOT PLATFORM_PANDORA AND NOT OPENPANDORA AND NOT NINTENDO_WII AND NOT PLATFORM_WII)
   set (CMAKE_POSITION_INDEPENDENT_CODE ON)
   if (NOT MSVC)
     set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
@@ -448,6 +448,31 @@ if (PLATFORM_XBOX360 OR XBOX360)
   set (HAVE_SYSCONF OFF CACHE BOOL "" FORCE)
   set (HAVE_GETPAGESIZE OFF CACHE BOOL "" FORCE)
 endif ()
+if (PLATFORM_ZEEBO OR ZEEBO)
+  set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGL OFF CACHE BOOL "" FORCE)
+  set (SDL_OPENGLES OFF CACHE BOOL "" FORCE)
+  set (SDL_VULKAN OFF CACHE BOOL "" FORCE)
+  set (SDL_RENDER_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_GPU OFF CACHE BOOL "" FORCE)
+  set (SDL_HIDAPI OFF CACHE BOOL "" FORCE)
+  set (SDL_VIRTUAL_JOYSTICK OFF CACHE BOOL "" FORCE)
+  set (SDL_CAMERA OFF CACHE BOOL "" FORCE)
+  set (SDL_HAPTIC OFF CACHE BOOL "" FORCE)
+  set (SDL_SENSOR OFF CACHE BOOL "" FORCE)
+  set (SDL_THREADS OFF CACHE BOOL "" FORCE)
+  set (SDL_PTHREADS OFF CACHE BOOL "" FORCE)
+  set (SDL_UNIX_CONSOLE_BUILD ON CACHE BOOL "" FORCE)
+  set (SDL_X11 OFF CACHE BOOL "" FORCE)
+  set (SDL_WAYLAND OFF CACHE BOOL "" FORCE)
+  set (SDL_ALSA OFF CACHE BOOL "" FORCE)
+  set (SDL_PULSEAUDIO OFF CACHE BOOL "" FORCE)
+  set (SDL_PIPEWIRE OFF CACHE BOOL "" FORCE)
+  set (HAVE_FDATASYNC OFF CACHE BOOL "" FORCE)
+  set (HAVE_GETHOSTNAME OFF CACHE BOOL "" FORCE)
+  set (HAVE_SYSCONF OFF CACHE BOOL "" FORCE)
+  set (HAVE_GETPAGESIZE OFF CACHE BOOL "" FORCE)
+endif ()
 if (PLATFORM_XBOX OR XBOX)
   # nxdk sets WIN32=1; keep SDL on Windows thread/timer backends, but nxdk is
   # ANSI-only (no Unicode WinAPI). Patched in SDL_windows.h below.
@@ -546,15 +571,19 @@ FetchContent_Declare (
 FetchContent_GetProperties (sdl3)
 if (NOT sdl3_POPULATED)
   FetchContent_Populate (sdl3)
-  if (PLATFORM_XBOX360 OR XBOX360)
-    # libXenon is a single-process bare-metal environment. SDL's generic
-    # no-thread primitives are sufficient; Bennu owns the native I/O backends.
+  if (PLATFORM_XBOX360 OR XBOX360 OR PLATFORM_ZEEBO OR ZEEBO)
+    # libXenon and Zeebo newlib are single-process bare-metal environments.
+    # SDL's generic no-thread primitives are sufficient.
     set (_xbox360_sdl_cmake "${sdl3_SOURCE_DIR}/CMakeLists.txt")
     file (READ "${_xbox360_sdl_cmake}" _xbox360_sdl_cmake_text)
     set (_xbox360_sdl_cmake_original "${_xbox360_sdl_cmake_text}")
     string (REPLACE
       "if(EMSCRIPTEN OR NGAGE)"
+      "if(EMSCRIPTEN OR NGAGE OR XBOX360 OR ZEEBO)"
+      _xbox360_sdl_cmake_text "${_xbox360_sdl_cmake_text}")
+    string (REPLACE
       "if(EMSCRIPTEN OR NGAGE OR XBOX360)"
+      "if(EMSCRIPTEN OR NGAGE OR XBOX360 OR ZEEBO)"
       _xbox360_sdl_cmake_text "${_xbox360_sdl_cmake_text}")
     if (NOT _xbox360_sdl_cmake_text STREQUAL _xbox360_sdl_cmake_original)
       file (WRITE "${_xbox360_sdl_cmake}" "${_xbox360_sdl_cmake_text}")
@@ -568,10 +597,77 @@ if (NOT sdl3_POPULATED)
       _xbox360_dynapi_text "${_xbox360_dynapi_text}")
     string (REPLACE
       "#if defined(SDL_PLATFORM_PRIVATE) // probably not useful on private platforms."
-      "#if defined(__XBOX360__)\n#define SDL_DYNAMIC_API 0\n#elif defined(SDL_PLATFORM_PRIVATE) // probably not useful on private platforms."
+      "#if defined(__XBOX360__) || defined(__ZEEBO__)\n#define SDL_DYNAMIC_API 0\n#elif defined(SDL_PLATFORM_PRIVATE) // probably not useful on private platforms."
       _xbox360_dynapi_text "${_xbox360_dynapi_text}")
     if (NOT _xbox360_dynapi_text STREQUAL _xbox360_dynapi_original)
       file (WRITE "${_xbox360_dynapi}" "${_xbox360_dynapi_text}")
+    endif ()
+    if (PLATFORM_ZEEBO OR ZEEBO)
+      # newlib already typedefs u_int32_t as unsigned long. SDL's fdlibm
+      # copy uses unsigned int, which conflicts even though both are 32-bit.
+      set (_zeebo_math_private "${sdl3_SOURCE_DIR}/src/libm/math_private.h")
+      file (READ "${_zeebo_math_private}" _zeebo_math_private_text)
+      set (_zeebo_math_private_original "${_zeebo_math_private_text}")
+      string (REPLACE
+        "#if !defined(SDL_PLATFORM_HAIKU) && !defined(SDL_PLATFORM_PSP) && !defined(SDL_PLATFORM_3DS) && !defined(SDL_PLATFORM_PS2) /* already defined in a system header. */"
+        "#if !defined(SDL_PLATFORM_HAIKU) && !defined(SDL_PLATFORM_PSP) && !defined(SDL_PLATFORM_3DS) && !defined(SDL_PLATFORM_PS2) && !defined(__ZEEBO__) /* already defined in a system header. */"
+        _zeebo_math_private_text "${_zeebo_math_private_text}")
+      if (NOT _zeebo_math_private_text STREQUAL _zeebo_math_private_original)
+        file (WRITE "${_zeebo_math_private}" "${_zeebo_math_private_text}")
+      endif ()
+      # ARMv6 GCC atomics lower a memory barrier to `mcr p15`. Zeebx's
+      # dynarmic build aborts on that coprocessor op. The guest is one
+      # core, so a compiler barrier and the plain CAS fallback are enough.
+      set (_zeebo_sdl_atomic_h "${sdl3_SOURCE_DIR}/include/SDL3/SDL_atomic.h")
+      file (READ "${_zeebo_sdl_atomic_h}" _zeebo_sdl_atomic_h_text)
+      string (REPLACE
+        "__asm__ __volatile__ (\"mcr p15, 0, %0, c7, c10, 5\" : : \"r\"(0) : \"memory\")"
+        "__asm__ __volatile__ (\"\" : : : \"memory\")"
+        _zeebo_sdl_atomic_h_text "${_zeebo_sdl_atomic_h_text}")
+      string (REPLACE
+        "#elif SDL_HAS_BUILTIN(__atomic_thread_fence) || (defined(__GNUC__) && (__GNUC__ >= 5))"
+        "#elif !defined(__ZEEBO__) && (SDL_HAS_BUILTIN(__atomic_thread_fence) || (defined(__GNUC__) && (__GNUC__ >= 5)))"
+        _zeebo_sdl_atomic_h_text "${_zeebo_sdl_atomic_h_text}")
+      file (WRITE "${_zeebo_sdl_atomic_h}" "${_zeebo_sdl_atomic_h_text}")
+      foreach (_zeebo_atomic_src IN ITEMS
+          "${sdl3_SOURCE_DIR}/src/atomic/SDL_atomic.c"
+          "${sdl3_SOURCE_DIR}/src/atomic/SDL_spinlock.c")
+        file (READ "${_zeebo_atomic_src}" _zeebo_atomic_src_text)
+        if (NOT _zeebo_atomic_src_text MATCHES "undef HAVE_GCC_ATOMICS")
+          string (REPLACE
+            "#include \"SDL_internal.h\""
+            "#include \"SDL_internal.h\"\n#ifdef __ZEEBO__\n#undef HAVE_GCC_ATOMICS\n#undef HAVE_GCC_SYNC_LOCK_TEST_AND_SET\n#endif"
+            _zeebo_atomic_src_text "${_zeebo_atomic_src_text}")
+          string (REPLACE
+            "#if (defined(__GNUC__) && (__GNUC__ >= 5)) || (defined(__clang__) && defined(HAVE_GCC_ATOMICS))"
+            "#if !defined(__ZEEBO__) && ((defined(__GNUC__) && (__GNUC__ >= 5)) || (defined(__clang__) && defined(HAVE_GCC_ATOMICS)))"
+            _zeebo_atomic_src_text "${_zeebo_atomic_src_text}")
+          string (REPLACE
+            "#else\n#if SDL_HAS_BUILTIN(__atomic_load_n)\n#define HAVE_ATOMIC_LOAD_N 1\n#endif\n#if SDL_HAS_BUILTIN(__atomic_exchange_n)\n#define HAVE_ATOMIC_EXCHANGE_N 1\n#endif\n#endif"
+            "#elif !defined(__ZEEBO__)\n#if SDL_HAS_BUILTIN(__atomic_load_n)\n#define HAVE_ATOMIC_LOAD_N 1\n#endif\n#if SDL_HAS_BUILTIN(__atomic_exchange_n)\n#define HAVE_ATOMIC_EXCHANGE_N 1\n#endif\n#endif"
+            _zeebo_atomic_src_text "${_zeebo_atomic_src_text}")
+          string (REPLACE
+            "#elif defined(__GNUC__) && defined(__arm__)\n    int result;\n    __asm__ __volatile__(\n        \"ldrex %0, [%2]\\nteq   %0, #0\\nstrexeq %0, %1, [%2]\""
+            "#elif defined(__ZEEBO__)\n    if (*lock == 0) {\n        *lock = 1;\n        return true;\n    }\n    return false;\n\n#elif defined(__GNUC__) && defined(__arm__)\n    int result;\n    __asm__ __volatile__(\n        \"ldrex %0, [%2]\\nteq   %0, #0\\nstrexeq %0, %1, [%2]\""
+            _zeebo_atomic_src_text "${_zeebo_atomic_src_text}")
+          string (REPLACE
+            "#else\n    SDL_MemoryBarrierRelease();\n    *lock = 0;\n#endif"
+            "#elif defined(__ZEEBO__)\n    *lock = 0;\n\n#else\n    SDL_MemoryBarrierRelease();\n    *lock = 0;\n#endif"
+            _zeebo_atomic_src_text "${_zeebo_atomic_src_text}")
+          file (WRITE "${_zeebo_atomic_src}" "${_zeebo_atomic_src_text}")
+        endif ()
+      endforeach ()
+      # The dummy driver pretends the desktop is 1024x768. Streets of Rage
+      # then renders that size. The Zeebo screen is 640x480.
+      set (_zeebo_dummy "${sdl3_SOURCE_DIR}/src/video/dummy/SDL_nullvideo.c")
+      if (EXISTS "${_zeebo_dummy}")
+        file (READ "${_zeebo_dummy}" _zeebo_dummy_text)
+        string (REPLACE
+          "mode.w = 1024;\n    mode.h = 768;"
+          "mode.w = 640;\n    mode.h = 480;"
+          _zeebo_dummy_text "${_zeebo_dummy_text}")
+        file (WRITE "${_zeebo_dummy}" "${_zeebo_dummy_text}")
+      endif ()
     endif ()
   endif ()
   if (PLATFORM_XBOX OR XBOX)
@@ -736,6 +832,12 @@ if (PLATFORM_XBOX360 OR XBOX360)
     SDL_TIMER_XBOX360=1)
   set_target_properties (SDL3-static PROPERTIES POSITION_INDEPENDENT_CODE OFF)
   target_link_libraries (SDL3-static PUBLIC Xbox360::Xenon)
+endif ()
+
+if (PLATFORM_ZEEBO OR ZEEBO)
+  target_sources (SDL3-static PRIVATE
+    "${CMAKE_SOURCE_DIR}/platforms/zeebo/sdl/SDL_systimer.c")
+  set_target_properties (SDL3-static PROPERTIES POSITION_INDEPENDENT_CODE OFF)
 endif ()
 
 # Always refresh nxdk SDL stubs (FetchContent may already be populated).

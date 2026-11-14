@@ -66,6 +66,7 @@
 #define OS_PS4                  1011
 #define OS_XBOX                 1012
 #define OS_XBOX360              1013
+#define OS_ZEEBO                1014
 
 #endif
 

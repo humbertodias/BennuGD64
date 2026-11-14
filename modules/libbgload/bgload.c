@@ -78,8 +78,9 @@ int bgload( int ( *fn )(), intptr_t * params )
 {
     bgdata *t = prep( params );
     t->fn = fn;
-#ifdef __EMSCRIPTEN__
-    /* No pthreads in the default wasm build; load synchronously. */
+#if defined( __EMSCRIPTEN__ ) || defined( TARGET_ZEEBO )
+    /* No working threads: the Zeebo SDL backend refuses SDL_CreateThread,
+     * and a failed bgload leaves the song id at -2 forever. */
     bgDoLoad( t );
 #else
     SDL_CreateThread( bgDoLoad, "bgload", ( void * )t );

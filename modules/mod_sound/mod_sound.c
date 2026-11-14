@@ -66,6 +66,9 @@
 #ifdef TARGET_LIBRETRO
 #include "mod_sound_libretro.h"
 #endif
+#ifdef TARGET_ZEEBO
+#include "mod_sound_zeebo.h"
+#endif
 
 #ifdef MODSOUND_PS4_DUMMY_AUDIO
 /* Reuse the module's existing no-audio API behavior while keeping exports. */
@@ -302,7 +305,7 @@ static int sound_init()
     modsound_xbox_adjust_spec( &spec );
 #endif
 
-#if defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_LIBRETRO)
+#if defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_LIBRETRO) || defined(TARGET_ZEEBO)
     mixer = MIX_CreateMixer( &spec );
 #else
     mixer = MIX_CreateMixerDevice( SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec );
@@ -400,6 +403,14 @@ static int sound_init()
         return -1;
     }
 #endif
+#ifdef TARGET_ZEEBO
+    if ( modsound_zeebo_start_output( mixer ) != 0 )
+    {
+        fprintf( stderr, "[SOUND] No se pudo iniciar mixer zeebo\n" );
+        MIX_Quit();
+        return -1;
+    }
+#endif
 
     audio_initialized = 1;
     return 0;
@@ -434,6 +445,9 @@ static void sound_close()
 #endif
 #ifdef TARGET_XBOX
     modsound_xbox_stop_output();
+#endif
+#ifdef TARGET_ZEEBO
+    modsound_zeebo_stop_output();
 #endif
 
     if ( music_track )
@@ -2155,6 +2169,9 @@ HOOK __bgdexport( mod_sound, handler_hooks )[] =
 #endif
 #ifdef TARGET_XBOX
     { 4800, modsound_xbox_pump },
+#endif
+#ifdef TARGET_ZEEBO
+    { 4800, modsound_zeebo_pump },
 #endif
     {    0, NULL }
 };

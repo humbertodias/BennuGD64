@@ -111,6 +111,11 @@ The archive also contains `libmain.so` and `libSDL3.so` for integration and diag
     install='Copy `bennugd64.pnd` to an application directory on the Pandora SD card, or run `./bgdi` directly.'
     data='For direct execution, place `main.dcb` and its assets beside `bgdi`.'
     ;;
+  *-zeebo-arm-*)
+    platform="Zeebo"
+    install='Copy `mif/` and `mod/` to the root of the SD card (`sd:/mif/bgdi.mif` and `sd:/mod/bgdi/bgdi.mod`). On the console, open EMAPPLET, Field Test, Memory Copy. `bgdi.elf` is the little-endian ARMv6 ELF that was packed into the module.'
+    data='`main.dcb` is already in `mod/bgdi/`. Saves belong in `mod/bgdi/udata/`. Copy this console'"'"'s test signature to `mod/bgdi/bgdi.sig`; that file is issued for the handset IMEI and is not part of this package.'
+    ;;
   *-wii-powerpc-*)
     platform="Nintendo Wii"
     install='Copy the included `apps/bennugd64/` folder to the SD card and launch it from the Homebrew Channel.'

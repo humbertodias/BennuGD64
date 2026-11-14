@@ -229,6 +229,13 @@ int debug = 0;  /* 1 if running in debug mode      */
 #define _OS_ID          OS_XBOX
 #endif
 
+#ifdef TARGET_ZEEBO
+#ifdef _OS_ID
+#undef _OS_ID
+#endif
+#define _OS_ID          OS_ZEEBO
+#endif
+
 #ifdef TARGET_IOS
 #ifdef _OS_ID
 #undef _OS_ID

@@ -1,0 +1,19 @@
+# Zeebo (Tectoy) homebrew toolchain (linux/amd64).
+#   docker build --platform linux/amd64 -t bennugd64-zeebo \
+#     -f docker/Dockerfile.zeebo docker/
+#   docker run --platform linux/amd64 --rm -v "$PWD":/src -w /src \
+#     bennugd64-zeebo cmake --preset zeebo-arm
+#
+# Toolchain only: does not clone this repo or bake Bennu into the image.
+# Compiler, newlib, Wine, and elf2mod come from hldtux/zeebo-sdk, built from
+# https://github.com/humbertodias/docker-brew-sdk
+
+FROM hldtux/zeebo-sdk
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=zeebo \
+    PATH="/opt/zeebo/bin:${PATH}" \
+    ZEEBO_TOOLCHAIN=/opt/zeebo
+
+WORKDIR /src
+CMD ["bash"]

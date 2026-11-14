@@ -42,6 +42,9 @@
 #ifdef TARGET_PS2
 #include "g_frame_ps2.h"
 #endif
+#ifdef TARGET_ZEEBO
+#include "g_frame_zeebo.h"
+#endif
 #include "g_stats.h"
 #ifdef TARGET_WII
 #include "g_frame_wii.h"
@@ -112,6 +115,10 @@ void gr_set_fps( int fps, int skip )
 #endif
 #ifdef TARGET_PS2
     skip = gr_frame_ps2_adjust_skip( skip );
+#endif
+#ifdef TARGET_ZEEBO
+    fps = gr_frame_zeebo_adjust_fps( fps );
+    skip = gr_frame_zeebo_adjust_skip( skip );
 #endif
 
     if ( fps == fps_value && skip == max_jump ) return ;

@@ -32,6 +32,9 @@ endif ()
 if (BENNUGD_LIBRETRO)
   target_sources (joy PRIVATE libjoy_libretro.c)
 endif ()
+if (PLATFORM_ZEEBO OR ZEEBO)
+  target_sources (joy PRIVATE libjoy_zeebo.c)
+endif ()
 
 target_link_libraries (
   joy

@@ -94,6 +94,9 @@
 #ifdef TARGET_PANDORA
 #include "main_pandora.h"
 #endif
+#ifdef TARGET_ZEEBO
+#include "main_zeebo.h"
+#endif
 #ifdef TARGET_WII
 #include "main_wii.h"
 #endif
@@ -319,6 +322,23 @@ int main( int argc, char *argv[] )
         char * pandora_dcb = bgdi_pandora_startup( argc, argv, &standalone );
         if ( pandora_dcb )
             filename = pandora_dcb;
+    }
+#endif
+
+#ifdef TARGET_ZEEBO
+    {
+        static char * zeebo_argv[2] = { "bgdi.elf", NULL };
+        char * zeebo_dcb;
+
+        if ( argc < 1 || !argv || !argv[0] )
+        {
+            argc = 1;
+            argv = zeebo_argv;
+        }
+
+        zeebo_dcb = bgdi_zeebo_startup( argc, argv, &standalone );
+        if ( zeebo_dcb )
+            filename = zeebo_dcb;
     }
 #endif
 

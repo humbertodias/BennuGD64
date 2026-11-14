@@ -3,7 +3,7 @@ include_directories (
   ../libvideo
 )
 
-if (PLATFORM_XBOX OR XBOX)
+if (PLATFORM_XBOX OR XBOX OR PLATFORM_ZEEBO OR ZEEBO)
   include_directories (../libjoy)
 endif ()
 
@@ -40,6 +40,10 @@ endif ()
 if (PLATFORM_XBOX OR XBOX)
   target_sources (key PRIVATE libkey_xbox.c)
   target_link_libraries (key Xbox::Nxdk joy)
+endif ()
+if (PLATFORM_ZEEBO OR ZEEBO)
+  target_sources (key PRIVATE libkey_zeebo.c)
+  target_link_libraries (key joy)
 endif ()
 if (EMSCRIPTEN)
   target_sources (key PRIVATE libkey_emscripten.c)

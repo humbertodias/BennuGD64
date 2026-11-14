@@ -42,6 +42,11 @@ void zeebo_set_shell( void * shell )
     zeebo_shell = shell;
 }
 
+void * zeebo_get_shell( void )
+{
+    return zeebo_shell;
+}
+
 static void ** zeebo_vt( void * obj )
 {
     return *( void *** )obj;

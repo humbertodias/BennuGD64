@@ -96,6 +96,11 @@ The archive also contains `libmain.so` and `libSDL3.so` for integration and diag
     install='Install `bennugd64.pkg` on a jailbroken PS4.'
     data='Place `main.dcb` and game assets in `/mnt/usb0/bennugd64/` or `/data/bennugd64/`.'
     ;;
+  *-ps5-x86_64-*)
+    platform="PlayStation 5"
+    install='Load `bgdi.elf` with a PS5 ELF loader (elfldr, websrv, etaHEN, or the BD-J JAR loader).'
+    data='Place `main.dcb` and game assets in `/mnt/usb0/bennugd64/`, `/data/bennugd64/`, or `/user/homebrew/bennugd64/`. A `main.dcb` next to the ELF is also accepted.'
+    ;;
   *-xbox360-powerpc-*)
     platform="Xbox 360"
     install='Copy `xenon.elf` to the root of a FAT32 USB drive and boot it with XeLL Reloaded. This is a libXenon homebrew binary, not an XEX.'

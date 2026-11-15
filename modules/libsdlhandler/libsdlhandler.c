@@ -50,6 +50,9 @@
 #ifdef TARGET_PS4
 #include "libsdlhandler_ps4.h"
 #endif
+#ifdef TARGET_PS5
+#include "libsdlhandler_ps5.h"
+#endif
 
 /* ----------------------------------------------------------------- */
 /* Public functions                                                  */
@@ -68,6 +71,8 @@ static void  dump_new_events( void )
     libsdlhandler_ps3_pump();
 #elif defined(TARGET_PS4)
     libsdlhandler_ps4_pump();
+#elif defined(TARGET_PS5)
+    libsdlhandler_ps5_pump();
 #else
     SDL_Event event;
     /* Remove all pendings events */

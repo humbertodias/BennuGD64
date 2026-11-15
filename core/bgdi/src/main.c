@@ -84,6 +84,10 @@
 #include "main_ps4.h"
 #include "ps4_log.h"
 #endif
+#ifdef TARGET_PS5
+#include "main_ps5.h"
+#include "ps5_log.h"
+#endif
 #ifdef TARGET_XBOX360
 #include "main_xbox360.h"
 #endif
@@ -142,7 +146,7 @@ int main( int argc, char *argv[] )
     dcb_signature dcb_signature;
 
     /* disable stdout buffering */
-#if !defined(TARGET_PS2) && !defined(TARGET_PS4) && !defined(TARGET_XBOX) && !defined(TARGET_XBOX360)
+#if !defined(TARGET_PS2) && !defined(TARGET_PS4) && !defined(TARGET_PS5) && !defined(TARGET_XBOX) && !defined(TARGET_XBOX360)
     setvbuf( stdout, NULL, _IONBF, BUFSIZ );
 #endif
 
@@ -280,6 +284,24 @@ int main( int argc, char *argv[] )
         if ( ps4_dcb )
             filename = ps4_dcb;
         ps4_log_write( "bgdi: PS4 startup returned" );
+    }
+#endif
+
+#ifdef TARGET_PS5
+    {
+        static char * ps5_argv[2] = { "bgdi.elf", NULL };
+        char * ps5_dcb;
+
+        if ( argc < 1 || !argv || !argv[0] )
+        {
+            argc = 1;
+            argv = ps5_argv;
+        }
+
+        ps5_dcb = bgdi_ps5_startup( argc, argv, &standalone );
+        if ( ps5_dcb )
+            filename = ps5_dcb;
+        ps5_log_write( "bgdi: PS5 startup returned" );
     }
 #endif
 
@@ -557,6 +579,9 @@ fflush(stdout);
 #ifdef TARGET_PS4
         ps4_log_write( "bgdi: loading DCB" );
 #endif
+#ifdef TARGET_PS5
+        ps5_log_write( "bgdi: loading DCB" );
+#endif
         if ( !dcb_load( dcbname ) )
         {
             char ** dcbext = dcb_exts;
@@ -593,6 +618,9 @@ fflush(stdout);
 #ifdef TARGET_PS4
                 ps4_log_write( "bgdi: DCB load failed" );
 #endif
+#ifdef TARGET_PS5
+                ps5_log_write( "bgdi: DCB load failed" );
+#endif
 #ifdef TARGET_XBOX
                 {
                     char msg[256];
@@ -606,6 +634,9 @@ fflush(stdout);
         }
 #ifdef TARGET_PS4
         ps4_log_write( "bgdi: DCB loaded" );
+#endif
+#ifdef TARGET_PS5
+        ps5_log_write( "bgdi: DCB loaded" );
 #endif
 #ifdef TARGET_XBOX
         debugPrint( "DCB loaded\n" );
@@ -625,9 +656,15 @@ fflush(stdout);
 #ifdef TARGET_PS4
     ps4_log_write( "bgdi: initializing modules" );
 #endif
+#ifdef TARGET_PS5
+    ps5_log_write( "bgdi: initializing modules" );
+#endif
     sysproc_init() ;
 #ifdef TARGET_PS4
     ps4_log_write( "bgdi: modules initialized" );
+#endif
+#ifdef TARGET_PS5
+    ps5_log_write( "bgdi: modules initialized" );
 #endif
 #ifdef TARGET_XBOX
     debugPrint( "modules ok\n" );
@@ -642,6 +679,9 @@ fflush(stdout);
 #ifdef TARGET_PS4
     ps4_log_write( "bgdi: entering runtime" );
 #endif
+#ifdef TARGET_PS5
+    ps5_log_write( "bgdi: entering runtime" );
+#endif
     bgdrtm_entry( argc, argv );
 
     if ( mainproc )
@@ -649,6 +689,9 @@ fflush(stdout);
         mainproc_running = instance_new( mainproc, NULL ) ;
 #ifdef TARGET_PS4
         ps4_log_write( "bgdi: starting scheduler" );
+#endif
+#ifdef TARGET_PS5
+        ps5_log_write( "bgdi: starting scheduler" );
 #endif
 #ifdef TARGET_XBOX
         debugPrint( "starting game\n" );

@@ -67,6 +67,9 @@
 #ifdef TARGET_PS4
 #include "misc_ps4.h"
 #endif
+#ifdef TARGET_PS5
+#include "misc_ps5.h"
+#endif
 
 #if defined(TARGET_GP2X_WIZ) || defined(TARGET_CAANOO)
     #include <sys/types.h>
@@ -213,6 +216,13 @@ int debug = 0;  /* 1 if running in debug mode      */
 #undef _OS_ID
 #endif
 #define _OS_ID          OS_PS4
+#endif
+
+#ifdef TARGET_PS5
+#ifdef _OS_ID
+#undef _OS_ID
+#endif
+#define _OS_ID          OS_PS5
 #endif
 
 #ifdef TARGET_XBOX360
@@ -379,6 +389,9 @@ void bgdrtm_entry( int argc, char * argv[] )
 #endif
 #ifdef TARGET_PS4
     bgdrtm_ps4_entry();
+#endif
+#ifdef TARGET_PS5
+    bgdrtm_ps5_entry();
 #endif
 #endif
 

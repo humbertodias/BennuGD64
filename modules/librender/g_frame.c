@@ -56,6 +56,9 @@ extern bool retro_enable_frame_limiter;
 #ifdef TARGET_PS4
 #include "g_frame_ps4.h"
 #endif
+#ifdef TARGET_PS5
+#include "g_frame_ps5.h"
+#endif
 #ifdef TARGET_XBOX360
 #include "g_frame_xbox360.h"
 #endif
@@ -144,6 +147,8 @@ static int bennu_get_ticks_ms( void )
     return gr_frame_wii_get_ticks_ms();
 #elif defined(TARGET_PS4)
     return gr_frame_ps4_get_ticks_ms();
+#elif defined(TARGET_PS5)
+    return gr_frame_ps5_get_ticks_ms();
 #elif defined(TARGET_XBOX360)
     return gr_frame_xbox360_get_ticks_ms();
 #elif defined(TARGET_XBOX)
@@ -161,6 +166,8 @@ static void bennu_delay_ms( int delay )
     gr_frame_wii_delay_ms( delay );
 #elif defined(TARGET_PS4)
     gr_frame_ps4_delay_ms( delay );
+#elif defined(TARGET_PS5)
+    gr_frame_ps5_delay_ms( delay );
 #elif defined(TARGET_XBOX360)
     gr_frame_xbox360_delay_ms( delay );
 #elif defined(TARGET_XBOX)

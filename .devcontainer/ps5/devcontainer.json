@@ -1,0 +1,28 @@
+{
+  "name": "BennuGD64 PS5 (payload SDK)",
+  "build": {
+    "dockerfile": "../../docker/Dockerfile.ps5",
+    "context": "../../docker",
+    "args": {
+      "PS5_PAYLOAD_SDK_VERSION": "v0.45"
+    }
+  },
+  "workspaceFolder": "/src",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/src,type=bind,consistency=cached",
+  "remoteUser": "root",
+  "containerEnv": {
+    "PS5_PAYLOAD_SDK": "/opt/ps5-payload-sdk"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "twxs.cmake"
+      ]
+    },
+    "zed": {
+      "extensions": ["dockerfile", "make"]
+    }
+  }
+}

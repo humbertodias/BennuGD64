@@ -42,6 +42,9 @@
 #ifdef TARGET_PS4
 #include "ps4_platform.h"
 #endif
+#ifdef TARGET_PS5
+#include "ps5_platform.h"
+#endif
 
 #include <time.h>
 
@@ -52,6 +55,8 @@ static int modtime_get_timer( INSTANCE * my, intptr_t * params )
 {
 #ifdef TARGET_PS4
     return ps4_platform_get_ticks_ms() ;
+#elif defined(TARGET_PS5)
+    return ps5_platform_get_ticks_ms() ;
 #else
     return SDL_GetTicks() ;
 #endif

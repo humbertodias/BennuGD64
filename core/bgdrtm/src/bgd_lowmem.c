@@ -7,12 +7,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#if defined(__linux__) && defined(__x86_64__) && !defined(TARGET_PS4)
+#if defined(__linux__) && defined(__x86_64__) && !defined(TARGET_PS4) && !defined(TARGET_PS5)
 #include <sys/mman.h>
 #include <unistd.h>
 #endif
 #ifdef TARGET_PS4
 #include "bgd_lowmem_ps4.h"
+#endif
+#ifdef TARGET_PS5
+#include "bgd_lowmem_ps5.h"
 #endif
 
 #include "bgd_lowmem.h"
@@ -36,7 +39,7 @@ static void * bgd_low_alloc( size_t size, int zeroed )
 
     total = sizeof( bgd_low_hdr ) + size;
 
-#if defined(__linux__) && defined(__x86_64__) && !defined(TARGET_PS4)
+#if defined(__linux__) && defined(__x86_64__) && !defined(TARGET_PS4) && !defined(TARGET_PS5)
     {
         size_t page = ( size_t ) sysconf( _SC_PAGESIZE );
         size_t mapped = ( total + page - 1 ) & ~( page - 1 );
@@ -52,12 +55,16 @@ static void * bgd_low_alloc( size_t size, int zeroed )
             return hdr + 1;
         }
     }
-#elif defined(TARGET_PS4) && defined(__x86_64__)
+#elif (defined(TARGET_PS4) || defined(TARGET_PS5)) && defined(__x86_64__)
     {
         size_t page = 16384;
         size_t mapped = ( total + page - 1 ) & ~( page - 1 );
 
+#if defined(TARGET_PS5)
+        map = bgd_lowmem_ps5_map( mapped );
+#else
         map = bgd_lowmem_ps4_map( mapped );
+#endif
         if ( map )
         {
             hdr = ( bgd_low_hdr * ) map;
@@ -71,7 +78,7 @@ static void * bgd_low_alloc( size_t size, int zeroed )
 
     hdr = ( bgd_low_hdr * ) malloc( total );
     if ( !hdr ) return NULL;
-#if defined(TARGET_PS4) && defined(__x86_64__)
+#if (defined(TARGET_PS4) || defined(TARGET_PS5)) && defined(__x86_64__)
     if ( ( uintptr_t )( hdr + 1 ) + size - 1 > UINT32_MAX )
     {
         free( hdr );
@@ -108,12 +115,16 @@ void bgd_low_free( void * ptr )
         return;
     }
 
-#if defined(TARGET_PS4) && defined(__x86_64__)
+#if (defined(TARGET_PS4) || defined(TARGET_PS5)) && defined(__x86_64__)
     if ( hdr->magic == BGD_LOW_MAGIC_MMAP )
     {
         size_t total = hdr->total;
         hdr->magic = 0;
+#if defined(TARGET_PS5)
+        bgd_lowmem_ps5_unmap( hdr, total );
+#else
         bgd_lowmem_ps4_unmap( hdr, total );
+#endif
         return;
     }
 #elif defined(__linux__) && defined(__x86_64__)

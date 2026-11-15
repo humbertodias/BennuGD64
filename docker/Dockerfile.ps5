@@ -1,0 +1,77 @@
+# PlayStation 5 payload toolchain.
+#   docker build -t bennugd64-ps5 -f docker/Dockerfile.ps5 docker/
+#   docker run --rm -v "$PWD":/src -w /src bennugd64-ps5 cmake --preset ps5-x86_64
+#
+# Toolchain only: does not clone this repo or bake Bennu into the image.
+# The image unpacks ps5-payload-sdk (prospero-clang wrappers, FreeBSD
+# sysroot, sce stubs). Host clang/lld are the compilers those wrappers call.
+
+ARG PS5_PAYLOAD_SDK_VERSION=v0.45
+
+FROM ubuntu:24.04 AS setup
+
+ARG PS5_PAYLOAD_SDK_VERSION
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        unzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /tmp/ps5-sdk /opt \
+    && curl -fsSL \
+        "https://github.com/ps5-payload-dev/sdk/releases/download/${PS5_PAYLOAD_SDK_VERSION}/ps5-payload-sdk.zip" \
+        -o /tmp/ps5-payload-sdk.zip \
+    && unzip -q /tmp/ps5-payload-sdk.zip -d /tmp/ps5-sdk \
+    && test -f /tmp/ps5-sdk/ps5-payload-sdk/toolchain/prospero.cmake \
+    && test -x /tmp/ps5-sdk/ps5-payload-sdk/bin/prospero-clang \
+    && rm -rf /opt/ps5-payload-sdk \
+    && mv /tmp/ps5-sdk/ps5-payload-sdk /opt/ps5-payload-sdk \
+    && rm -rf /tmp/ps5-sdk /tmp/ps5-payload-sdk.zip
+
+FROM ubuntu:24.04
+
+ARG PS5_PAYLOAD_SDK_VERSION
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PLATFORM=ps5 \
+    PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk \
+    PS5_PAYLOAD_SDK_VERSION=${PS5_PAYLOAD_SDK_VERSION} \
+    PATH="/opt/ps5-payload-sdk/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+COPY --from=setup /opt/ps5-payload-sdk /opt/ps5-payload-sdk
+
+# libm lives inside libSceLibcInternal. The empty archive only satisfies -lm.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        clang \
+        cmake \
+        curl \
+        gcc \
+        g++ \
+        git \
+        lld \
+        llvm \
+        ninja-build \
+        pkg-config \
+        python3 \
+        python-is-python3 \
+        unzip \
+        zip \
+    && rm -rf /var/lib/apt/lists/* \
+    && git config --system --add safe.directory '*' \
+    && printf '%s\n' 'void __ps5_libm_anchor(void) {}' > /tmp/libm_anchor.c \
+    && /opt/ps5-payload-sdk/bin/prospero-clang -c /tmp/libm_anchor.c -o /tmp/libm_anchor.o \
+    && llvm-ar rcs /opt/ps5-payload-sdk/target/lib/libm.a /tmp/libm_anchor.o \
+    && rm -f /tmp/libm_anchor.c /tmp/libm_anchor.o \
+    && chmod -R a+rX /opt/ps5-payload-sdk \
+    && test -f /opt/ps5-payload-sdk/toolchain/prospero.cmake \
+    && test -f /opt/ps5-payload-sdk/target/lib/crt1.o \
+    && test -e /opt/ps5-payload-sdk/target/lib/libSceVideoOut.so \
+    && command -v clang \
+    && command -v ld.lld \
+    && command -v llvm-config
+
+WORKDIR /src
+CMD ["bash"]

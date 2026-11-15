@@ -19,6 +19,7 @@
 #   bash scripts/build.sh ps2
 #   bash scripts/build.sh ps3
 #   bash scripts/build.sh ps4
+#   bash scripts/build.sh ps5
 #   bash scripts/build.sh xbox
 #   bash scripts/build.sh xbox360
 #   bash scripts/build.sh pandora
@@ -45,6 +46,7 @@ USAGE="usage: $0 linux|windows [static|shared|libretro|shell]
        $0 ps2 [libretro|shell]
        $0 ps3 [libretro|shell]
        $0 ps4 [libretro|shell]
+       $0 ps5 [libretro|shell]
        $0 xbox [libretro|shell]
        $0 xbox360 [libretro|shell]
        $0 pandora [libretro|shell]
@@ -67,7 +69,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|ps4|xbox|xbox360|pandora|zeebo|wii|macos) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|ps4|ps5|xbox|xbox360|pandora|zeebo|wii|macos) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -152,6 +154,12 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
       --build-arg OO_PS4_TOOLCHAIN_ASSET="${OO_PS4_TOOLCHAIN_ASSET:-toolchain-llvm-18.tar.gz}" \
       -t bennugd64-ps4 \
       -f docker/Dockerfile.ps4 \
+      docker/
+  elif [[ "${PLATFORM}" == "ps5" ]]; then
+    docker build \
+      --build-arg PS5_PAYLOAD_SDK_VERSION="${PS5_PAYLOAD_SDK_VERSION:-v0.45}" \
+      -t bennugd64-ps5 \
+      -f docker/Dockerfile.ps5 \
       docker/
   elif [[ "${PLATFORM}" == "xbox" ]]; then
     docker build \
@@ -398,6 +406,11 @@ if [[ "${2:-}" == "libretro" || "${3:-}" == "libretro" || "${4:-}" == "libretro"
       PRESET="ps4-x86_64-libretro"
       BUILD_DIR="/src/build-ps4-x86_64-libretro"
       STAGE="/src/dist/ps4-x86_64-libretro"
+      ;;
+    ps5)
+      PRESET="ps5-x86_64-libretro"
+      BUILD_DIR="/src/build-ps5-x86_64-libretro"
+      STAGE="/src/dist/ps5-x86_64-libretro"
       ;;
     xbox)
       PRESET="xbox-i386-libretro"
@@ -1737,6 +1750,72 @@ PY
       test -s "${STAGE}/bennugd64.pkg"
       test -s "${STAGE}/eboot.bin"
       test -s "${STAGE}/bgdi.elf"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "ps5" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: ps5-host + ps5-x86_64"
+  echo "version: ${BENNUGD_VERSION}"
+  scrub_fetchcontent "${ROOT}/build-ps5-host/_deps"
+  scrub_fetchcontent "${ROOT}/build-ps5-x86_64/_deps"
+  docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -n "${PS5_PAYLOAD_SDK:-}"
+      test -f "${PS5_PAYLOAD_SDK}/toolchain/prospero.cmake"
+      test -x "${PS5_PAYLOAD_SDK}/bin/prospero-clang"
+      HOST_BUILD=/src/build-ps5-host
+      PS5_BUILD=/src/build-ps5-x86_64
+      STAGE=/src/dist/ps5-x86_64-static
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset ps5-host "${COMMON[@]}"
+      cmake --build --preset ps5-host
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
+      cmake --preset ps5-x86_64 "${COMMON[@]}"
+      cmake --build --preset ps5-x86_64
+      ELF=""
+      for cand in \
+        "${PS5_BUILD}/core/bgdi/src/bgdi.elf" \
+        "${PS5_BUILD}/core/bgdi/src/bgdi"
+      do
+        if [[ -f "${cand}" ]]; then
+          ELF="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${ELF}" ]]; then
+        ELF="$(find "${PS5_BUILD}/core/bgdi" \( -type f -o -type l \) \( -name bgdi.elf -o -name bgdi \) | grep -v /CMakeFiles/ | head -n 1 || true)"
+      fi
+      test -n "${ELF}"
+      test -s "${ELF}"
+      rm -rf "${STAGE}"
+      mkdir -p "${STAGE}"
+      cmake --install "${PS5_BUILD}" --prefix "${STAGE}"
+      cp "${ELF}" "${STAGE}/bgdi.elf"
+      cp /src/platforms/web/demo/*.dcb "${STAGE}/"
+      cp /src/platforms/web/demo/hello.dcb "${STAGE}/main.dcb"
+      test -s "${STAGE}/bgdi.elf"
+      test -s "${STAGE}/main.dcb"
     '
   exit 0
 fi

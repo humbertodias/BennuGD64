@@ -57,6 +57,9 @@
 #ifdef TARGET_PS4
 #include "mod_sound_ps4.h"
 #endif
+#ifdef TARGET_PS5
+#include "mod_sound_ps5.h"
+#endif
 #ifdef TARGET_XBOX360
 #include "mod_sound_xbox360.h"
 #endif
@@ -70,7 +73,7 @@
 #include "mod_sound_zeebo.h"
 #endif
 
-#ifdef MODSOUND_PS4_DUMMY_AUDIO
+#if defined(MODSOUND_PS4_DUMMY_AUDIO) || defined(MODSOUND_PS5_DUMMY_AUDIO)
 /* Reuse the module's existing no-audio API behavior while keeping exports. */
 #define TARGET_DINGUX_A320
 #endif
@@ -257,6 +260,9 @@ static int sound_init()
 #ifdef TARGET_PS4
     modsound_ps4_prepare();
 #endif
+#ifdef TARGET_PS5
+    modsound_ps5_prepare();
+#endif
 #ifdef TARGET_XBOX360
     modsound_xbox360_prepare();
 #endif
@@ -298,6 +304,9 @@ static int sound_init()
 #ifdef TARGET_PS4
     modsound_ps4_adjust_spec( &spec );
 #endif
+#ifdef TARGET_PS5
+    modsound_ps5_adjust_spec( &spec );
+#endif
 #ifdef TARGET_XBOX360
     modsound_xbox360_adjust_spec( &spec );
 #endif
@@ -305,7 +314,7 @@ static int sound_init()
     modsound_xbox_adjust_spec( &spec );
 #endif
 
-#if defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_LIBRETRO) || defined(TARGET_ZEEBO)
+#if defined(TARGET_PS4) || defined(TARGET_PS5) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_LIBRETRO) || defined(TARGET_ZEEBO)
     mixer = MIX_CreateMixer( &spec );
 #else
     mixer = MIX_CreateMixerDevice( SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec );
@@ -359,6 +368,18 @@ static int sound_init()
                 channels[i] = NULL;
             }
         }
+        MIX_DestroyTrack( music_track );
+        music_track = NULL;
+        MIX_DestroyMixer( mixer );
+        mixer = NULL;
+        MIX_Quit();
+        return -1;
+    }
+#endif
+#ifdef TARGET_PS5
+    if ( modsound_ps5_start_output( mixer ) != 0 )
+    {
+        fprintf( stderr, "[SOUND] No se pudo iniciar PS5 AudioOut\n" );
         MIX_DestroyTrack( music_track );
         music_track = NULL;
         MIX_DestroyMixer( mixer );
@@ -439,6 +460,9 @@ static void sound_close()
 
 #ifdef TARGET_PS4
     modsound_ps4_stop_output();
+#endif
+#ifdef TARGET_PS5
+    modsound_ps5_stop_output();
 #endif
 #ifdef TARGET_XBOX360
     modsound_xbox360_stop_output();
@@ -524,6 +548,9 @@ static int load_song( const char * filename )
     if ( !io ) return ( 0 );
 #elif defined(TARGET_PS4)
     io = modsound_ps4_slurp_file( fp );
+    if ( !io ) return ( 0 );
+#elif defined(TARGET_PS5)
+    io = modsound_ps5_slurp_file( fp );
     if ( !io ) return ( 0 );
 #else
     io = SDL_IOFromBGDFP( fp );
@@ -842,6 +869,9 @@ static int load_wav( const char * filename )
     if ( !io ) return ( 0 );
 #elif defined(TARGET_PS4)
     io = modsound_ps4_slurp_file( fp );
+    if ( !io ) return ( 0 );
+#elif defined(TARGET_PS5)
+    io = modsound_ps5_slurp_file( fp );
     if ( !io ) return ( 0 );
 #else
     io = SDL_IOFromBGDFP( fp );
@@ -2140,6 +2170,8 @@ void  __bgdexport( mod_sound, module_initialize )()
 #elif defined(TARGET_PS3)
     return;
 #elif defined(TARGET_PS4)
+    return;
+#elif defined(TARGET_PS5)
     return;
 #elif defined(TARGET_XBOX360)
     return;

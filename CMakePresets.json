@@ -344,6 +344,26 @@
       }
     },
     {
+      "name": "ps5-host",
+      "inherits": "static",
+      "displayName": "Native bgdc used to compile PS5 demo DCBs",
+      "binaryDir": "${sourceDir}/build-ps5-host",
+      "cacheVariables": {
+        "COMPILER_ONLY": "ON"
+      }
+    },
+    {
+      "name": "ps5-x86_64",
+      "inherits": "base",
+      "displayName": "PlayStation 5 interpreter (bgdi.elf payload)",
+      "binaryDir": "${sourceDir}/build-ps5-x86_64",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/ps5dev.cmake",
+      "cacheVariables": {
+        "STATIC_MODULES": "ON",
+        "INTERPRETER_ONLY": "ON"
+      }
+    },
+    {
       "name": "xbox360-host",
       "inherits": "static",
       "displayName": "Native bgdc used to compile Xbox 360 demo DCBs",
@@ -600,6 +620,16 @@
       "inherits": "ps4-x86_64",
       "displayName": "PlayStation 4 libretro core",
       "binaryDir": "${sourceDir}/build-ps4-x86_64-libretro",
+      "cacheVariables": {
+        "INTERPRETER_ONLY": "ON",
+        "BENNUGD_LIBRETRO": "ON"
+      }
+    },
+    {
+      "name": "ps5-x86_64-libretro",
+      "inherits": "ps5-x86_64",
+      "displayName": "PlayStation 5 libretro core",
+      "binaryDir": "${sourceDir}/build-ps5-x86_64-libretro",
       "cacheVariables": {
         "INTERPRETER_ONLY": "ON",
         "BENNUGD_LIBRETRO": "ON"
@@ -866,6 +896,20 @@
       ]
     },
     {
+      "name": "ps5-host",
+      "configurePreset": "ps5-host",
+      "targets": [
+        "bgdc"
+      ]
+    },
+    {
+      "name": "ps5-x86_64",
+      "configurePreset": "ps5-x86_64",
+      "targets": [
+        "bgdi"
+      ]
+    },
+    {
       "name": "xbox360-host",
       "configurePreset": "xbox360-host",
       "targets": [
@@ -1006,6 +1050,10 @@
     {
       "name": "ps4-x86_64-libretro",
       "configurePreset": "ps4-x86_64-libretro"
+    },
+    {
+      "name": "ps5-x86_64-libretro",
+      "configurePreset": "ps5-x86_64-libretro"
     },
     {
       "name": "xbox-i386-libretro",

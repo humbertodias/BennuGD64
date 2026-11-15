@@ -91,6 +91,7 @@ bash scripts/build.sh zeebo
 bash scripts/build.sh ps2
 bash scripts/build.sh ps3
 bash scripts/build.sh ps4
+bash scripts/build.sh ps5
 bash scripts/build.sh psp
 bash scripts/build.sh switch
 bash scripts/build.sh tvos

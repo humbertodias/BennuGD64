@@ -83,6 +83,7 @@ constants_def[] =
     { "OS_XBOX"         , TYPE_DWORD, OS_XBOX             },
     { "OS_XBOX360"      , TYPE_DWORD, OS_XBOX360          },
     { "OS_ZEEBO"        , TYPE_DWORD, OS_ZEEBO            },
+    { "OS_PS5"          , TYPE_DWORD, OS_PS5              },
 
     { "MIN_INT"         , TYPE_INT  , -2147483647L - 1    },
     { "MAX_INT"         , TYPE_INT  , 2147483647L         },

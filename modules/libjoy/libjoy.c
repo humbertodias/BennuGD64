@@ -66,6 +66,9 @@
 #if defined(TARGET_PS4)
 #include "libjoy_ps4.h"
 #endif
+#if defined(TARGET_PS5)
+#include "libjoy_ps5.h"
+#endif
 #if defined(TARGET_XBOX360)
 #include "libjoy_xbox360.h"
 #endif
@@ -104,6 +107,19 @@
 #define libjoy_plat_get_accel    libjoy_ps4_get_accel
 #define libjoy_plat_initialize   libjoy_ps4_module_initialize
 #define libjoy_plat_finalize     libjoy_ps4_module_finalize
+#endif
+#if defined(TARGET_PS5)
+#define libjoy_plat_num          libjoy_ps5_num
+#define libjoy_plat_name         libjoy_ps5_name
+#define libjoy_plat_buttons      libjoy_ps5_buttons
+#define libjoy_plat_axes         libjoy_ps5_axes
+#define libjoy_plat_hats         libjoy_ps5_hats
+#define libjoy_plat_get_button   libjoy_ps5_get_button
+#define libjoy_plat_get_position libjoy_ps5_get_position
+#define libjoy_plat_get_hat      libjoy_ps5_get_hat
+#define libjoy_plat_get_accel    libjoy_ps5_get_accel
+#define libjoy_plat_initialize   libjoy_ps5_module_initialize
+#define libjoy_plat_finalize     libjoy_ps5_module_finalize
 #endif
 #if defined(TARGET_XBOX360)
 #define libjoy_plat_num          libjoy_xbox360_num
@@ -161,7 +177,7 @@
 #define libjoy_plat_finalize     libjoy_zeebo_module_finalize
 #endif
 
-#if defined(TARGET_WII) || defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_LIBRETRO) || defined(TARGET_ZEEBO)
+#if defined(TARGET_WII) || defined(TARGET_PS4) || defined(TARGET_PS5) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_LIBRETRO) || defined(TARGET_ZEEBO)
 #define LIBJOY_NATIVE_PLATFORM
 #endif
 
@@ -788,6 +804,9 @@ HOOK __bgdexport( libjoy, handler_hooks )[] =
 #endif
 #if defined(TARGET_PS4)
     { 4900, libjoy_ps4_pump },
+#endif
+#if defined(TARGET_PS5)
+    { 4900, libjoy_ps5_pump },
 #endif
 #if defined(TARGET_XBOX360)
     { 4900, libjoy_xbox360_pump },

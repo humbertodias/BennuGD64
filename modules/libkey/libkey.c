@@ -75,6 +75,9 @@
 #ifdef TARGET_ZEEBO
 #include "libkey_zeebo.h"
 #endif
+#ifdef TARGET_LIBRETRO
+extern const bool * libsdlhandler_libretro_keystate( void );
+#endif
 
 /* ---------------------------------------------------------------------- */
 
@@ -332,6 +335,15 @@ static void process_key_events()
 #endif
 
     /* Actualizar eventos */
+
+#ifdef TARGET_LIBRETRO
+    /* Dummy SDL never sees the frontend keyboard. key() reads this array. */
+    {
+        const bool * lr_keys = libsdlhandler_libretro_keystate();
+        if ( lr_keys )
+            keystate = lr_keys;
+    }
+#endif
 
     keypress = 0 ;
     m = SDL_GetModState() ;

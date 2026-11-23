@@ -60,7 +60,7 @@ bash scripts/build.sh windows libretro
 | `ps2` | `docker/Dockerfile.ps2` | `dist/ps2-mips-static/` (`bgdi.elf`, `bennugd64.iso`) |
 | `ps3` | `docker/Dockerfile.ps3` | `dist/ps3-ppu-static/` (`bennugd64.pkg`) |
 | `ps4` | `docker/Dockerfile.ps4` | `dist/ps4-x86_64-static/` (`bennugd64.pkg`) |
-| `ps5` | `docker/Dockerfile.ps5` | `dist/ps5-x86_64-static/` (`bgdi.elf`) |
+| `ps5` | `docker/Dockerfile.ps5` | `dist/ps5-x86_64-static/` (`bennugd64.pkg`) |
 | `pandora` | `docker/Dockerfile.pandora` | `dist/pandora-arm-static/` (`bennugd64.pnd`) |
 | `zeebo` | `docker/Dockerfile.zeebo` (`hldtux/zeebo-sdk`) | `dist/zeebo-arm-static/` (`bgdi.elf`) |
 | `wii` | `docker/Dockerfile.wii` | `dist/wii-powerpc-static/` (`apps/bennugd64/boot.dol`) |
@@ -68,7 +68,7 @@ bash scripts/build.sh windows libretro
 | `macos arm64` / `macos arm64 shared` / `macos arm64 libretro` | `docker/Dockerfile.macos` | `dist/macos-arm64-{static,shared,libretro}/` |
 | `windows` / `windows shared` / `windows libretro` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared,libretro}/` |
 
-The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native `bgdc` + osxcross `bgdi.app`; iOS: native `bgdc` + osxcross `bgdi.app`; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; PS4: native `bgdc` + OpenOrbis `bgdi.elf` + `create-fself` / `PkgTool`; PS5: native `bgdc` + ps5-payload-sdk `bgdi.elf`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Zeebo: native `bgdc` + arm-none-eabi `bgdi.elf` + `elf2mod`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
+The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native `bgdc` + osxcross `bgdi.app`; iOS: native `bgdc` + osxcross `bgdi.app`; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; PS4: native `bgdc` + OpenOrbis `bgdi.elf` + `create-fself` / `PkgTool`; PS5: native `bgdc` + ps5-payload-sdk `bgdi.elf` + `bennugd-ps5-pkg`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Zeebo: native `bgdc` + arm-none-eabi `bgdi.elf` + `elf2mod`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
 
 ## Libretro (RetroArch)
 
@@ -167,7 +167,7 @@ MinGW-w64 on Windows). Presets in `CMakePresets.json`:
 | `ps4-host` | `build-ps4-host` | Native `bgdc` for PS4 demo DCBs |
 | `ps4-x86_64` | `build-ps4-x86_64` | OpenOrbis `bgdi.elf` (needs `OO_PS4_TOOLCHAIN`) |
 | `ps5-host` | `build-ps5-host` | Native `bgdc` for PS5 demo DCBs |
-| `ps5-x86_64` | `build-ps5-x86_64` | ps5-payload-sdk `bgdi.elf` (needs `PS5_PAYLOAD_SDK`) |
+| `ps5-x86_64` | `build-ps5-x86_64` | ps5-payload-sdk `bgdi.elf`, then `bennugd64.pkg` (needs `PS5_PAYLOAD_SDK`) |
 | `pandora-host` | `build-pandora-host` | Native `bgdc` for Pandora demo DCBs |
 | `pandora-arm` | `build-pandora-arm` | Ångström `bgdi` (needs `TOOLCHAIN=/opt/openpandora`) |
 | `zeebo-host` | `build-zeebo-host` | Native `bgdc` for Zeebo demo DCBs |
@@ -572,20 +572,21 @@ packaging step and is not copied from an OpenOrbis sample.
 
 ## PlayStation 5
 
-Needs Docker. `docker/Dockerfile.ps5` unpacks [ps5-payload-sdk](https://github.com/ps5-payload-dev/sdk) (`PS5_PAYLOAD_SDK`, `prospero-clang`) onto Ubuntu 24.04 with host clang/lld. It does not clone this repo or bake Bennu into the image. The SDK wrappers call the host compiler, so the image is not pinned to amd64.
+Needs Docker. `docker/Dockerfile.ps5` unpacks [ps5-payload-sdk](https://github.com/ps5-payload-dev/sdk) (`PS5_PAYLOAD_SDK`, `prospero-clang`) onto Ubuntu 24.04 with host clang/lld, and publishes `bennugd-ps5-pkg` (links [LibProsperoPkg](https://github.com/SvenGDK/LibProsperoPKG)). It does not clone this repo or bake Bennu into the image. The SDK wrappers call the host compiler, so the image is not pinned to amd64.
 
 ```shell
 bash scripts/build.sh ps5
 ```
 
-That configures native `bgdc` (`ps5-host`), compiles `platforms/web/demo/*.prg`, and cross-compiles `bgdi.elf` (`ps5-x86_64`) into `dist/ps5-x86_64-static/`. There is no PKG: load `bgdi.elf` with an ELF loader (elfldr, websrv, etaHEN, or the BD-J JAR loader). `hello.dcb` is copied to `main.dcb` beside the ELF.
+That configures native `bgdc` (`ps5-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi.elf` (`ps5-x86_64`), then packs `dist/ps5-x86_64-static/bennugd64.pkg` (title id `PPSA64001`, content id `IV0000-PPSA64001_00-BENNUGD640000000`). Install the fPKG on a PS5 with fPKG support (etaHEN). `bgdi.elf` is still copied beside the package for an ELF loader (elfldr, websrv, etaHEN, or the BD-J JAR loader). `hello.dcb` is bundled as `/app0/main.dcb`.
 
 **Where `main.dcb` goes** (first match wins):
 
 1. `/mnt/usb0/bennugd64/main.dcb`
 2. `/data/bennugd64/main.dcb`
 3. `/user/homebrew/bennugd64/main.dcb`
-4. `main.dcb` in the loader's working directory
+4. `/app0/main.dcb` — bundled in the PKG
+5. `main.dcb` in the loader's working directory
 
 Other assets (FPG, WAV, …) also go in those search paths. Compile with the matching `ps5-host` `bgdc`.
 

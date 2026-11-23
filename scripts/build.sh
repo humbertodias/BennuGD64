@@ -158,6 +158,7 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
   elif [[ "${PLATFORM}" == "ps5" ]]; then
     docker build \
       --build-arg PS5_PAYLOAD_SDK_VERSION="${PS5_PAYLOAD_SDK_VERSION:-v0.45}" \
+      --build-arg LIBPROSPEROPKG_VERSION="${LIBPROSPEROPKG_VERSION:-v2.5}" \
       -t bennugd64-ps5 \
       -f docker/Dockerfile.ps5 \
       docker/
@@ -1780,7 +1781,14 @@ if [[ "${PLATFORM}" == "ps5" ]]; then
       test -x "${PS5_PAYLOAD_SDK}/bin/prospero-clang"
       HOST_BUILD=/src/build-ps5-host
       PS5_BUILD=/src/build-ps5-x86_64
+      PKGDIR=/src/build-ps5-pkg
       STAGE=/src/dist/ps5-x86_64-static
+      # platforms/ps5/pkg.env is documented alongside the PKG metadata.
+      source /src/platforms/ps5/pkg.env
+      GAME_TITLE="${TITLE}"
+      GAME_ID="${TITLE_ID}"
+      APPVERSION="${VERSION}"
+      test -x /opt/ps5-pkg/bennugd-ps5-pkg
       COMMON=(
         -DBENNUGD_VERSION="${BENNUGD_VERSION}"
         -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
@@ -1808,12 +1816,43 @@ if [[ "${PLATFORM}" == "ps5" ]]; then
       fi
       test -n "${ELF}"
       test -s "${ELF}"
-      rm -rf "${STAGE}"
-      mkdir -p "${STAGE}"
+      rm -rf "${PKGDIR}" "${STAGE}"
+      mkdir -p "${PKGDIR}/sce_sys" "${STAGE}"
+      cp "${ELF}" "${PKGDIR}/eboot.bin"
+      cp /src/platforms/web/demo/*.dcb "${PKGDIR}/"
+      cp /src/platforms/web/demo/hello.dcb "${PKGDIR}/main.dcb"
+      python3 - <<'"'"'PY'"'"'
+import struct, zlib, pathlib
+path = pathlib.Path("/src/build-ps5-pkg/sce_sys/icon0.png")
+path.parent.mkdir(parents=True, exist_ok=True)
+def chunk(tag, data):
+    return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xffffffff)
+width = height = 512
+rows = []
+for y in range(height):
+    row = bytearray([0])
+    for x in range(width):
+        band = 18 if ((x // 64) + (y // 64)) % 2 else 0
+        row.extend((20 + band, 36 + band, 96 + band))
+    rows.append(bytes(row))
+raw = b"".join(rows)
+png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
+path.write_bytes(png)
+PY
+      /opt/ps5-pkg/bennugd-ps5-pkg \
+        "${PKGDIR}" "${PKGDIR}/out" \
+        "${CONTENT_ID}" "${GAME_ID}" "${GAME_TITLE}" "${APPVERSION}"
+      PKG_OUT=""
+      for cand in "${PKGDIR}/out/${CONTENT_ID}"*.pkg "${PKGDIR}/out"/*.pkg; do
+        if [[ -f "${cand}" ]]; then PKG_OUT="${cand}"; break; fi
+      done
+      test -n "${PKG_OUT}"
+      cp "${PKG_OUT}" "${STAGE}/bennugd64.pkg"
       cmake --install "${PS5_BUILD}" --prefix "${STAGE}"
       cp "${ELF}" "${STAGE}/bgdi.elf"
+      cp "${PKGDIR}/main.dcb" "${STAGE}/main.dcb"
       cp /src/platforms/web/demo/*.dcb "${STAGE}/"
-      cp /src/platforms/web/demo/hello.dcb "${STAGE}/main.dcb"
+      test -s "${STAGE}/bennugd64.pkg"
       test -s "${STAGE}/bgdi.elf"
       test -s "${STAGE}/main.dcb"
     '

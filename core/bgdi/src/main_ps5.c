@@ -1,8 +1,8 @@
 /*
  * PlayStation 5 interpreter entry: pad, search path, default DCB.
  *
- * A payload has no PKG /app0. USB, /data and /user/homebrew drop-ins win
- * over a main.dcb sitting next to the ELF.
+ * USB, /data and /user/homebrew drop-ins win over the PKG /app0 copy
+ * and over a main.dcb sitting next to the ELF.
  */
 
 #include <stdio.h>
@@ -121,6 +121,7 @@ static void ps5_use_dcb( const char * dcb_path )
         "/mnt/usb0/bennugd64/",
         "/data/bennugd64/",
         "/user/homebrew/bennugd64/",
+        "/app0/",
         NULL
     };
     const char * root;
@@ -187,6 +188,7 @@ char * bgdi_ps5_startup( int argc, char * argv[], int * standalone )
         "/mnt/usb0/bennugd64/main.dcb",
         "/data/bennugd64/main.dcb",
         "/user/homebrew/bennugd64/main.dcb",
+        "/app0/main.dcb",
         "main.dcb",
         NULL
     };
@@ -207,6 +209,7 @@ char * bgdi_ps5_startup( int argc, char * argv[], int * standalone )
     file_addp( "/mnt/usb0/bennugd64/" );
     file_addp( "/data/bennugd64/" );
     file_addp( "/user/homebrew/bennugd64/" );
+    file_addp( "/app0/" );
     file_addp( "." );
 
     if ( standalone )

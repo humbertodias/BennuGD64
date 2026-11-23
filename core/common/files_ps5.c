@@ -2,7 +2,7 @@
  * PlayStation 5 file I/O. Linked instead of files_native.c.
  *
  * Relative names are prefixed with the DCB directory. Absolute paths stay
- * as given (/data, /mnt/usb0, /user/homebrew).
+ * as given (/app0, /data, /mnt/usb0, /user/homebrew).
  */
 
 #include <stdio.h>
@@ -18,6 +18,7 @@ static const char * ps5_fallbacks[] = {
     "/mnt/usb0/bennugd64/",
     "/data/bennugd64/",
     "/user/homebrew/bennugd64/",
+    "/app0/",
     NULL
 };
 

@@ -2390,18 +2390,16 @@ void gr_rotated_blit( GRAPH * dest, REGION * clip, int scrx, int scry, int flags
         max.y = dest->height - 1;
     }
 
-    /* The texture coordinates of each corner point are displaced
-       to the center of the texel to sidestep precision errors */
+    /* Corner samples sit half a screen pixel inside the texel, so the
+       inclusive span (x2 - x + 1 pixels, step (s2 - s) / (x2 - x)) never
+       reads index width or height. Scale is a percentage: 50/100 = 0.5. */
 
-//    half_texel_size_x = 50.0 / scalex;
-//    half_texel_size_y = 50.0 / scaley;
-
-
-//    half_texel_size_x = 0.5 / scalex;
-//    half_texel_size_y = 0.5 / scaley;
-
-    half_texel_size_x = 0;
-    half_texel_size_y = 0;
+    half_texel_size_x = 50.0f / ( float ) scalex;
+    half_texel_size_y = 50.0f / ( float ) scaley;
+    if ( half_texel_size_x * 2.0f >= ( float ) gr->width )
+        half_texel_size_x = ( float ) gr->width * 0.5f;
+    if ( half_texel_size_y * 2.0f >= ( float ) gr->height )
+        half_texel_size_y = ( float ) gr->height * 0.5f;
 
     /* Fill the vertex array with the four obtained points */
 
@@ -2413,24 +2411,24 @@ void gr_rotated_blit( GRAPH * dest, REGION * clip, int scrx, int scry, int flags
 
     if ((( flags & B_VMIRROR ) && angle ) || (( flags & B_HMIRROR ) && !angle ) )
     {
-        vertex[1].s = vertex[3].s = half_texel_size_y ;
-        vertex[0].s = vertex[2].s = gr->width - half_texel_size_x /*- 1*/;
+        vertex[1].s = vertex[3].s = half_texel_size_x;
+        vertex[0].s = vertex[2].s = gr->width - half_texel_size_x;
     }
     else
     {
-        vertex[0].s = vertex[2].s = half_texel_size_y;
+        vertex[0].s = vertex[2].s = half_texel_size_x;
         vertex[1].s = vertex[3].s = gr->width - half_texel_size_x;
     }
 
     if ((( flags & B_HMIRROR ) && angle ) || (( flags & B_VMIRROR ) && !angle ) )
     {
-        vertex[2].t = vertex[3].t = half_texel_size_x;
-        vertex[0].t = vertex[1].t = gr->height - half_texel_size_y /*- 1*/;
+        vertex[2].t = vertex[3].t = half_texel_size_y;
+        vertex[0].t = vertex[1].t = gr->height - half_texel_size_y;
     }
     else
     {
-        vertex[0].t = vertex[1].t = half_texel_size_x;
-        vertex[2].t = vertex[3].t = gr->height - half_texel_size_y ;
+        vertex[0].t = vertex[1].t = half_texel_size_y;
+        vertex[2].t = vertex[3].t = gr->height - half_texel_size_y;
     }
 
     /* Sort the vertex list in y coordinate order */
@@ -2522,9 +2520,23 @@ void gr_rotated_blit( GRAPH * dest, REGION * clip, int scrx, int scry, int flags
                 x2  = max.x;
             }
 
-            /* Draw the resulting line */
+            /* Draw the resulting line. The last pixel is s2/t2, and
+               draw_span indexes with >> 16, so width and height are
+               already out of the bitmap. */
             if ( x2 > x )
             {
+                float max_s = ( float ) gr->width  - ( 1.0f / 65536.0f );
+                float max_t = ( float ) gr->height - ( 1.0f / 65536.0f );
+
+                if ( s  < 0 ) s  = 0;
+                if ( t  < 0 ) t  = 0;
+                if ( s2 < 0 ) s2 = 0;
+                if ( t2 < 0 ) t2 = 0;
+                if ( s  > max_s ) s  = max_s;
+                if ( t  > max_t ) t  = max_t;
+                if ( s2 > max_s ) s2 = max_s;
+                if ( t2 > max_t ) t2 = max_t;
+
                 draw_span
                 (
                     dest,

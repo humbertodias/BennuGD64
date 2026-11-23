@@ -17,6 +17,7 @@ void libretro_audio_mix( void * mixbuf, size_t mixbuf_size );
 int  modsound_libretro_start_output( void * mixer );
 
 void libsdlhandler_libretro_pump( void );
+void libsdlhandler_libretro_keyboard_event( bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers );
 
 extern int libretro_width;
 extern int libretro_height;

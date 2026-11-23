@@ -17,6 +17,8 @@
 #include "bennugd_git.h"
 #include "mod_sound_libretro.h"
 
+void libsdlhandler_libretro_keyboard_event( bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers );
+
 static struct retro_vfs_interface_info retro_vfs_interface_info = { 3, NULL};
 
 static retro_usec_t frametime_usec;
@@ -868,6 +870,13 @@ void retro_init(void)
     }
 
     audio_mixbuf = malloc(audio_mixbuf_frames*audio_frame_size);
+
+    {
+        struct retro_keyboard_callback keyboard;
+        keyboard.callback = libsdlhandler_libretro_keyboard_event;
+        if ( !environ_cb( RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &keyboard ) )
+            log_cb( RETRO_LOG_WARN, "RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK failed\n" );
+    }
 
     SDL_SetMainReady();
     SDL_SetHint( SDL_HINT_VIDEO_DRIVER, "dummy" );

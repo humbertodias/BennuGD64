@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: read
+  actions: write
   contents: read
   pages: write
   id-token: write
@@ -18,13 +18,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    name: Deploy
+  build:
+    name: Build site
     if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      artifact_id: ${{ steps.pages.outputs.artifact_id }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -80,10 +79,92 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
+      # Artifacts stay on the run across attempts. A re-run would otherwise
+      # leave two copies named github-pages, which deploy-pages rejects.
+      - name: Remove stale Pages artifacts
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const { data } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId,
+              name: "github-pages",
+              per_page: 100,
+            });
+            for (const artifact of data.artifacts) {
+              core.info(`Deleting stale github-pages artifact ${artifact.id}`);
+              try {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id,
+                });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+              }
+            }
+
       - name: Upload Pages artifact
+        id: pages
         uses: actions/upload-pages-artifact@v4
         with:
           path: dist/pages
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      # Listing an artifact finalized in the same job often returns nothing.
+      # deploy-pages then fails, and a re-run of that job uploads a second copy.
+      - name: Wait for Pages artifact
+        env:
+          PAGES_ARTIFACT_ID: ${{ needs.build.outputs.artifact_id }}
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+            const wanted = Number(process.env.PAGES_ARTIFACT_ID);
+            if (!wanted) {
+              core.setFailed("Build job did not output a Pages artifact id.");
+              return;
+            }
+            const list = async () => {
+              const { data } = await github.rest.actions.listWorkflowRunArtifacts({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                run_id: context.runId,
+                name: "github-pages",
+                per_page: 100,
+              });
+              return data.artifacts.filter((artifact) => !artifact.expired);
+            };
+            for (let attempt = 1; attempt <= 18; attempt++) {
+              const artifacts = await list();
+              const ids = artifacts.map((artifact) => artifact.id).join(", ") || "(none)";
+              core.info(`Attempt ${attempt}: github-pages artifacts [${ids}], want ${wanted}`);
+              for (const extra of artifacts.filter((artifact) => artifact.id !== wanted)) {
+                core.info(`Deleting extra github-pages artifact ${extra.id}`);
+                try {
+                  await github.rest.actions.deleteArtifact({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    artifact_id: extra.id,
+                  });
+                } catch (error) {
+                  if (error.status !== 404) throw error;
+                }
+              }
+              if (artifacts.some((artifact) => artifact.id === wanted) && artifacts.length === 1) {
+                return;
+              }
+              await sleep(10000);
+            }
+            core.setFailed(`Timed out waiting for github-pages artifact ${wanted} to be the only one listed.`);
 
       - name: Deploy to GitHub Pages
         id: deployment

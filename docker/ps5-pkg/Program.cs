@@ -2,7 +2,9 @@
 // Links LibProsperoPkg (GPL-3.0-or-later); this program is GPL-3.0-or-later too.
 // https://github.com/SvenGDK/LibProsperoPKG
 
+using System.Buffers.Binary;
 using LibProsperoPkg;
+using LibProsperoPkg.Content;
 using LibProsperoPkg.PKG;
 
 if (args.Length != 6)
@@ -31,6 +33,23 @@ if (!ProsperoPackageBuilder.IsValidTitleId(titleId))
 
 Directory.CreateDirectory(output);
 
+try
+{
+    SelfImage eboot = ProsperoFself.Parse(File.ReadAllBytes(Path.Combine(source, "eboot.bin")));
+    if (eboot.Elf.Length < 64 ||
+        BinaryPrimitives.ReadUInt16LittleEndian(eboot.Elf.AsSpan(0x10)) !=
+            (ushort)ElfType.ModuleDynamicExecutable)
+    {
+        Console.Error.WriteLine("PS5 packaging error: eboot.bin must be a native Prospero executable SELF");
+        return 1;
+    }
+}
+catch (Exception ex) when (ex is IOException or InvalidDataException)
+{
+    Console.Error.WriteLine("PS5 packaging error: " + ex.Message);
+    return 1;
+}
+
 ProsperoBuildResult result = ProsperoPackageBuilder.Build(new ProsperoBuildOptions
 {
     Mode = ProsperoPackageMode.Homebrew,
@@ -50,8 +69,9 @@ var failed = false;
 foreach (string warning in result.Warnings)
 {
     Console.Error.WriteLine("warning: " + warning);
-    if (warning.Contains("fake-sign", StringComparison.OrdinalIgnoreCase)
-        || warning.Contains("no raw ELF", StringComparison.OrdinalIgnoreCase))
+    if (warning.Contains("no raw ELF", StringComparison.OrdinalIgnoreCase))
+        continue; // eboot.bin and libc.prx are already in SELF format.
+    if (warning.Contains("fake-sign", StringComparison.OrdinalIgnoreCase))
         failed = true;
 }
 

@@ -48,6 +48,7 @@ static int ps5_dcb_exists( const char * path )
     return 1;
 }
 
+#ifndef BENNUGD_PS5_NATIVE_TITLE
 static void ps5_chdir_from_argv0( const char * argv0 )
 {
     char dir[ 512 ];
@@ -114,9 +115,16 @@ static void ps5_add_search_paths( const char * root )
 {
     ps5_add_tree( root, 4 );
 }
+#endif
 
 static void ps5_use_dcb( const char * dcb_path )
 {
+#ifdef BENNUGD_PS5_NATIVE_TITLE
+    file_ps5_bind_root( dcb_path );
+    file_addp( file_ps5_root() );
+    file_addp( "/app0/" );
+    fprintf( stderr, "bgdi: data root %s\n", file_ps5_root() );
+#else
     static const char * extra[] = {
         "/mnt/usb0/bennugd64/",
         "/data/bennugd64/",
@@ -138,6 +146,7 @@ static void ps5_use_dcb( const char * dcb_path )
     }
     file_addp( "." );
     fprintf( stderr, "bgdi: data root %s\n", root );
+#endif
 }
 
 static int ps5_pad_quit( void )
@@ -157,7 +166,11 @@ static void ps5_missing_dcb( void )
     SDL_Surface * surface;
     int x, y;
 
+#ifdef BENNUGD_PS5_NATIVE_TITLE
+    ps5_log_write( "bgdi: game DCB not found" );
+#else
     fprintf( stderr, "bgdi: main.dcb not found\n" );
+#endif
 
     gr_video_ps5_module_initialize();
     surface = SDL_CreateSurface( 960, 540, SDL_PIXELFORMAT_ARGB8888 );
@@ -185,11 +198,16 @@ static void ps5_missing_dcb( void )
 char * bgdi_ps5_startup( int argc, char * argv[], int * standalone )
 {
     static const char * bundled[] = {
+#ifdef BENNUGD_PS5_NATIVE_TITLE
+        "/app0/data/game.dcb",
+        "/app0/main.dcb",
+#else
         "/mnt/usb0/bennugd64/main.dcb",
         "/data/bennugd64/main.dcb",
         "/user/homebrew/bennugd64/main.dcb",
         "/app0/main.dcb",
         "main.dcb",
+#endif
         NULL
     };
     int k;
@@ -203,6 +221,11 @@ char * bgdi_ps5_startup( int argc, char * argv[], int * standalone )
 
     SDL_SetMainReady();
 
+#ifdef BENNUGD_PS5_NATIVE_TITLE
+    ps5_log_write( "bgdi: SDL main ready" );
+#endif
+
+#ifndef BENNUGD_PS5_NATIVE_TITLE
     if ( argc >= 1 && argv && argv[0] )
         ps5_chdir_from_argv0( argv[0] );
 
@@ -211,6 +234,7 @@ char * bgdi_ps5_startup( int argc, char * argv[], int * standalone )
     file_addp( "/user/homebrew/bennugd64/" );
     file_addp( "/app0/" );
     file_addp( "." );
+#endif
 
     if ( standalone )
         *standalone = 1;
@@ -228,6 +252,9 @@ char * bgdi_ps5_startup( int argc, char * argv[], int * standalone )
 
     for ( k = 0 ; bundled[k] ; k++ )
     {
+#ifdef BENNUGD_PS5_NATIVE_TITLE
+        ps5_log_write( bundled[k] );
+#endif
         if ( ps5_dcb_exists( bundled[k] ) )
         {
             fprintf( stderr, "bgdi: using %s\n", bundled[k] );

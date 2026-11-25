@@ -98,8 +98,8 @@ The archive also contains `libmain.so` and `libSDL3.so` for integration and diag
     ;;
   *-ps5-x86_64-*)
     platform="PlayStation 5"
-    install='Install `bennugd64.pkg` on a PS5 with fPKG support (etaHEN). `bgdi.elf` can still be loaded with an ELF loader (elfldr, websrv, etaHEN, or the BD-J JAR loader).'
-    data='Place `main.dcb` and game assets in `/mnt/usb0/bennugd64/`, `/data/bennugd64/`, or `/user/homebrew/bennugd64/` (overrides `/app0/main.dcb`). A `main.dcb` next to the ELF is also accepted.'
+    install='Extract `bennugd64-ps5-title.zip` and register the `PPSA64002` folder with your PS5 title-folder loader. `bennugd64.pkg` requires PS5 fPKG support. Load `bgdi.elf` with an ELF loader.'
+    data='Replace `data/game.dcb` in the native title folder and put its assets under `data/`. For the standalone payload, put `main.dcb` and its assets next to the ELF or in `/mnt/usb0/bennugd64/`, `/data/bennugd64/`, or `/user/homebrew/bennugd64/`.'
     ;;
   *-xbox360-powerpc-*)
     platform="Xbox 360"

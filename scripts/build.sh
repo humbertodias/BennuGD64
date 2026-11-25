@@ -1757,10 +1757,13 @@ fi
 
 if [[ "${PLATFORM}" == "ps5" ]]; then
   echo "image: ${IMAGE}"
-  echo "preset: ps5-host + ps5-x86_64"
+  echo "preset: ps5-host + ps5-x86_64 (payload and native title)"
   echo "version: ${BENNUGD_VERSION}"
-  scrub_fetchcontent "${ROOT}/build-ps5-host/_deps"
-  scrub_fetchcontent "${ROOT}/build-ps5-x86_64/_deps"
+  for build_dir in build-ps5-host build-ps5-x86_64; do
+    if ! grep -qx "CMAKE_HOME_DIRECTORY:INTERNAL=/src" "${ROOT}/${build_dir}/CMakeCache.txt" 2>/dev/null; then
+      scrub_fetchcontent "${ROOT}/${build_dir}/_deps"
+    fi
+  done
   docker run --rm \
     -u "$(id -u):$(id -g)" \
     -v "${ROOT}:/src" \
@@ -1781,6 +1784,7 @@ if [[ "${PLATFORM}" == "ps5" ]]; then
       test -x "${PS5_PAYLOAD_SDK}/bin/prospero-clang"
       HOST_BUILD=/src/build-ps5-host
       PS5_BUILD=/src/build-ps5-x86_64
+      NATIVE_BUILD=/src/build-ps5-x86_64-native
       PKGDIR=/src/build-ps5-pkg
       STAGE=/src/dist/ps5-x86_64-static
       # platforms/ps5/pkg.env is documented alongside the PKG metadata.
@@ -1799,8 +1803,17 @@ if [[ "${PLATFORM}" == "ps5" ]]; then
       cmake --preset ps5-host "${COMMON[@]}"
       cmake --build --preset ps5-host
       /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
-      cmake --preset ps5-x86_64 "${COMMON[@]}"
+      cmake --preset ps5-x86_64 "${COMMON[@]}" -DBENNUGD_PS5_NATIVE_TITLE=OFF
       cmake --build --preset ps5-x86_64
+      cmake --preset ps5-x86_64 -B "${NATIVE_BUILD}" "${COMMON[@]}" \
+        -DBENNUGD_PS5_NATIVE_TITLE=ON \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${PS5_BUILD}/_deps/zlib-src" \
+        -DFETCHCONTENT_SOURCE_DIR_LIBPNG="${PS5_BUILD}/_deps/libpng-src" \
+        -DFETCHCONTENT_SOURCE_DIR_SDL3="${PS5_BUILD}/_deps/sdl3-src" \
+        -DFETCHCONTENT_SOURCE_DIR_SDL3_MIXER="${PS5_BUILD}/_deps/sdl3_mixer-src"
+      cmake --build "${NATIVE_BUILD}" --target bgdi_ps5_native
+      NATIVE_EBOOT="${NATIVE_BUILD}/core/bgdi/src/eboot.bin"
+      test -s "${NATIVE_EBOOT}"
       ELF=""
       for cand in \
         "${PS5_BUILD}/core/bgdi/src/bgdi.elf" \
@@ -1816,15 +1829,46 @@ if [[ "${PLATFORM}" == "ps5" ]]; then
       fi
       test -n "${ELF}"
       test -s "${ELF}"
-      rm -rf "${PKGDIR}" "${STAGE}"
-      mkdir -p "${PKGDIR}/sce_sys" "${STAGE}"
-      cp "${ELF}" "${PKGDIR}/eboot.bin"
+      rm -rf "${PKGDIR}"
+      mkdir -p "${PKGDIR}/sce_sys" "${PKGDIR}/sce_module" "${PKGDIR}/data"
+      install -m 755 "${NATIVE_EBOOT}" "${PKGDIR}/eboot.bin"
+      cp /opt/ps5-native/libc.prx "${PKGDIR}/sce_module/libc.prx"
+      cp /opt/ps5-native/LICENSE "${PKGDIR}/sce_module/libc.prx.LICENSE.txt"
       cp /src/platforms/web/demo/*.dcb "${PKGDIR}/"
-      cp /src/platforms/web/demo/hello.dcb "${PKGDIR}/main.dcb"
-      python3 - <<'"'"'PY'"'"'
-import struct, zlib, pathlib
-path = pathlib.Path("/src/build-ps5-pkg/sce_sys/icon0.png")
-path.parent.mkdir(parents=True, exist_ok=True)
+      cp "${PKGDIR}/hello.dcb" "${PKGDIR}/main.dcb"
+      cp "${PKGDIR}/main.dcb" "${PKGDIR}/data/game.dcb"
+      python3 - "${PKGDIR}" "${NATIVE_BUILD}/bennugd64-ps5-title.zip" \
+        "${GAME_ID}" "${FOLDER_TITLE_ID}" "${CONTENT_ID}" "${GAME_TITLE}" "${APPVERSION}" <<'"'"'PY'"'"'
+import json
+import pathlib
+import struct
+import sys
+from zipfile import ZIP_DEFLATED, ZipFile
+import zlib
+
+directory, archive_path, title_id, folder_id, content_id, title, version = sys.argv[1:]
+root = pathlib.Path(directory)
+sce_sys = root / "sce_sys"
+major, minor = map(int, version.split("."))
+param = {
+    "ageLevel": {"default": 0},
+    "applicationCategoryType": 0,
+    "applicationDrmType": "free",
+    "attribute": 0,
+    "conceptId": title_id[4:],
+    "contentBadgeType": 1,
+    "contentId": content_id,
+    "contentVersion": f"{major:02d}.{minor:03d}.000",
+    "downloadDataSize": 256,
+    "gameIntent": {"permittedIntents": [{"intentType": "launchActivity"}]},
+    "localizedParameters": {"defaultLanguage": "en-US", "en-US": {"titleName": title}},
+    "masterVersion": version,
+    "requiredSystemSoftwareVersion": "0x0000000000000000",
+    "sdkVersion": "0x0000000000000000",
+    "titleId": title_id,
+}
+(sce_sys / "param.json").write_text(json.dumps(param, indent=2) + "\n", encoding="utf-8")
+
 def chunk(tag, data):
     return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xffffffff)
 width = height = 512
@@ -1837,7 +1881,16 @@ for y in range(height):
     rows.append(bytes(row))
 raw = b"".join(rows)
 png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
-path.write_bytes(png)
+(sce_sys / "icon0.png").write_bytes(png)
+
+# Give the folder its own ID so it can be registered alongside the installed fPKG.
+param.update(titleId=folder_id, conceptId=folder_id[4:],
+             contentId=content_id.replace(title_id, folder_id, 1))
+with ZipFile(archive_path, "w", compression=ZIP_DEFLATED) as archive:
+    archive.writestr(f"{folder_id}/sce_sys/param.json", json.dumps(param, indent=2) + "\n")
+    for filename in ("eboot.bin", "sce_sys/icon0.png", "sce_module/libc.prx",
+                     "sce_module/libc.prx.LICENSE.txt", "data/game.dcb"):
+        archive.write(root / filename, f"{folder_id}/{filename}")
 PY
       /opt/ps5-pkg/bennugd-ps5-pkg \
         "${PKGDIR}" "${PKGDIR}/out" \
@@ -1847,12 +1900,16 @@ PY
         if [[ -f "${cand}" ]]; then PKG_OUT="${cand}"; break; fi
       done
       test -n "${PKG_OUT}"
+      rm -rf "${STAGE}"
+      mkdir -p "${STAGE}"
       cp "${PKG_OUT}" "${STAGE}/bennugd64.pkg"
+      cp "${NATIVE_BUILD}/bennugd64-ps5-title.zip" "${STAGE}/"
       cmake --install "${PS5_BUILD}" --prefix "${STAGE}"
       cp "${ELF}" "${STAGE}/bgdi.elf"
       cp "${PKGDIR}/main.dcb" "${STAGE}/main.dcb"
       cp /src/platforms/web/demo/*.dcb "${STAGE}/"
       test -s "${STAGE}/bennugd64.pkg"
+      test -s "${STAGE}/bennugd64-ps5-title.zip"
       test -s "${STAGE}/bgdi.elf"
       test -s "${STAGE}/main.dcb"
     '

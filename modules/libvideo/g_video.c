@@ -65,6 +65,9 @@
 #ifdef TARGET_PS5
 #include "g_video_ps5.h"
 #endif
+#ifdef BENNUGD_PS5_NATIVE_TITLE
+#include "ps5_log.h"
+#endif
 #ifdef TARGET_XBOX360
 #include "g_video_xbox360.h"
 #endif
@@ -655,6 +658,9 @@ int gr_set_icon( GRAPH * map )
 
 int gr_set_mode( int width, int height, int depth )
 {
+#ifdef BENNUGD_PS5_NATIVE_TITLE
+    ps5_log_write( "bgdi: setting video mode" );
+#endif
 #ifdef TARGET_LIBRETRO
     depth = libretro_depth;
     bennugd_content_width = width;
@@ -1084,6 +1090,9 @@ int gr_set_mode( int width, int height, int depth )
     gr_video_emscripten_after_set_mode();
 #endif
 
+#ifdef BENNUGD_PS5_NATIVE_TITLE
+    ps5_log_write( "bgdi: video mode ready" );
+#endif
     return 0;
 }
 

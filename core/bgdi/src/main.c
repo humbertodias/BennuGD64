@@ -387,6 +387,8 @@ int main( int argc, char *argv[] )
 
 #ifdef TARGET_WIN32
     arg0 = bgdi_win32_resolve_argv0( argc, argv );
+#elif defined(BENNUGD_PS5_NATIVE_TITLE)
+    arg0 = strdup( "/app0/eboot.bin" );
 #else
     if ( argc < 1 || !argv || !argv[0] )
         arg0 = strdup( "bgdi" );
@@ -426,7 +428,7 @@ int main( int argc, char *argv[] )
     appexepath = calloc( 1, (size_t)( ptr - appexefullpath ) + 1 );
     strncpy( appexepath, appexefullpath, ptr - appexefullpath );
 
-#ifdef BGD_STANDALONE_INTERPRETER
+#if defined(BGD_STANDALONE_INTERPRETER) || defined(BENNUGD_PS5_NATIVE_TITLE)
     standalone = 1 ;
 #else
     standalone = ( strncmpi( appexename, "bgdi", 4 ) == 0 ) ;

@@ -34,6 +34,7 @@ set (CMAKE_SKIP_INSTALL_RPATH TRUE CACHE BOOL "" FORCE)
 
 set (PLATFORM_PS5 TRUE CACHE BOOL "Build PlayStation 5 homebrew" FORCE)
 set (PS5 TRUE CACHE BOOL "Build PlayStation 5 homebrew" FORCE)
+option (BENNUGD_PS5_NATIVE_TITLE "Build a native PS5 application for the PKG" OFF)
 
 string (APPEND CMAKE_C_FLAGS_INIT
   " -D_GNU_SOURCE=1 -D__PS5__=1 -D__PROSPERO__=1 -DPS5=1")

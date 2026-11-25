@@ -75,12 +75,14 @@ int scePadOpen( int user_id, int type, int index, const void * param );
 int scePadReadState( int handle, ScePadData * data );
 
 int sceSystemServiceHideSplashScreen( void );
+int sceSystemServiceLoadExec( const char * path, const char ** arguments );
+int sceKernelDebugOutText( int channel, const char * text );
 
 uint64_t sceKernelGetProcessTime( void );
 int sceKernelUsleep( unsigned int microseconds );
 int sceKernelCreateEqueue( void ** queue, const char * name );
 int sceKernelDeleteEqueue( void * queue );
-int sceKernelWaitEqueue( void * queue, void * event, int count, int * out, void * timeout );
+int sceKernelWaitEqueue( void * queue, void * event, int count, int * out, unsigned int * timeout );
 int sceKernelAllocateMainDirectMemory( size_t len, size_t alignment, int type, intptr_t * phys );
 int sceKernelMapDirectMemory( void ** addr, size_t len, int prot, int flags, intptr_t phys, size_t alignment );
 int sceKernelReleaseDirectMemory( intptr_t phys, size_t len );

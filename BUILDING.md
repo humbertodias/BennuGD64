@@ -572,25 +572,31 @@ packaging step and is not copied from an OpenOrbis sample.
 
 ## PlayStation 5
 
-Needs Docker. `docker/Dockerfile.ps5` unpacks [ps5-payload-sdk](https://github.com/ps5-payload-dev/sdk) (`PS5_PAYLOAD_SDK`, `prospero-clang`) onto Ubuntu 24.04 with host clang/lld, and publishes `bennugd-ps5-pkg` (links [LibProsperoPkg](https://github.com/SvenGDK/LibProsperoPKG)). It does not clone this repo or bake Bennu into the image. The SDK wrappers call the host compiler, so the image is not pinned to amd64.
+Needs Docker. `docker/Dockerfile.ps5` installs [ps5-payload-sdk](https://github.com/ps5-payload-dev/sdk), the native application tools from [ProsperoStore](https://github.com/darkxex/ProsperoStore/tree/22d5a44a053b4dad4f3a5867fe39d262a80a1b8c/tooling/native), and the `bennugd-ps5-pkg` packager based on [LibProsperoPkg](https://github.com/SvenGDK/LibProsperoPKG).
 
 ```shell
 bash scripts/build.sh ps5
 ```
 
-That configures native `bgdc` (`ps5-host`), compiles `platforms/web/demo/*.prg`, cross-compiles `bgdi.elf` (`ps5-x86_64`), then packs `dist/ps5-x86_64-static/bennugd64.pkg` (title id `PPSA64001`, content id `IV0000-PPSA64001_00-BENNUGD640000000`). Install the fPKG on a PS5 with fPKG support (etaHEN). `bgdi.elf` is still copied beside the package for an ELF loader (elfldr, websrv, etaHEN, or the BD-J JAR loader). `hello.dcb` is bundled as `/app0/main.dcb`.
+The build compiles the demos with host `bgdc` and writes these files to `dist/ps5-x86_64-static/`:
 
-**Where `main.dcb` goes** (first match wins):
+- `bennugd64-ps5-title.zip` contains the `PPSA64002` native title folder, ready to register with a PS5 title-folder loader. Keep `eboot.bin`, `sce_sys/`, `sce_module/`, and `data/` together.
+- `bennugd64.pkg` contains the same native executable and demo under title ID `PPSA64001` for a PS5 configured to run PS5 fPKGs.
+- `bgdi.elf` is the standalone payload interpreter for an ELF loader.
+
+The native title opens `/app0/data/game.dcb`, with `/app0/main.dcb` as a fallback for older packages. To ship a different game in the title folder, compile it with the matching `ps5-host` `bgdc` and replace `data/game.dcb`. Place its assets alongside it or under `data/` and refer to their relative paths in the game.
+
+**Standalone payload `main.dcb` search order** (first match wins):
 
 1. `/mnt/usb0/bennugd64/main.dcb`
 2. `/data/bennugd64/main.dcb`
 3. `/user/homebrew/bennugd64/main.dcb`
-4. `/app0/main.dcb` — bundled in the PKG
+4. `/app0/main.dcb`
 5. `main.dcb` in the loader's working directory
 
 Other assets (FPG, WAV, …) also go in those search paths. Compile with the matching `ps5-host` `bgdc`.
 
-If none exists, a fallback pattern is displayed. CROSS / OPTIONS quits. Copy `/data/bennugd64/bgdi.log` after a silent close. OPTIONS is Enter; the touch pad is Escape.
+If no DCB is found, the interpreter displays a fallback pattern. CROSS or OPTIONS quits the fallback screen. For a silent close, look for `/data/bennugd64/bgdi.log` or, for the native title, `/download0/bgdi.log`. The native title also emits an early marker to the PS5 kernel log. During gameplay, OPTIONS is Enter and the touch pad is Escape.
 
 Upstream SDL3 has no Prospero video driver. Bennu keeps it for software surfaces and mixing, and talks to the payload SDK directly:
 

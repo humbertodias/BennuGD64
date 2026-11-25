@@ -467,6 +467,12 @@ if (PLATFORM_PS5 OR PS5)
   set (LIBC_HAS_WCSLCPY OFF CACHE BOOL "" FORCE)
   set (LIBC_HAS_WCSLCAT OFF CACHE BOOL "" FORCE)
   set (HAVE_ELF_AUX_INFO "" CACHE INTERNAL "" FORCE)
+  if (BENNUGD_PS5_NATIVE_TITLE)
+    # Native titles cannot use SDL's POSIX subprocess backend. Let SDL
+    # manage its environment locally instead of importing the libc globals.
+    set (HAVE_POSIX_SPAWN OFF CACHE BOOL "" FORCE)
+    set (LIBC_HAS_GETENV OFF CACHE BOOL "" FORCE)
+  endif ()
 endif ()
 if (PLATFORM_XBOX360 OR XBOX360)
   set (SDL_SYSTEM_ICONV OFF CACHE BOOL "" FORCE)

@@ -34,6 +34,11 @@
 #define SCE_VIDEO_OUT_BUS_MAIN    0
 #define SCE_VIDEO_OUT_FLIP_VSYNC  1u
 
+#define SCE_AUDIO_OUT_PORT_TYPE_MAIN           0
+#define SCE_AUDIO_OUT_FORMAT_FLOAT_STEREO      4u
+#define SCE_AUDIO_OUT_ERROR_ALREADY_INIT       0x8026000eu
+#define SCE_USER_SERVICE_USER_ID_SYSTEM        0xff
+
 typedef struct ScePadAnalogStick
 {
     uint8_t x;
@@ -73,6 +78,11 @@ int sceUserServiceGetForegroundUser( int * user_id );
 int scePadInit( void );
 int scePadOpen( int user_id, int type, int index, const void * param );
 int scePadReadState( int handle, ScePadData * data );
+
+int sceAudioOutInit( void );
+int sceAudioOutOpen( int user_id, int type, int index, uint32_t frames, uint32_t rate, uint32_t format );
+int sceAudioOutOutput( int handle, const void * samples );
+int sceAudioOutClose( int handle );
 
 int sceSystemServiceHideSplashScreen( void );
 int sceSystemServiceLoadExec( const char * path, const char ** arguments );

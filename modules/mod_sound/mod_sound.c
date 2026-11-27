@@ -73,7 +73,7 @@
 #include "mod_sound_zeebo.h"
 #endif
 
-#if defined(MODSOUND_PS4_DUMMY_AUDIO) || defined(MODSOUND_PS5_DUMMY_AUDIO)
+#ifdef MODSOUND_PS4_DUMMY_AUDIO
 /* Reuse the module's existing no-audio API behavior while keeping exports. */
 #define TARGET_DINGUX_A320
 #endif
@@ -260,9 +260,6 @@ static int sound_init()
 #ifdef TARGET_PS4
     modsound_ps4_prepare();
 #endif
-#ifdef TARGET_PS5
-    modsound_ps5_prepare();
-#endif
 #ifdef TARGET_XBOX360
     modsound_xbox360_prepare();
 #endif
@@ -376,14 +373,14 @@ static int sound_init()
         return -1;
     }
 #endif
-#ifdef TARGET_PS5
+#if defined(TARGET_PS5) && !defined(TARGET_LIBRETRO)
     if ( modsound_ps5_start_output( mixer ) != 0 )
     {
         fprintf( stderr, "[SOUND] No se pudo iniciar PS5 AudioOut\n" );
-        MIX_DestroyTrack( music_track );
-        music_track = NULL;
         MIX_DestroyMixer( mixer );
         mixer = NULL;
+        music_track = NULL;
+        SDL_zeroa( channels );
         MIX_Quit();
         return -1;
     }
@@ -461,8 +458,11 @@ static void sound_close()
 #ifdef TARGET_PS4
     modsound_ps4_stop_output();
 #endif
-#ifdef TARGET_PS5
+#if defined(TARGET_PS5) && !defined(TARGET_LIBRETRO)
     modsound_ps5_stop_output();
+#endif
+#if defined(TARGET_PS5) && defined(TARGET_LIBRETRO)
+    modsound_libretro_start_output( NULL );
 #endif
 #ifdef TARGET_XBOX360
     modsound_xbox360_stop_output();

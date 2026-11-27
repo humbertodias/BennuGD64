@@ -5,10 +5,11 @@
 #include <SDL3_mixer/SDL_mixer.h>
 #include "files.h"
 
-void           modsound_ps5_prepare( void );
 void           modsound_ps5_adjust_spec( SDL_AudioSpec * spec );
+#ifndef TARGET_LIBRETRO
 int            modsound_ps5_start_output( MIX_Mixer * mixer );
 void           modsound_ps5_stop_output( void );
+#endif
 SDL_IOStream * modsound_ps5_slurp_file( file * fp );
 
 #endif

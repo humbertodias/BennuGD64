@@ -602,7 +602,7 @@ Upstream SDL3 has no Prospero video driver. Bennu keeps it for software surfaces
 
 - `sceVideoOut`: double-buffered 1080p (or 4K when the output reports it);
 - `scePad`: DualSense keys and `JOY_*` axes/buttons/hats;
-- audio exports stay linked, with output left off.
+- `sceAudioOut`: stereo audio at 48 kHz from SDL_mixer.
 
 The port does not create an `SDL_Window`. Bennu draws into SDL surfaces and the presenter copies each frame to VideoOut.
 

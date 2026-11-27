@@ -2,12 +2,10 @@
 # Compile .prg on a host with the ps5-host preset.
 #
 # SDL3 provides software surfaces and codecs. Bennu drives sceVideoOut and
-# scePad directly. Audio output stays off; the mixer exports remain.
+# scePad and sceAudioOut directly.
 
 set (STATIC_MODULES ON CACHE BOOL "PS5 homebrew is a single ELF" FORCE)
 set (INTERPRETER_ONLY ON CACHE BOOL "ELF ships the interpreter; compile .prg on a host" FORCE)
-set (BENNUGD_PS5_DUMMY_AUDIO ON CACHE BOOL
-  "Keep mod_sound exports but disable PS5 audio output")
 
 set (SDL_SHARED OFF CACHE BOOL "" FORCE)
 set (SDL_STATIC ON CACHE BOOL "" FORCE)

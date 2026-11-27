@@ -1,10 +1,11 @@
 /*
  * PlayStation 5 audio. Compiled only into the ps5-x86_64 build.
  *
- * The default build keeps the mixer exports and slurps songs into memory,
- * but does not open sceAudioOut (same policy as the PS4 dummy-audio build).
+ * SDL_mixer generates samples for sceAudioOut. Audio files are read into
+ * memory before playback so decoding can run on the audio thread.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -13,6 +14,7 @@
 
 #include "files.h"
 #include "mod_sound_ps5.h"
+#include "ps5_sce.h"
 
 typedef struct Ps5Slurp
 {
@@ -21,28 +23,103 @@ typedef struct Ps5Slurp
     size_t  pos;
 } Ps5Slurp;
 
-void modsound_ps5_prepare( void )
+enum
 {
-}
+    PS5_AUDIO_RATE = 48000,
+    PS5_AUDIO_CHANNELS = 2,
+    PS5_AUDIO_FRAMES = 1024
+};
 
 void modsound_ps5_adjust_spec( SDL_AudioSpec * spec )
 {
-    if ( !spec )
-        return;
-    spec->freq = 48000;
+    spec->freq = PS5_AUDIO_RATE;
+    spec->channels = PS5_AUDIO_CHANNELS;
+#ifdef TARGET_LIBRETRO
+    spec->format = SDL_AUDIO_S16;
+#else
     spec->format = SDL_AUDIO_F32;
-    spec->channels = 2;
+#endif
+}
+
+#ifndef TARGET_LIBRETRO
+static SDL_Thread * ps5_audio_thread;
+static SDL_AtomicInt ps5_audio_running;
+static int ps5_audio_handle = -1;
+static _Alignas(64) float ps5_audio_buffers[2][PS5_AUDIO_FRAMES * PS5_AUDIO_CHANNELS];
+
+static int SDLCALL ps5_audio_worker( void * userdata )
+{
+    MIX_Mixer * mixer = userdata;
+    int current = 0;
+    bool mix_error_logged = false;
+
+    while ( SDL_GetAtomicInt( &ps5_audio_running ) )
+    {
+        float * samples = ps5_audio_buffers[current];
+        const int bytes = sizeof( ps5_audio_buffers[current] );
+        if ( MIX_Generate( mixer, samples, bytes ) < 0 )
+        {
+            if ( !mix_error_logged )
+                fprintf( stderr, "[SOUND] PS5 MIX_Generate: %s\n", SDL_GetError() );
+            mix_error_logged = true;
+            memset( samples, 0, bytes );
+        }
+
+        int result = sceAudioOutOutput( ps5_audio_handle, samples );
+        if ( result < 0 )
+        {
+            fprintf( stderr, "[SOUND] sceAudioOutOutput: %#x\n", ( unsigned int ) result );
+            return result;
+        }
+        current ^= 1;
+    }
+    return 0;
 }
 
 void modsound_ps5_stop_output( void )
 {
+    SDL_SetAtomicInt( &ps5_audio_running, 0 );
+    if ( ps5_audio_thread )
+    {
+        SDL_WaitThread( ps5_audio_thread, NULL );
+        ps5_audio_thread = NULL;
+    }
+    if ( ps5_audio_handle >= 0 )
+    {
+        sceAudioOutClose( ps5_audio_handle );
+        ps5_audio_handle = -1;
+    }
 }
 
 int modsound_ps5_start_output( MIX_Mixer * mixer )
 {
-    ( void ) mixer;
+    int result = sceAudioOutInit();
+    if ( result != 0 && ( uint32_t ) result != SCE_AUDIO_OUT_ERROR_ALREADY_INIT )
+    {
+        fprintf( stderr, "[SOUND] sceAudioOutInit: %#x\n", ( unsigned int ) result );
+        return result;
+    }
+
+    result = sceAudioOutOpen( SCE_USER_SERVICE_USER_ID_SYSTEM, SCE_AUDIO_OUT_PORT_TYPE_MAIN, 0,
+                              PS5_AUDIO_FRAMES, PS5_AUDIO_RATE, SCE_AUDIO_OUT_FORMAT_FLOAT_STEREO );
+    if ( result < 0 )
+    {
+        fprintf( stderr, "[SOUND] sceAudioOutOpen: %#x\n", ( unsigned int ) result );
+        return result;
+    }
+    ps5_audio_handle = result;
+
+    SDL_SetAtomicInt( &ps5_audio_running, 1 );
+    ps5_audio_thread = SDL_CreateThread( ps5_audio_worker, "BennuGD PS5 Audio", mixer );
+    if ( !ps5_audio_thread )
+    {
+        fprintf( stderr, "[SOUND] PS5 SDL_CreateThread: %s\n", SDL_GetError() );
+        modsound_ps5_stop_output();
+        return -1;
+    }
     return 0;
 }
+#endif
 
 static Sint64 SDLCALL slurp_size( void * ud )
 {

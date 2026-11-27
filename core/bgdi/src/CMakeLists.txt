@@ -452,6 +452,9 @@ if (PLATFORM_PS5 OR PS5)
     SceSystemService
     m
   )
+  if (NOT BENNUGD_LIBRETRO)
+    target_link_libraries (bgdi SceAudioOut)
+  endif ()
 endif ()
 
 if (PLATFORM_XBOX360 OR XBOX360)

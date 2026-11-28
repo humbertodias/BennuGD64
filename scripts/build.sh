@@ -158,7 +158,6 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
   elif [[ "${PLATFORM}" == "ps5" ]]; then
     docker build \
       --build-arg PS5_PAYLOAD_SDK_VERSION="${PS5_PAYLOAD_SDK_VERSION:-v0.45}" \
-      --build-arg LIBPROSPEROPKG_VERSION="${LIBPROSPEROPKG_VERSION:-v2.5}" \
       -t bennugd64-ps5 \
       -f docker/Dockerfile.ps5 \
       docker/
@@ -1785,14 +1784,13 @@ if [[ "${PLATFORM}" == "ps5" ]]; then
       HOST_BUILD=/src/build-ps5-host
       PS5_BUILD=/src/build-ps5-x86_64
       NATIVE_BUILD=/src/build-ps5-x86_64-native
-      PKGDIR=/src/build-ps5-pkg
+      TITLEDIR=/src/build-ps5-title
       STAGE=/src/dist/ps5-x86_64-static
-      # platforms/ps5/pkg.env is documented alongside the PKG metadata.
+      # platforms/ps5/pkg.env is documented alongside the title metadata.
       source /src/platforms/ps5/pkg.env
       GAME_TITLE="${TITLE}"
       GAME_ID="${TITLE_ID}"
       APPVERSION="${VERSION}"
-      test -x /opt/ps5-pkg/bennugd-ps5-pkg
       COMMON=(
         -DBENNUGD_VERSION="${BENNUGD_VERSION}"
         -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
@@ -1829,15 +1827,15 @@ if [[ "${PLATFORM}" == "ps5" ]]; then
       fi
       test -n "${ELF}"
       test -s "${ELF}"
-      rm -rf "${PKGDIR}"
-      mkdir -p "${PKGDIR}/sce_sys" "${PKGDIR}/sce_module" "${PKGDIR}/data"
-      install -m 755 "${NATIVE_EBOOT}" "${PKGDIR}/eboot.bin"
-      cp /opt/ps5-native/libc.prx "${PKGDIR}/sce_module/libc.prx"
-      cp /opt/ps5-native/LICENSE "${PKGDIR}/sce_module/libc.prx.LICENSE.txt"
-      cp /src/platforms/web/demo/*.dcb "${PKGDIR}/"
-      cp "${PKGDIR}/hello.dcb" "${PKGDIR}/main.dcb"
-      cp "${PKGDIR}/main.dcb" "${PKGDIR}/data/game.dcb"
-      python3 - "${PKGDIR}" "${NATIVE_BUILD}/bennugd64-ps5-title.zip" \
+      rm -rf "${TITLEDIR}"
+      mkdir -p "${TITLEDIR}/sce_sys" "${TITLEDIR}/sce_module" "${TITLEDIR}/data"
+      install -m 755 "${NATIVE_EBOOT}" "${TITLEDIR}/eboot.bin"
+      cp /opt/ps5-native/libc.prx "${TITLEDIR}/sce_module/libc.prx"
+      cp /opt/ps5-native/LICENSE "${TITLEDIR}/sce_module/libc.prx.LICENSE.txt"
+      cp /src/platforms/web/demo/*.dcb "${TITLEDIR}/"
+      cp "${TITLEDIR}/hello.dcb" "${TITLEDIR}/main.dcb"
+      cp "${TITLEDIR}/main.dcb" "${TITLEDIR}/data/game.dcb"
+      python3 - "${TITLEDIR}" "${NATIVE_BUILD}/bennugd64-ps5-title.zip" \
         "${GAME_ID}" "${FOLDER_TITLE_ID}" "${CONTENT_ID}" "${GAME_TITLE}" "${APPVERSION}" <<'"'"'PY'"'"'
 import json
 import pathlib
@@ -1883,7 +1881,6 @@ raw = b"".join(rows)
 png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
 (sce_sys / "icon0.png").write_bytes(png)
 
-# The title folder uses the same ID as the fPKG.
 param.update(titleId=folder_id, conceptId=folder_id[4:],
              contentId=content_id.replace(title_id, folder_id, 1))
 with ZipFile(archive_path, "w", compression=ZIP_DEFLATED) as archive:
@@ -1892,23 +1889,13 @@ with ZipFile(archive_path, "w", compression=ZIP_DEFLATED) as archive:
                      "sce_module/libc.prx.LICENSE.txt", "data/game.dcb"):
         archive.write(root / filename, f"{folder_id}/{filename}")
 PY
-      /opt/ps5-pkg/bennugd-ps5-pkg \
-        "${PKGDIR}" "${PKGDIR}/out" \
-        "${CONTENT_ID}" "${GAME_ID}" "${GAME_TITLE}" "${APPVERSION}"
-      PKG_OUT=""
-      for cand in "${PKGDIR}/out/${CONTENT_ID}"*.pkg "${PKGDIR}/out"/*.pkg; do
-        if [[ -f "${cand}" ]]; then PKG_OUT="${cand}"; break; fi
-      done
-      test -n "${PKG_OUT}"
       rm -rf "${STAGE}"
       mkdir -p "${STAGE}"
-      cp "${PKG_OUT}" "${STAGE}/bennugd64.pkg"
       cp "${NATIVE_BUILD}/bennugd64-ps5-title.zip" "${STAGE}/"
       cmake --install "${PS5_BUILD}" --prefix "${STAGE}"
       cp "${ELF}" "${STAGE}/bgdi.elf"
-      cp "${PKGDIR}/main.dcb" "${STAGE}/main.dcb"
+      cp "${TITLEDIR}/main.dcb" "${STAGE}/main.dcb"
       cp /src/platforms/web/demo/*.dcb "${STAGE}/"
-      test -s "${STAGE}/bennugd64.pkg"
       test -s "${STAGE}/bennugd64-ps5-title.zip"
       test -s "${STAGE}/bgdi.elf"
       test -s "${STAGE}/main.dcb"

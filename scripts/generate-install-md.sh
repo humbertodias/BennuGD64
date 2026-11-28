@@ -96,6 +96,23 @@ The archive also contains `libmain.so` and `libSDL3.so` for integration and diag
     install='Install `bennugd64.pkg` on a jailbroken PS4.'
     data='Place `main.dcb` and game assets in `/mnt/usb0/bennugd64/` or `/data/bennugd64/`.'
     ;;
+  *-ps5-x86_64-*)
+    platform="PlayStation 5"
+    install='On firmware 13.60, load kstuff 1.13 and then ShadowMountPlus. Extract `bennugd64-ps5-title.zip` so `PPSA64001/` sits directly in `/data/homebrew/` or `/mnt/usb0/homebrew/`. Load `bgdi.elf` with an ELF loader.'
+    data='Keep this layout inside the homebrew folder. `eboot.bin` and `libc.prx` must stay executable (`755`):
+
+```text
+PPSA64001/
+├── eboot.bin
+├── sce_sys/icon0.png
+├── sce_sys/param.json
+├── sce_module/libc.prx
+├── sce_module/libc.prx.LICENSE.txt
+└── data/game.dcb
+```
+
+Replace `data/game.dcb` to ship another game and put its assets under `data/`. For the standalone payload, put `main.dcb` and its assets next to the ELF or in `/mnt/usb0/bennugd64/`, `/data/bennugd64/`, or `/user/homebrew/bennugd64/`.'
+    ;;
   *-xbox360-powerpc-*)
     platform="Xbox 360"
     install='Copy `xenon.elf` to the root of a FAT32 USB drive and boot it with XeLL Reloaded. This is a libXenon homebrew binary, not an XEX.'

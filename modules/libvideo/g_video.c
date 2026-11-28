@@ -62,6 +62,12 @@
 #ifdef TARGET_PS4
 #include "g_video_ps4.h"
 #endif
+#ifdef TARGET_PS5
+#include "g_video_ps5.h"
+#endif
+#ifdef BENNUGD_PS5_NATIVE_TITLE
+#include "ps5_log.h"
+#endif
 #ifdef TARGET_XBOX360
 #include "g_video_xbox360.h"
 #endif
@@ -292,6 +298,10 @@ void gr_video_present( SDL_Surface * src )
     gr_video_ps4_present( src );
     return;
 #endif
+#ifdef TARGET_PS5
+    gr_video_ps5_present( src );
+    return;
+#endif
 #ifdef TARGET_XBOX360
     gr_video_xbox360_present( src );
     return;
@@ -376,6 +386,10 @@ void gr_video_present_rects( SDL_Surface * src, const SDL_Rect * rects, int coun
 #endif
 #ifdef TARGET_PS4
     gr_video_ps4_present_rects( src, rects, count );
+    return;
+#endif
+#ifdef TARGET_PS5
+    gr_video_ps5_present_rects( src, rects, count );
     return;
 #endif
 #ifdef TARGET_XBOX360
@@ -482,7 +496,7 @@ static SDL_Surface * gr_create_shadow_surface( int width, int height, int depth 
 
 static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 {
-#if defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_LIBRETRO)
+#if defined(TARGET_PS4) || defined(TARGET_PS5) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_LIBRETRO)
     ( void ) width;
     ( void ) height;
     ( void ) window_flags;
@@ -519,6 +533,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 #endif
 #ifdef TARGET_PS4
     gr_video_ps4_adjust_window( &width, &height, &window_flags );
+#endif
+#ifdef TARGET_PS5
+    gr_video_ps5_adjust_window( &width, &height, &window_flags );
 #endif
 #ifdef TARGET_PANDORA
     gr_video_pandora_adjust_window( &width, &height, &window_flags );
@@ -563,6 +580,9 @@ static int gr_setup_sdl_window( int width, int height, Uint32 window_flags )
 #endif
 #ifdef TARGET_PS4
             gr_video_ps4_destroy();
+#endif
+#ifdef TARGET_PS5
+            gr_video_ps5_destroy();
 #endif
 #ifdef TARGET_WII
             gr_video_wii_destroy();
@@ -638,6 +658,9 @@ int gr_set_icon( GRAPH * map )
 
 int gr_set_mode( int width, int height, int depth )
 {
+#ifdef BENNUGD_PS5_NATIVE_TITLE
+    ps5_log_write( "bgdi: setting video mode" );
+#endif
 #ifdef TARGET_LIBRETRO
     depth = libretro_depth;
     bennugd_content_width = width;
@@ -708,6 +731,10 @@ int gr_set_mode( int width, int height, int depth )
 #endif
 #ifdef TARGET_PS4
     gr_video_ps4_apply_mode();
+    GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
+#endif
+#ifdef TARGET_PS5
+    gr_video_ps5_apply_mode();
     GLODWORD( libvideo, SCALE_RESOLUTION ) = -1;
 #endif
 #ifdef TARGET_XBOX360
@@ -962,7 +989,7 @@ int gr_set_mode( int width, int height, int depth )
     if ( !gr_video_psp_ready_present( screen->w, screen->h ) ) return -1;
 #endif
 
-#if !defined(TARGET_PS4) && !defined(TARGET_XBOX360) && !defined(TARGET_XBOX) && !defined(TARGET_LIBRETRO)
+#if !defined(TARGET_PS4) && !defined(TARGET_PS5) && !defined(TARGET_XBOX360) && !defined(TARGET_XBOX) && !defined(TARGET_LIBRETRO)
 
     SDL_SetWindowMouseGrab( window, grab_input ? true : false ) ;
     SDL_SetWindowKeyboardGrab( window, grab_input ? true : false ) ;
@@ -1006,7 +1033,7 @@ int gr_set_mode( int width, int height, int depth )
 
     scr_initialized = 1 ;
 
-#if !defined(TARGET_PS4) && !defined(TARGET_XBOX360) && !defined(TARGET_XBOX) && !defined(TARGET_LIBRETRO)
+#if !defined(TARGET_PS4) && !defined(TARGET_PS5) && !defined(TARGET_XBOX360) && !defined(TARGET_XBOX) && !defined(TARGET_LIBRETRO)
 
     SDL_HideCursor() ;
 #endif
@@ -1063,6 +1090,9 @@ int gr_set_mode( int width, int height, int depth )
     gr_video_emscripten_after_set_mode();
 #endif
 
+#ifdef BENNUGD_PS5_NATIVE_TITLE
+    ps5_log_write( "bgdi: video mode ready" );
+#endif
     return 0;
 }
 
@@ -1110,6 +1140,8 @@ void __bgdexport( libvideo, module_initialize )()
     gr_video_ps3_module_initialize();
 #elif defined(TARGET_PS4)
     gr_video_ps4_module_initialize();
+#elif defined(TARGET_PS5)
+    gr_video_ps5_module_initialize();
 #elif defined(TARGET_XBOX360)
     gr_video_xbox360_module_initialize();
 #elif defined(TARGET_XBOX)
@@ -1170,6 +1202,9 @@ void __bgdexport( libvideo, module_finalize )()
 #endif
 #ifdef TARGET_PS4
         gr_video_ps4_destroy();
+#endif
+#ifdef TARGET_PS5
+        gr_video_ps5_destroy();
 #endif
 #ifdef TARGET_XBOX
         gr_video_xbox_destroy();

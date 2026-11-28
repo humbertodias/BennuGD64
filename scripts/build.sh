@@ -19,6 +19,7 @@
 #   bash scripts/build.sh ps2
 #   bash scripts/build.sh ps3
 #   bash scripts/build.sh ps4
+#   bash scripts/build.sh ps5
 #   bash scripts/build.sh xbox
 #   bash scripts/build.sh xbox360
 #   bash scripts/build.sh pandora
@@ -45,6 +46,7 @@ USAGE="usage: $0 linux|windows [static|shared|libretro|shell]
        $0 ps2 [libretro|shell]
        $0 ps3 [libretro|shell]
        $0 ps4 [libretro|shell]
+       $0 ps5 [libretro|shell]
        $0 xbox [libretro|shell]
        $0 xbox360 [libretro|shell]
        $0 pandora [libretro|shell]
@@ -67,7 +69,7 @@ if [[ "${PLATFORM}" == *-* && -z "${SECOND}" ]]; then
 fi
 SECOND="${SECOND:-static}"
 case "${PLATFORM}" in
-  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|ps4|xbox|xbox360|pandora|zeebo|wii|macos) ;;
+  linux|windows|wasm|android|switch|dreamcast|psp|vita|tvos|ios|ps2|ps3|ps4|ps5|xbox|xbox360|pandora|zeebo|wii|macos) ;;
   *)
     echo "${USAGE}" >&2
     exit 1
@@ -152,6 +154,12 @@ if [[ "${SKIP_DOCKER_BUILD:-}" != "1" && "${NATIVE_APPLE_SIM}" != "1" ]]; then
       --build-arg OO_PS4_TOOLCHAIN_ASSET="${OO_PS4_TOOLCHAIN_ASSET:-toolchain-llvm-18.tar.gz}" \
       -t bennugd64-ps4 \
       -f docker/Dockerfile.ps4 \
+      docker/
+  elif [[ "${PLATFORM}" == "ps5" ]]; then
+    docker build \
+      --build-arg PS5_PAYLOAD_SDK_VERSION="${PS5_PAYLOAD_SDK_VERSION:-v0.45}" \
+      -t bennugd64-ps5 \
+      -f docker/Dockerfile.ps5 \
       docker/
   elif [[ "${PLATFORM}" == "xbox" ]]; then
     docker build \
@@ -398,6 +406,11 @@ if [[ "${2:-}" == "libretro" || "${3:-}" == "libretro" || "${4:-}" == "libretro"
       PRESET="ps4-x86_64-libretro"
       BUILD_DIR="/src/build-ps4-x86_64-libretro"
       STAGE="/src/dist/ps4-x86_64-libretro"
+      ;;
+    ps5)
+      PRESET="ps5-x86_64-libretro"
+      BUILD_DIR="/src/build-ps5-x86_64-libretro"
+      STAGE="/src/dist/ps5-x86_64-libretro"
       ;;
     xbox)
       PRESET="xbox-i386-libretro"
@@ -1737,6 +1750,155 @@ PY
       test -s "${STAGE}/bennugd64.pkg"
       test -s "${STAGE}/eboot.bin"
       test -s "${STAGE}/bgdi.elf"
+    '
+  exit 0
+fi
+
+if [[ "${PLATFORM}" == "ps5" ]]; then
+  echo "image: ${IMAGE}"
+  echo "preset: ps5-host + ps5-x86_64 (payload and native title)"
+  echo "version: ${BENNUGD_VERSION}"
+  for build_dir in build-ps5-host build-ps5-x86_64; do
+    if ! grep -qx "CMAKE_HOME_DIRECTORY:INTERNAL=/src" "${ROOT}/${build_dir}/CMakeCache.txt" 2>/dev/null; then
+      scrub_fetchcontent "${ROOT}/${build_dir}/_deps"
+    fi
+  done
+  docker run --rm \
+    -u "$(id -u):$(id -g)" \
+    -v "${ROOT}:/src" \
+    -w /src \
+    -e HOME=/tmp \
+    -e PS5_PAYLOAD_SDK=/opt/ps5-payload-sdk \
+    -e BENNUGD_VERSION="${BENNUGD_VERSION}" \
+    -e BUILD_TYPE="${BUILD_TYPE:-Release}" \
+    -e ZLIB_VERSION="${ZLIB_VERSION:-1.3.1}" \
+    -e LIBPNG_VERSION="${LIBPNG_VERSION:-1.6.47}" \
+    -e SDL3_REF="${SDL3_REF:-release-3.4.14}" \
+    -e SDL3_MIXER_REF="${SDL3_MIXER_REF:-release-3.2.4}" \
+    "${IMAGE}" \
+    bash -c 'set -euo pipefail
+      unset CC CXX CFLAGS CXXFLAGS
+      test -n "${PS5_PAYLOAD_SDK:-}"
+      test -f "${PS5_PAYLOAD_SDK}/toolchain/prospero.cmake"
+      test -x "${PS5_PAYLOAD_SDK}/bin/prospero-clang"
+      HOST_BUILD=/src/build-ps5-host
+      PS5_BUILD=/src/build-ps5-x86_64
+      NATIVE_BUILD=/src/build-ps5-x86_64-native
+      TITLEDIR=/src/build-ps5-title
+      STAGE=/src/dist/ps5-x86_64-static
+      # platforms/ps5/pkg.env is documented alongside the title metadata.
+      source /src/platforms/ps5/pkg.env
+      GAME_TITLE="${TITLE}"
+      GAME_ID="${TITLE_ID}"
+      APPVERSION="${VERSION}"
+      COMMON=(
+        -DBENNUGD_VERSION="${BENNUGD_VERSION}"
+        -DBENNUGD_ZLIB_VERSION="${ZLIB_VERSION}"
+        -DBENNUGD_LIBPNG_VERSION="${LIBPNG_VERSION}"
+        -DBENNUGD_SDL3_REF="${SDL3_REF}"
+        -DBENNUGD_SDL3_MIXER_REF="${SDL3_MIXER_REF}"
+      )
+      cmake --preset ps5-host "${COMMON[@]}"
+      cmake --build --preset ps5-host
+      /src/scripts/compile-web-demos.sh "${HOST_BUILD}/core/bgdc/src/bgdc"
+      cmake --preset ps5-x86_64 "${COMMON[@]}" -DBENNUGD_PS5_NATIVE_TITLE=OFF
+      cmake --build --preset ps5-x86_64
+      cmake --preset ps5-x86_64 -B "${NATIVE_BUILD}" "${COMMON[@]}" \
+        -DBENNUGD_PS5_NATIVE_TITLE=ON \
+        -DFETCHCONTENT_SOURCE_DIR_ZLIB="${PS5_BUILD}/_deps/zlib-src" \
+        -DFETCHCONTENT_SOURCE_DIR_LIBPNG="${PS5_BUILD}/_deps/libpng-src" \
+        -DFETCHCONTENT_SOURCE_DIR_SDL3="${PS5_BUILD}/_deps/sdl3-src" \
+        -DFETCHCONTENT_SOURCE_DIR_SDL3_MIXER="${PS5_BUILD}/_deps/sdl3_mixer-src"
+      cmake --build "${NATIVE_BUILD}" --target bgdi_ps5_native
+      NATIVE_EBOOT="${NATIVE_BUILD}/core/bgdi/src/eboot.bin"
+      test -s "${NATIVE_EBOOT}"
+      ELF=""
+      for cand in \
+        "${PS5_BUILD}/core/bgdi/src/bgdi.elf" \
+        "${PS5_BUILD}/core/bgdi/src/bgdi"
+      do
+        if [[ -f "${cand}" ]]; then
+          ELF="${cand}"
+          break
+        fi
+      done
+      if [[ -z "${ELF}" ]]; then
+        ELF="$(find "${PS5_BUILD}/core/bgdi" \( -type f -o -type l \) \( -name bgdi.elf -o -name bgdi \) | grep -v /CMakeFiles/ | head -n 1 || true)"
+      fi
+      test -n "${ELF}"
+      test -s "${ELF}"
+      rm -rf "${TITLEDIR}"
+      mkdir -p "${TITLEDIR}/sce_sys" "${TITLEDIR}/sce_module" "${TITLEDIR}/data"
+      install -m 755 "${NATIVE_EBOOT}" "${TITLEDIR}/eboot.bin"
+      cp /opt/ps5-native/libc.prx "${TITLEDIR}/sce_module/libc.prx"
+      cp /opt/ps5-native/LICENSE "${TITLEDIR}/sce_module/libc.prx.LICENSE.txt"
+      cp /src/platforms/web/demo/*.dcb "${TITLEDIR}/"
+      cp "${TITLEDIR}/hello.dcb" "${TITLEDIR}/main.dcb"
+      cp "${TITLEDIR}/main.dcb" "${TITLEDIR}/data/game.dcb"
+      python3 - "${TITLEDIR}" "${NATIVE_BUILD}/bennugd64-ps5-title.zip" \
+        "${GAME_ID}" "${FOLDER_TITLE_ID}" "${CONTENT_ID}" "${GAME_TITLE}" "${APPVERSION}" <<'"'"'PY'"'"'
+import json
+import pathlib
+import struct
+import sys
+from zipfile import ZIP_DEFLATED, ZipFile
+import zlib
+
+directory, archive_path, title_id, folder_id, content_id, title, version = sys.argv[1:]
+root = pathlib.Path(directory)
+sce_sys = root / "sce_sys"
+major, minor = map(int, version.split("."))
+param = {
+    "ageLevel": {"default": 0},
+    "applicationCategoryType": 0,
+    "applicationDrmType": "free",
+    "attribute": 0,
+    "conceptId": title_id[4:],
+    "contentBadgeType": 1,
+    "contentId": content_id,
+    "contentVersion": f"{major:02d}.{minor:03d}.000",
+    "downloadDataSize": 256,
+    "gameIntent": {"permittedIntents": [{"intentType": "launchActivity"}]},
+    "localizedParameters": {"defaultLanguage": "en-US", "en-US": {"titleName": title}},
+    "masterVersion": version,
+    "requiredSystemSoftwareVersion": "0x0000000000000000",
+    "sdkVersion": "0x0000000000000000",
+    "titleId": title_id,
+}
+(sce_sys / "param.json").write_text(json.dumps(param, indent=2) + "\n", encoding="utf-8")
+
+def chunk(tag, data):
+    return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data) & 0xffffffff)
+width = height = 512
+rows = []
+for y in range(height):
+    row = bytearray([0])
+    for x in range(width):
+        band = 18 if ((x // 64) + (y // 64)) % 2 else 0
+        row.extend((20 + band, 36 + band, 96 + band))
+    rows.append(bytes(row))
+raw = b"".join(rows)
+png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
+(sce_sys / "icon0.png").write_bytes(png)
+
+param.update(titleId=folder_id, conceptId=folder_id[4:],
+             contentId=content_id.replace(title_id, folder_id, 1))
+with ZipFile(archive_path, "w", compression=ZIP_DEFLATED) as archive:
+    archive.writestr(f"{folder_id}/sce_sys/param.json", json.dumps(param, indent=2) + "\n")
+    for filename in ("eboot.bin", "sce_sys/icon0.png", "sce_module/libc.prx",
+                     "sce_module/libc.prx.LICENSE.txt", "data/game.dcb"):
+        archive.write(root / filename, f"{folder_id}/{filename}")
+PY
+      rm -rf "${STAGE}"
+      mkdir -p "${STAGE}"
+      cp "${NATIVE_BUILD}/bennugd64-ps5-title.zip" "${STAGE}/"
+      cmake --install "${PS5_BUILD}" --prefix "${STAGE}"
+      cp "${ELF}" "${STAGE}/bgdi.elf"
+      cp "${TITLEDIR}/main.dcb" "${STAGE}/main.dcb"
+      cp /src/platforms/web/demo/*.dcb "${STAGE}/"
+      test -s "${STAGE}/bennugd64-ps5-title.zip"
+      test -s "${STAGE}/bgdi.elf"
+      test -s "${STAGE}/main.dcb"
     '
   exit 0
 fi

@@ -47,6 +47,14 @@ if (PLATFORM_PS4 OR PS4)
     ../../common/ps4_platform.c
   )
 endif ()
+if (PLATFORM_PS5 OR PS5)
+  target_sources (
+    bgdi PRIVATE
+    main_ps5.c
+    ../../common/ps5_log.c
+    ../../common/ps5_platform.c
+  )
+endif ()
 if (PLATFORM_XBOX360 OR XBOX360)
   target_sources (bgdi PRIVATE main_xbox360.c)
 endif ()
@@ -432,6 +440,23 @@ if (PLATFORM_PS4 OR PS4)
   )
 endif ()
 
+if (PLATFORM_PS5 OR PS5)
+  target_link_libraries (
+    bgdi
+    ${BENNUGD_SDL3_TARGET}
+    ${BENNUGD_SDL3_MIXER_TARGET}
+    pthread
+    ScePad
+    SceUserService
+    SceVideoOut
+    SceSystemService
+    m
+  )
+  if (NOT BENNUGD_LIBRETRO)
+    target_link_libraries (bgdi SceAudioOut)
+  endif ()
+endif ()
+
 if (PLATFORM_XBOX360 OR XBOX360)
   target_link_libraries (
     bgdi
@@ -531,5 +556,8 @@ endif ()
 
 if (EMSCRIPTEN)
   bennugd_emscripten_link (bgdi)
+endif ()
+if (BENNUGD_PS5_NATIVE_TITLE AND (PLATFORM_PS5 OR PS5))
+  include ("${CMAKE_CURRENT_SOURCE_DIR}/../../../cmake/PS5NativeTitle.cmake")
 endif ()
 endif ()

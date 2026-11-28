@@ -60,6 +60,7 @@ bash scripts/build.sh windows libretro
 | `ps2` | `docker/Dockerfile.ps2` | `dist/ps2-mips-static/` (`bgdi.elf`, `bennugd64.iso`) |
 | `ps3` | `docker/Dockerfile.ps3` | `dist/ps3-ppu-static/` (`bennugd64.pkg`) |
 | `ps4` | `docker/Dockerfile.ps4` | `dist/ps4-x86_64-static/` (`bennugd64.pkg`) |
+| `ps5` | `docker/Dockerfile.ps5` | `dist/ps5-x86_64-static/` (`bennugd64-ps5-title.zip`) |
 | `pandora` | `docker/Dockerfile.pandora` | `dist/pandora-arm-static/` (`bennugd64.pnd`) |
 | `zeebo` | `docker/Dockerfile.zeebo` (`hldtux/zeebo-sdk`) | `dist/zeebo-arm-static/` (`bgdi.elf`) |
 | `wii` | `docker/Dockerfile.wii` | `dist/wii-powerpc-static/` (`apps/bennugd64/boot.dol`) |
@@ -67,7 +68,7 @@ bash scripts/build.sh windows libretro
 | `macos arm64` / `macos arm64 shared` / `macos arm64 libretro` | `docker/Dockerfile.macos` | `dist/macos-arm64-{static,shared,libretro}/` |
 | `windows` / `windows shared` / `windows libretro` | `docker/Dockerfile.windows` | `dist/windows-x86_64-{static,shared,libretro}/` |
 
-The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native `bgdc` + osxcross `bgdi.app`; iOS: native `bgdc` + osxcross `bgdi.app`; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; PS4: native `bgdc` + OpenOrbis `bgdi.elf` + `create-fself` / `PkgTool`; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Zeebo: native `bgdc` + arm-none-eabi `bgdi.elf` + `elf2mod`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
+The images are toolchains only. `scripts/build.sh` builds the image, then `docker run` with the repo mounted and `cmake --preset` / `ctest --preset` (wasm: native `bgdc` + `emcmake` for `bgdi`; Android: native `bgdc` + NDK `libmain.so` + Gradle APK; Switch: native `bgdc` + libnx `bgdi.elf` + `elf2nro`; Dreamcast: native `bgdc` + KallistiOS `bgdi.elf` + `mkdcdisc`; PSP: native `bgdc` + pspdev `bgdi.elf` + `pack-pbp`; Vita: native `bgdc` + vitasdk `bgdi` + `vita-pack-vpk`; tvOS: native `bgdc` + osxcross `bgdi.app`; iOS: native `bgdc` + osxcross `bgdi.app`; PS2: native `bgdc` + ps2dev `bgdi.elf`; PS3: native `bgdc` + PSL1GHT `bgdi.elf` + `make_self_npdrm` / `pkg.py`; PS4: native `bgdc` + OpenOrbis `bgdi.elf` + `create-fself` / `PkgTool`; PS5: native `bgdc` + ps5-payload-sdk `bgdi.elf` + title folder zip; Pandora: native `bgdc` + Ångström `bgdi` + `mksquashfs`; Zeebo: native `bgdc` + arm-none-eabi `bgdi.elf` + `elf2mod`; Wii: native `bgdc` + libogc `bgdi.elf` + `elf2dol`). GitHub Actions uses the same Dockerfiles (`docker/build-push-action` + the same wrapper). Wasm native `bgdc` is `COMPILER_ONLY`.
 
 ## Libretro (RetroArch)
 
@@ -106,13 +107,14 @@ Android, iOS, and tvOS also produce a shared object/dylib. Consoles that cannot 
 ./scripts/build.sh ps2 shell
 ./scripts/build.sh ps3 shell
 ./scripts/build.sh ps4 shell
+./scripts/build.sh ps5 shell
 ./scripts/build.sh pandora shell
 ./scripts/build.sh zeebo shell
 ./scripts/build.sh wii shell
 ./scripts/build.sh macos shell
 ```
 
-Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, **Android (NDK)**, **Switch (devkitA64)**, **Dreamcast (KallistiOS)**, **PSP (pspdev)**, **PS Vita (vitasdk)**, **PS2 (ps2dev)**, **PS3 (PSL1GHT)**, **PS4 (OpenOrbis)**, **OpenPandora (Ångström)**, **Zeebo (arm-none-eabi)**, **Wii (devkitPPC)**, **macOS (osxcross)**, **tvOS (osxcross)**, or **iOS (osxcross)** in the config picker. The repo is mounted at `/src`, same as `build.sh`.
+Zed and VS Code can attach to the same images via [Dev Containers](https://containers.dev/) (`.devcontainer/`). The default is the Linux toolchain; pick **Web (Emscripten)**, **Windows (MinGW)**, **Android (NDK)**, **Switch (devkitA64)**, **Dreamcast (KallistiOS)**, **PSP (pspdev)**, **PS Vita (vitasdk)**, **PS2 (ps2dev)**, **PS3 (PSL1GHT)**, **PS4 (OpenOrbis)**, **PS5 (payload SDK)**, **OpenPandora (Ångström)**, **Zeebo (arm-none-eabi)**, **Wii (devkitPPC)**, **macOS (osxcross)**, **tvOS (osxcross)**, or **iOS (osxcross)** in the config picker. The repo is mounted at `/src`, same as `build.sh`.
 
 The first `macos` image build downloads a macOS SDK (Xcode license) and compiles [osxcross](https://github.com/tpoechtrager/osxcross); later runs reuse `bennugd64-macos`. SDL3 is built from FetchContent (not `osxcross-macports` / SDL2). SDK 10.10 is too old for SDL3; the image uses MacOSX 14.5 with deployment target 11.0.
 
@@ -164,6 +166,8 @@ MinGW-w64 on Windows). Presets in `CMakePresets.json`:
 | `ps3-ppu` | `build-ps3-ppu` | PSL1GHT `bgdi.elf` (needs `PS3DEV`) |
 | `ps4-host` | `build-ps4-host` | Native `bgdc` for PS4 demo DCBs |
 | `ps4-x86_64` | `build-ps4-x86_64` | OpenOrbis `bgdi.elf` (needs `OO_PS4_TOOLCHAIN`) |
+| `ps5-host` | `build-ps5-host` | Native `bgdc` for PS5 demo DCBs |
+| `ps5-x86_64` | `build-ps5-x86_64` | ps5-payload-sdk `bgdi.elf`, then `bennugd64-ps5-title.zip` (needs `PS5_PAYLOAD_SDK`) |
 | `pandora-host` | `build-pandora-host` | Native `bgdc` for Pandora demo DCBs |
 | `pandora-arm` | `build-pandora-arm` | Ångström `bgdi` (needs `TOOLCHAIN=/opt/openpandora`) |
 | `zeebo-host` | `build-zeebo-host` | Native `bgdc` for Zeebo demo DCBs |
@@ -565,6 +569,58 @@ The package must contain `sce_module/libc.prx` and
 an incomplete PKG when either file is unavailable. `scripts/build.sh ps4`
 produces only the production `bennugd64.pkg`. The icon is generated by Bennu's
 packaging step and is not copied from an OpenOrbis sample.
+
+## PlayStation 5
+
+Needs Docker. `docker/Dockerfile.ps5` installs [ps5-payload-sdk](https://github.com/ps5-payload-dev/sdk) and the native application tools from [ProsperoStore](https://github.com/darkxex/ProsperoStore/tree/22d5a44a053b4dad4f3a5867fe39d262a80a1b8c/tooling/native).
+
+```shell
+bash scripts/build.sh ps5
+```
+
+The build compiles the demos with host `bgdc` and writes these files to `dist/ps5-x86_64-static/`:
+
+- `bennugd64-ps5-title.zip` contains the `PPSA64001` native title folder.
+- `bgdi.elf` is the standalone payload interpreter for an ELF loader.
+
+The title folder runs on firmware **13.60** after **kstuff 1.13** and then **ShadowMountPlus**. ShadowMountPlus scans `/data/homebrew/` (internal) and `/mnt/usb0/homebrew/` through `/mnt/usb7/homebrew/` (USB). Extract the zip so the title id is the folder name, with no extra directory around it:
+
+```text
+/data/homebrew/PPSA64001/
+├── eboot.bin
+├── sce_sys/
+│   ├── icon0.png
+│   └── param.json
+├── sce_module/
+│   ├── libc.prx
+│   └── libc.prx.LICENSE.txt
+└── data/
+    └── game.dcb
+```
+
+`eboot.bin` and `libc.prx` must stay executable (`755`). A copy that drops those bits will not start.
+
+The native title opens `/app0/data/game.dcb`, with `/app0/main.dcb` as a fallback. To ship a different game, compile it with the matching `ps5-host` `bgdc`, replace `data/game.dcb`, and put its assets under `data/` using the paths the game already uses.
+
+**Standalone payload `main.dcb` search order** (first match wins):
+
+1. `/mnt/usb0/bennugd64/main.dcb`
+2. `/data/bennugd64/main.dcb`
+3. `/user/homebrew/bennugd64/main.dcb`
+4. `/app0/main.dcb`
+5. `main.dcb` in the loader's working directory
+
+Other assets (FPG, WAV, …) also go in those search paths. Compile with the matching `ps5-host` `bgdc`.
+
+If no DCB is found, the interpreter displays a fallback pattern. CROSS or OPTIONS quits the fallback screen. For a silent close, look for `/data/bennugd64/bgdi.log` or, for the native title, `/download0/bgdi.log`. The native title also emits an early marker to the PS5 kernel log. During gameplay, OPTIONS is Enter and the touch pad is Escape.
+
+Upstream SDL3 has no Prospero video driver. Bennu keeps it for software surfaces and mixing, and talks to the payload SDK directly:
+
+- `sceVideoOut`: double-buffered 1080p (or 4K when the output reports it);
+- `scePad`: DualSense keys and `JOY_*` axes/buttons/hats;
+- `sceAudioOut`: stereo audio at 48 kHz from SDL_mixer.
+
+The port does not create an `SDL_Window`. Bennu draws into SDL surfaces and the presenter copies each frame to VideoOut.
 
 ## OpenPandora
 

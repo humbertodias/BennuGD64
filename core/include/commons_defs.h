@@ -67,6 +67,7 @@
 #define OS_XBOX                 1012
 #define OS_XBOX360              1013
 #define OS_ZEEBO                1014
+#define OS_PS5                  1015
 
 #endif
 

@@ -40,6 +40,9 @@
 #ifdef TARGET_PS4
 #include "ps4_platform.h"
 #endif
+#ifdef TARGET_PS5
+#include "ps5_platform.h"
+#endif
 
 /* ----------------------------------------------------------------- */
 
@@ -81,6 +84,8 @@ static void _advance_timers( void )
     int * timer, i ;
 #ifdef TARGET_PS4
     int curr_ticktimer = ps4_platform_get_ticks_ms() ;
+#elif defined(TARGET_PS5)
+    int curr_ticktimer = ps5_platform_get_ticks_ms() ;
 #else
     int curr_ticktimer = SDL_GetTicks() ;
 #endif

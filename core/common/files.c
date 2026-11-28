@@ -933,7 +933,7 @@ char * getfullpath( char *rel_path )
     if ( !rel_path || !*rel_path ) return NULL;
 #if defined(_WIN32) && !defined(TARGET_XBOX) && !defined(__XBOX__)
     GetFullPathName( rel_path, sizeof( fullpath ), fullpath, NULL );
-#elif defined(TARGET_PS2) || defined(TARGET_VITA) || defined(TARGET_PS3) || defined(TARGET_PS4) \
+#elif defined(TARGET_PS2) || defined(TARGET_VITA) || defined(TARGET_PS3) || defined(TARGET_PS4) || defined(TARGET_PS5) \
    || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(__XBOX__)
     /* Device paths (mass:/ ux0:/ app0: /dev_usb000/ D:\\) are not POSIX; realpath strips them. */
     strncpy( fullpath, rel_path, sizeof( fullpath ) - 1 );

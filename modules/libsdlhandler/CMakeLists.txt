@@ -29,6 +29,9 @@ endif ()
 if (PLATFORM_PS4 OR PS4)
   target_sources (sdlhandler PRIVATE libsdlhandler_ps4.c)
 endif ()
+if (PLATFORM_PS5 OR PS5)
+  target_sources (sdlhandler PRIVATE libsdlhandler_ps5.c)
+endif ()
 
 target_link_libraries (
   sdlhandler

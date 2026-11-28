@@ -140,6 +140,15 @@ jobs:
             shared: false
             libretro: true
             timeout: 210
+          - platform: ps5
+            artifact: ps5-x86_64
+            dist_static: dist/ps5-x86_64-static
+            dist_libretro: dist/ps5-x86_64-libretro
+            dist_shared: ""
+            docker_target: ""
+            shared: false
+            libretro: true
+            timeout: 210
           - platform: xbox
             artifact: xbox-i386
             dist_static: dist/xbox-i386-static
@@ -456,7 +465,7 @@ jobs:
             bash scripts/generate-install-md.sh "$base" "$art_dir"
             find "$art_dir" \( -path '*/bgdi.app/bgdi' -o -name sim-install.sh \) -exec chmod +x {} +
             case "$base" in
-              *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*psp*|*vita*|*ps2*|*ps3*|*ps4*|*xbox*|*xbox360*|*pandora*|*zeebo*|*wii*|*tvos*|*ios*)
+              *windows*|*wasm32*|*android*|*switch*|*dreamcast*|*psp*|*vita*|*ps2*|*ps3*|*ps4*|*ps5*|*xbox*|*xbox360*|*pandora*|*zeebo*|*wii*|*tvos*|*ios*)
                 (cd artifacts && zip -r "$GITHUB_WORKSPACE/release-assets/${base}.zip" "$base")
                 ;;
               *)
@@ -475,9 +484,9 @@ jobs:
           set -euo pipefail
           NOTES="$(mktemp)"
           cat > "$NOTES" <<'EOF'
-          Builds of `bgdc` and `bgdi` for Linux, Windows, macOS, WebAssembly, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, PlayStation Vita, Apple tvOS, Apple iOS, PlayStation 2, PlayStation 3, PlayStation 4, Original Xbox, Xbox 360, OpenPandora, Zeebo, and Nintendo Wii.
+          Builds of `bgdc` and `bgdi` for Linux, Windows, macOS, WebAssembly, Android, Nintendo Switch, Sega Dreamcast, PlayStation Portable, PlayStation Vita, Apple tvOS, Apple iOS, PlayStation 2, PlayStation 3, PlayStation 4, PlayStation 5, Original Xbox, Xbox 360, OpenPandora, Zeebo, and Nintendo Wii.
 
-          Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared|libretro>.tar.gz` (`.zip` on Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, tvOS, iOS, PS2, PS3, PS4, Xbox, Pandora, Zeebo, and Wii):
+          Archives are named `bennugd64-<tag>-<os>-<arch>-<static|shared|libretro>.tar.gz` (`.zip` on Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, tvOS, iOS, PS2, PS3, PS4, PS5, Xbox, Pandora, Zeebo, and Wii):
           - **static** — modules linked into `bgdi`
           - **shared** — modules as `.so`/`.dll`/`.dylib` under `modules/`
           - **libretro** — RetroArch core (`bennugd_libretro.so` / `.dll` / `.dylib`, or `.a`/`.lib` on consoles without shared libraries)
@@ -495,6 +504,7 @@ jobs:
           - **ps2-mips-static** — homebrew ELF (`bgdi.elf`) and ISO (`bennugd64.iso`); PCSX2 File→Open the ISO, USB `mass:/`, or HostFS File→Open ELF
           - **ps3-ppu-static** — homebrew PKG (`bennugd64.pkg`); install on CFW, extra data in `/dev_usb000/bennugd64/` or USRDIR
           - **ps4-x86_64-static** — homebrew PKG (`bennugd64.pkg`); install on a jailbroken PS4, extra data in `/mnt/usb0/bennugd64/` or `/data/bennugd64/`
+          - **ps5-x86_64-static** — native title folder (`bennugd64-ps5-title.zip`) for firmware 13.60 with kstuff 1.13 and ShadowMountPlus: extract `PPSA64001/` into `/data/homebrew/` or `/mnt/usb0/homebrew/`; standalone payload is `bgdi.elf`
           - **xbox-i386-static** — nxdk homebrew (`default.xbe` + `bennugd64.iso` for xemu); softmodded Original Xbox or xemu, game data in `D:\bennugd64\` or beside the XBE
           - **xbox360-powerpc-static** — libXenon homebrew (`xenon.elf`); copy to FAT32 USB and boot with XeLL, game data in `uda:/bennugd64/`
           - **pandora-arm-static** — homebrew PND (`bennugd64.pnd`); copy to the Pandora SD card, or run `./bgdi` next to `main.dcb`
@@ -502,7 +512,7 @@ jobs:
           - **wii-powerpc-static** — homebrew DOL (`apps/bennugd64/boot.dol`); copy the folder to the SD card and launch from the Homebrew Channel
 
           Third-party libraries are linked statically (zlib, libpng, SDL3, SDL3_mixer, bundled DES).
-          Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, PS2, PS3, PS4, Xbox 360, Pandora, Wii, macOS (x86_64 and arm64), tvOS, and iOS CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.vita` (`vitasdk/vitasdk`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.ps3` (`hldtux/ps3dev`), `docker/Dockerfile.ps4` (OpenOrbis), `docker/Dockerfile.xbox360` (`free60/libxenon`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), `docker/Dockerfile.zeebo` (`hldtux/zeebo-sdk`), `docker/Dockerfile.wii` (`devkitpro/devkitppc`), `docker/Dockerfile.macos` (osxcross), `docker/Dockerfile.tvos` (osxcross + AppleTVOS/AppleTVSimulator.sdk), and `docker/Dockerfile.ios` (osxcross + iPhoneOS/iPhoneSimulator.sdk).
+          Linux, Windows, wasm, Android, Switch, Dreamcast, PSP, Vita, PS2, PS3, PS4, PS5, Xbox 360, Pandora, Wii, macOS (x86_64 and arm64), tvOS, and iOS CI images come from `docker/Dockerfile.linux` (`--target linux`), `docker/Dockerfile.wasm` (`emscripten/emsdk`), `docker/Dockerfile.windows` (MinGW-w64), `docker/Dockerfile.android` (NDK/SDK), `docker/Dockerfile.switch` (devkitA64 / libnx), `docker/Dockerfile.dreamcast` (`kallistios/dc-kos-toolchain`), `docker/Dockerfile.psp` (`pspdev/pspdev`), `docker/Dockerfile.vita` (`vitasdk/vitasdk`), `docker/Dockerfile.ps2` (`ps2dev/ps2dev`), `docker/Dockerfile.ps3` (`hldtux/ps3dev`), `docker/Dockerfile.ps4` (OpenOrbis), `docker/Dockerfile.ps5` (ps5-payload-sdk), `docker/Dockerfile.xbox360` (`free60/libxenon`), `docker/Dockerfile.pandora` (`scummvm/dockerized-toolchains:openpandora`), `docker/Dockerfile.zeebo` (`hldtux/zeebo-sdk`), `docker/Dockerfile.wii` (`devkitpro/devkitppc`), `docker/Dockerfile.macos` (osxcross), `docker/Dockerfile.tvos` (osxcross + AppleTVOS/AppleTVSimulator.sdk), and `docker/Dockerfile.ios` (osxcross + iPhoneOS/iPhoneSimulator.sdk).
           OS graphics/audio libraries may still be required at runtime.
           EOF
           extra=()

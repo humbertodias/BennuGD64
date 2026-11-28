@@ -66,6 +66,9 @@
 #ifdef TARGET_PS4
 #include "libkey_ps4.h"
 #endif
+#ifdef TARGET_PS5
+#include "libkey_ps5.h"
+#endif
 #ifdef TARGET_XBOX360
 #include "libkey_xbox360.h"
 #endif
@@ -498,6 +501,9 @@ static void process_key_events()
 #ifdef TARGET_PS4
     libkey_ps4_after_events();
 #endif
+#ifdef TARGET_PS5
+    libkey_ps5_after_events();
+#endif
 #ifdef TARGET_XBOX360
     libkey_xbox360_after_events();
 #endif
@@ -527,7 +533,7 @@ void __bgdexport( libkey, module_initialize )()
 {
     int * ptr = equivs ;
 
-#if defined(TARGET_PS2) || defined(TARGET_PS4) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_ZEEBO)
+#if defined(TARGET_PS2) || defined(TARGET_PS4) || defined(TARGET_PS5) || defined(TARGET_XBOX360) || defined(TARGET_XBOX) || defined(TARGET_ZEEBO)
     /* Native pad backends do not need SDL video during key initialization. */
 #else
     if ( !SDL_WasInit( SDL_INIT_VIDEO ) ) SDL_InitSubSystem( SDL_INIT_VIDEO );
@@ -557,6 +563,8 @@ void __bgdexport( libkey, module_initialize )()
     libkey_ps3_after_init( window );
 #elif defined(TARGET_PS4)
     libkey_ps4_after_init( window );
+#elif defined(TARGET_PS5)
+    libkey_ps5_after_init( window );
 #elif defined(TARGET_XBOX360)
     libkey_xbox360_after_init( window );
 #elif defined(TARGET_XBOX)

@@ -34,6 +34,7 @@ target_compile_features (bgdi_ps5_native_crt PRIVATE cxx_std_20)
 add_executable (bgdi_ps5_native_pie EXCLUDE_FROM_ALL
   ${_ps5_native_sources}
   ps5_native_runtime.c
+  ps5_native_heap.c
   $<TARGET_OBJECTS:bgdi_ps5_native_crt>
 )
 add_dependencies (bgdi_ps5_native_pie bennugd_git_header bgdi_ps5_native_libc)
@@ -48,6 +49,7 @@ target_link_options (bgdi_ps5_native_pie PRIVATE
   "LINKER:-T,${_ps5_native_layout}"
   "LINKER:--version-script,${_ps5_native_symbols}"
   "LINKER:--wrap=stat,--wrap=exit,--wrap=_exit,--wrap=_Exit"
+  "LINKER:--wrap=malloc,--wrap=calloc,--wrap=realloc,--wrap=free,--wrap=posix_memalign,--wrap=aligned_alloc,--wrap=strdup"
   "LINKER:-e,_start,--eh-frame-hdr,--no-dynamic-linker,--as-needed,--gc-sections"
 )
 set_target_properties (bgdi_ps5_native_pie PROPERTIES

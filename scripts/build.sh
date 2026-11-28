@@ -1883,7 +1883,7 @@ raw = b"".join(rows)
 png = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)) + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b"")
 (sce_sys / "icon0.png").write_bytes(png)
 
-# Give the folder its own ID so it can be registered alongside the installed fPKG.
+# The title folder uses the same ID as the fPKG.
 param.update(titleId=folder_id, conceptId=folder_id[4:],
              contentId=content_id.replace(title_id, folder_id, 1))
 with ZipFile(archive_path, "w", compression=ZIP_DEFLATED) as archive:

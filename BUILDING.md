@@ -580,8 +580,8 @@ bash scripts/build.sh ps5
 
 The build compiles the demos with host `bgdc` and writes these files to `dist/ps5-x86_64-static/`:
 
-- `bennugd64-ps5-title.zip` contains the `PPSA64002` native title folder, ready to register with a PS5 title-folder loader. Keep `eboot.bin`, `sce_sys/`, `sce_module/`, and `data/` together.
-- `bennugd64.pkg` contains the same native executable and demo under title ID `PPSA64001` for a PS5 configured to run PS5 fPKGs.
+- `bennugd64-ps5-title.zip` contains the `PPSA64001` native title folder, ready to register with a PS5 title-folder loader. Keep `eboot.bin`, `sce_sys/`, `sce_module/`, and `data/` together.
+- `bennugd64.pkg` contains the same native executable and demo under the same title ID `PPSA64001` for a PS5 configured to run PS5 fPKGs.
 - `bgdi.elf` is the standalone payload interpreter for an ELF loader.
 
 The native title opens `/app0/data/game.dcb`, with `/app0/main.dcb` as a fallback for older packages. To ship a different game in the title folder, compile it with the matching `ps5-host` `bgdc` and replace `data/game.dcb`. Place its assets alongside it or under `data/` and refer to their relative paths in the game.
